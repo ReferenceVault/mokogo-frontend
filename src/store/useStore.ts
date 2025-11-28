@@ -1,0 +1,88 @@
+import { create } from 'zustand'
+import { User, Listing, Request } from '@/types'
+
+interface AppState {
+  user: User | null
+  currentListing: Listing | null
+  requests: Request[]
+  setUser: (user: User | null) => void
+  setCurrentListing: (listing: Listing | null) => void
+  setRequests: (requests: Request[]) => void
+  addRequest: (request: Request) => void
+  updateRequest: (requestId: string, updates: Partial<Request>) => void
+}
+
+export const useStore = create<AppState>((set) => ({
+  user: null,
+  currentListing: null,
+  requests: [],
+  setUser: (user) => {
+    set({ user })
+    if (user) {
+      localStorage.setItem('mokogo-user', JSON.stringify(user))
+    } else {
+      localStorage.removeItem('mokogo-user')
+    }
+  },
+  setCurrentListing: (listing) => {
+    set({ currentListing: listing })
+    if (listing) {
+      try {
+        // Try to store full listing
+        localStorage.setItem('mokogo-listing', JSON.stringify(listing))
+      } catch (error) {
+        // If quota exceeded, try storing without photos (they're too large)
+        if (error instanceof Error && error.name === 'QuotaExceededError') {
+          console.warn('localStorage quota exceeded, storing listing without photos')
+          try {
+            const listingWithoutPhotos = { ...listing, photos: [] }
+            localStorage.setItem('mokogo-listing', JSON.stringify(listingWithoutPhotos))
+            console.log('Stored listing without photos. Photos will need to be re-uploaded.')
+          } catch (e) {
+            console.error('Failed to store listing even without photos:', e)
+            // Still allow the app to work, just don't persist
+          }
+        } else {
+          console.error('Error storing listing:', error)
+        }
+      }
+    } else {
+      localStorage.removeItem('mokogo-listing')
+    }
+  },
+  setRequests: (requests) => {
+    set({ requests })
+    localStorage.setItem('mokogo-requests', JSON.stringify(requests))
+  },
+  addRequest: (request) =>
+    set((state) => {
+      const newRequests = [...state.requests, request]
+      localStorage.setItem('mokogo-requests', JSON.stringify(newRequests))
+      return { requests: newRequests }
+    }),
+  updateRequest: (requestId, updates) =>
+    set((state) => {
+      const updatedRequests = state.requests.map((r) =>
+        r.id === requestId ? { ...r, ...updates } : r
+      )
+      localStorage.setItem('mokogo-requests', JSON.stringify(updatedRequests))
+      return { requests: updatedRequests }
+    }),
+}))
+
+// Load from localStorage on init
+if (typeof window !== 'undefined') {
+  const savedUser = localStorage.getItem('mokogo-user')
+  const savedListing = localStorage.getItem('mokogo-listing')
+  const savedRequests = localStorage.getItem('mokogo-requests')
+  
+  if (savedUser) {
+    useStore.getState().setUser(JSON.parse(savedUser))
+  }
+  if (savedListing) {
+    useStore.getState().setCurrentListing(JSON.parse(savedListing))
+  }
+  if (savedRequests) {
+    useStore.getState().setRequests(JSON.parse(savedRequests))
+  }
+}

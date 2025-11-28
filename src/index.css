@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-mokogo-off-white font-sans antialiased;
+    margin: 0;
+    padding: 0;
+  }
+  
+  html {
+    margin: 0;
+    padding: 0;
+  }
+  
+  #root {
+    margin: 0;
+    padding: 0;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-mokogo-blue text-white px-6 py-2.5 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  
+  .btn-secondary {
+    @apply border border-mokogo-gray text-gray-700 px-6 py-2.5 rounded-lg font-medium hover:bg-gray-50 transition-colors;
+  }
+  
+  .input-field {
+    @apply w-full px-4 py-2.5 border border-mokogo-gray rounded-lg focus:outline-none focus:ring-2 focus:ring-mokogo-blue focus:border-transparent;
+  }
+  
+  .card {
+    @apply bg-white rounded-lg shadow-sm border border-mokogo-gray p-6;
+  }
+}
+
+@keyframes slideInFromBottom {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-in {
+  animation: slideInFromBottom 0.3s ease-out;
+}
