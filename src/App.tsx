@@ -7,6 +7,7 @@ import ListingWizard from './pages/listing/ListingWizard'
 import Dashboard from './pages/Dashboard'
 import RequestsList from './pages/requests/RequestsList'
 import RequestDetail from './pages/requests/RequestDetail'
+import ListingDetail from './pages/ListingDetail'
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/requests" element={<RequestsList />} />
         <Route path="/requests/:requestId" element={<RequestDetail />} />
+        <Route path="/listings/:listingId" element={<ListingDetail />} />
       </Routes>
     </Router>
   )

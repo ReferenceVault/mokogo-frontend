@@ -63,11 +63,11 @@ const AuthPhone = () => {
             {/* Left Section - Informational Panel */}
             <div className="space-y-8">
               {/* Secure Authentication Badge */}
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 rounded-full">
-                <svg className="w-4 h-4 text-mokogo-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-mokogo-info-bg border border-mokogo-info-border rounded-full">
+                <svg className="w-4 h-4 text-mokogo-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
-                <span className="text-sm font-medium text-mokogo-blue">Secure Authentication</span>
+                <span className="text-sm font-medium text-mokogo-primary">Secure Authentication</span>
               </div>
 
               {/* Main Heading */}
@@ -83,8 +83,8 @@ const AuthPhone = () => {
               {/* Features List */}
               <div className="space-y-4">
                 <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-mokogo-blue/10 flex items-center justify-center">
-                    <svg className="w-6 h-6 text-mokogo-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-mokogo-primary/10 flex items-center justify-center">
+                    <svg className="w-6 h-6 text-mokogo-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                     </svg>
                   </div>
@@ -95,8 +95,8 @@ const AuthPhone = () => {
                 </div>
 
                 <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-mokogo-blue/10 flex items-center justify-center">
-                    <svg className="w-6 h-6 text-mokogo-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-mokogo-primary/10 flex items-center justify-center">
+                    <svg className="w-6 h-6 text-mokogo-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                     </svg>
                   </div>
@@ -107,8 +107,8 @@ const AuthPhone = () => {
                 </div>
 
                 <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-mokogo-blue/10 flex items-center justify-center">
-                    <svg className="w-6 h-6 text-mokogo-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-mokogo-primary/10 flex items-center justify-center">
+                    <svg className="w-6 h-6 text-mokogo-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                     </svg>
                   </div>
@@ -149,7 +149,7 @@ const AuthPhone = () => {
               <div className="w-full">
                 <div className="bg-white rounded-xl shadow-lg border border-mokogo-gray p-8">
                   {/* Icon */}
-                  <div className="w-16 h-16 mx-auto mb-6 rounded-xl bg-mokogo-blue flex items-center justify-center">
+                  <div className="w-16 h-16 mx-auto mb-6 rounded-xl bg-mokogo-primary flex items-center justify-center">
                     <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
                     </svg>
@@ -191,7 +191,7 @@ const AuthPhone = () => {
                             type="tel"
                             value={displayPhone}
                             onChange={handlePhoneChange}
-                            className={`input-field ${error ? 'border-red-500 focus:ring-red-500' : 'focus:ring-mokogo-blue'} ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            className={`input-field ${error ? 'border-red-500 focus:ring-red-500' : 'focus:ring-mokogo-primary'} ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                             placeholder="98XXXXXXXX"
                             maxLength={12}
                             disabled={isLoading}
@@ -207,7 +207,7 @@ const AuthPhone = () => {
 
                     {/* Privacy Note */}
                     <div className="flex items-start gap-2 text-sm text-gray-600">
-                      <svg className="w-5 h-5 text-mokogo-blue flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-5 h-5 text-mokogo-primary flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                       <span>We use your phone to keep your account secure. No spam calls, ever.</span>
@@ -242,7 +242,7 @@ const AuthPhone = () => {
                   <div className="mt-6 text-center">
                     <p className="text-sm text-gray-600">
                       Already have an account?{' '}
-                      <Link to="/auth/phone" className="text-mokogo-blue hover:underline font-medium">
+                      <Link to="/auth/phone" className="text-mokogo-primary hover:underline font-medium">
                         Log in
                       </Link>
                     </p>
@@ -343,11 +343,11 @@ const AuthPhone = () => {
 
             {/* Card 2: Number Privacy */}
             <div className="bg-white rounded-lg p-6 shadow-sm border border-mokogo-gray">
-              <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center mb-4 relative">
-                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-12 h-12 rounded-lg bg-mokogo-primary/10 flex items-center justify-center mb-4 relative">
+                <svg className="w-6 h-6 text-mokogo-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                 </svg>
-                <svg className="w-5 h-5 text-blue-600 absolute top-1 right-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ transform: 'rotate(45deg)' }}>
+                <svg className="w-5 h-5 text-mokogo-primary absolute top-1 right-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ transform: 'rotate(45deg)' }}>
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </div>

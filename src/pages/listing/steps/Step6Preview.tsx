@@ -58,15 +58,15 @@ const Step6Preview = ({ data, onChange, onPublish }: Step6PreviewProps) => {
       <div className="grid md:grid-cols-2 gap-6">
         {/* Left Column - Title & Controls */}
         <div className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+          <div className="w-[110%]">
+            <label className="block text-sm font-medium text-stone-700 mb-2">
               Listing title
             </label>
             <input
               type="text"
               value={title}
               onChange={(e) => handleTitleChange(e.target.value)}
-              className="input-field"
+              className="w-full px-4 py-3 bg-gradient-to-br from-white via-white to-orange-50/30 border-2 border-orange-200/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-mokogo-primary/50 focus:border-mokogo-primary transition-all duration-200 shadow-sm hover:shadow-md hover:border-orange-300/70 text-gray-700 font-medium"
               placeholder="Enter listing title"
             />
           </div>
@@ -89,7 +89,7 @@ const Step6Preview = ({ data, onChange, onPublish }: Step6PreviewProps) => {
 
           {/* Badges */}
           <div className="flex flex-wrap gap-2 mb-4">
-            <span className="px-3 py-1 bg-mokogo-blue/10 text-mokogo-blue rounded-full text-xs font-medium">
+            <span className="px-3 py-1 bg-mokogo-primary/10 text-mokogo-primary rounded-full text-xs font-medium">
               ₹{data.rent?.toLocaleString()}/month
             </span>
             <span className="px-3 py-1 bg-gray-200 text-gray-700 rounded-full text-xs font-medium">

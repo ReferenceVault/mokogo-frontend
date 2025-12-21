@@ -112,7 +112,7 @@ const AuthOTP = () => {
           <div className="grid lg:grid-cols-2 gap-10 items-center">
             
             {/* Left Section - Informational Panel */}
-            <div className="bg-mokogo-blue rounded-xl p-8 text-white space-y-6">
+            <div className="bg-mokogo-primary rounded-xl p-8 text-white space-y-6">
               {/* Shield Icon */}
               <div className="w-16 h-16 rounded-lg bg-white/20 flex items-center justify-center">
                 <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -182,7 +182,7 @@ const AuthOTP = () => {
               <div className="w-full">
                 <div className="bg-white rounded-xl shadow-lg border border-mokogo-gray p-8">
                   {/* Icon with Checkmark */}
-                  <div className="w-16 h-16 mx-auto mb-6 rounded-xl bg-mokogo-blue flex items-center justify-center relative">
+                  <div className="w-16 h-16 mx-auto mb-6 rounded-xl bg-mokogo-primary flex items-center justify-center relative">
                     <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                     </svg>
@@ -219,7 +219,7 @@ const AuthOTP = () => {
                             onChange={(e) => handleOtpChange(index, e.target.value)}
                             onKeyDown={(e) => handleKeyDown(index, e)}
                             onPaste={handlePaste}
-                            className={`w-12 h-14 text-center text-xl font-semibold border rounded-lg focus:outline-none focus:ring-2 focus:ring-mokogo-blue ${
+                            className={`w-12 h-14 text-center text-xl font-semibold border rounded-lg focus:outline-none focus:ring-2 focus:ring-mokogo-primary ${
                               error ? 'border-red-500' : 'border-mokogo-gray'
                             }`}
                           />
@@ -248,7 +248,7 @@ const AuthOTP = () => {
                         type="button"
                         onClick={handleResend}
                         disabled={resendDisabled}
-                        className="text-sm text-mokogo-blue hover:underline disabled:text-gray-400 disabled:no-underline flex items-center gap-1 mx-auto"
+                        className="text-sm text-mokogo-primary hover:underline disabled:text-gray-400 disabled:no-underline flex items-center gap-1 mx-auto"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -286,7 +286,7 @@ const AuthOTP = () => {
                   <div className="mt-4 text-center">
                     <Link
                       to="/auth/phone"
-                      className="text-sm text-mokogo-blue hover:underline"
+                      className="text-sm text-mokogo-primary hover:underline"
                     >
                       Change phone number
                     </Link>
@@ -343,8 +343,8 @@ const AuthOTP = () => {
           <div className="grid md:grid-cols-3 gap-8">
             {/* Prevent Fraud */}
             <div className="text-center">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-lg bg-mokogo-blue/10 flex items-center justify-center">
-                <svg className="w-8 h-8 text-mokogo-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-lg bg-mokogo-primary/10 flex items-center justify-center">
+                <svg className="w-8 h-8 text-mokogo-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
               </div>
@@ -356,8 +356,8 @@ const AuthOTP = () => {
 
             {/* Build Trust */}
             <div className="text-center">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-lg bg-mokogo-blue/10 flex items-center justify-center">
-                <svg className="w-8 h-8 text-mokogo-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-lg bg-mokogo-primary/10 flex items-center justify-center">
+                <svg className="w-8 h-8 text-mokogo-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
               </div>
@@ -369,8 +369,8 @@ const AuthOTP = () => {
 
             {/* Account Recovery */}
             <div className="text-center">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-lg bg-mokogo-blue/10 flex items-center justify-center">
-                <svg className="w-8 h-8 text-mokogo-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-lg bg-mokogo-primary/10 flex items-center justify-center">
+                <svg className="w-8 h-8 text-mokogo-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
                 </svg>
               </div>
@@ -399,7 +399,7 @@ const AuthOTP = () => {
             {/* Step 1 */}
             <div className="bg-white rounded-lg p-6 shadow-sm border border-mokogo-gray">
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-full bg-mokogo-blue text-white flex items-center justify-center font-bold text-xl flex-shrink-0">
+                <div className="w-12 h-12 rounded-full bg-mokogo-primary text-white flex items-center justify-center font-bold text-xl flex-shrink-0">
                   1
                 </div>
                 <div className="flex-1">
@@ -420,7 +420,7 @@ const AuthOTP = () => {
             {/* Step 2 */}
             <div className="bg-white rounded-lg p-6 shadow-sm border border-mokogo-gray">
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-full bg-mokogo-blue text-white flex items-center justify-center font-bold text-xl flex-shrink-0">
+                <div className="w-12 h-12 rounded-full bg-mokogo-primary text-white flex items-center justify-center font-bold text-xl flex-shrink-0">
                   2
                 </div>
                 <div className="flex-1">
@@ -441,7 +441,7 @@ const AuthOTP = () => {
             {/* Step 3 */}
             <div className="bg-white rounded-lg p-6 shadow-sm border border-mokogo-gray">
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-full bg-mokogo-blue text-white flex items-center justify-center font-bold text-xl flex-shrink-0">
+                <div className="w-12 h-12 rounded-full bg-mokogo-primary text-white flex items-center justify-center font-bold text-xl flex-shrink-0">
                   3
                 </div>
                 <div className="flex-1">
@@ -549,10 +549,10 @@ const AuthOTP = () => {
       </section>
 
       {/* Need Help Section */}
-      <section className="bg-mokogo-blue py-16 px-24">
+      <section className="bg-mokogo-primary py-16 px-24">
         <div className="max-w-4xl mx-auto text-center">
           {/* Icon */}
-          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-blue-400/30 flex items-center justify-center">
+          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-mokogo-primary/30 flex items-center justify-center">
             <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
             </svg>
@@ -568,13 +568,13 @@ const AuthOTP = () => {
 
           {/* Support Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
-            <button className="bg-white text-mokogo-blue px-6 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors">
+            <button className="bg-white text-mokogo-primary px-6 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
               </svg>
               Live Chat Support
             </button>
-            <button className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 hover:bg-blue-700 transition-colors">
+            <button className="bg-mokogo-primary text-white px-6 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 hover:bg-mokogo-primary-dark transition-colors">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>

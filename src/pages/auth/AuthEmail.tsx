@@ -7,6 +7,7 @@ import { useStore } from '@/store/useStore'
 const AuthEmail = () => {
   const navigate = useNavigate()
   const setUser = useStore((state) => state.setUser)
+  const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -18,6 +19,11 @@ const AuthEmail = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+
+    if (!name.trim()) {
+      setError('Name is required')
+      return
+    }
 
     if (!email.trim()) {
       setError('Email is required')
@@ -40,13 +46,14 @@ const AuthEmail = () => {
       id: `user-${Date.now()}`,
       phone,
       email,
+      name: name.trim(),
     }
 
     setUser(user)
     sessionStorage.removeItem('auth-phone')
 
-    // Navigate to listing wizard
-    navigate('/listing/wizard')
+    // Navigate to dashboard after login
+    navigate('/dashboard')
   }
 
   return (
@@ -57,8 +64,8 @@ const AuthEmail = () => {
       <main className="flex-1 flex items-center py-12 px-16" style={{ fontSize: '90%' }}>
         <div className="max-w-2xl mx-auto w-full px-24">
           {/* Icon */}
-          <div className="w-16 h-16 mx-auto mb-6 rounded-lg bg-blue-100 flex items-center justify-center">
-            <svg className="w-8 h-8 text-mokogo-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="w-16 h-16 mx-auto mb-6 rounded-lg bg-mokogo-primary/10 flex items-center justify-center">
+            <svg className="w-8 h-8 text-mokogo-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
             </svg>
           </div>
@@ -66,16 +73,37 @@ const AuthEmail = () => {
           {/* Heading */}
           <div className="text-center mb-8">
             <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
-              What's your email?
+              Tell us about yourself
             </h1>
             <p className="text-lg text-gray-600">
-              We'll send important updates about your listing here.
+              We'll use this information to personalize your experience.
             </p>
           </div>
 
           {/* Form Card */}
           <div className="bg-white rounded-xl shadow-lg border border-mokogo-gray p-8">
             <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                  Full Name <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    id="name"
+                    type="text"
+                    value={name}
+                    onChange={(e) => {
+                      setName(e.target.value)
+                      setError('')
+                    }}
+                    className={`input-field ${error && !name.trim() ? 'border-red-500 focus:ring-red-500' : 'focus:ring-mokogo-primary'} ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    placeholder="Enter your full name"
+                    disabled={isLoading}
+                    autoFocus
+                  />
+                </div>
+              </div>
+
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                   Email Address <span className="text-red-500">*</span>
@@ -89,10 +117,9 @@ const AuthEmail = () => {
                       setEmail(e.target.value)
                       setError('')
                     }}
-                    className={`input-field pr-10 ${error ? 'border-red-500 focus:ring-red-500' : 'focus:ring-mokogo-blue'} ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    className={`input-field pr-10 ${error && (!email.trim() || !validateEmail(email)) ? 'border-red-500 focus:ring-red-500' : 'focus:ring-mokogo-primary'} ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                     placeholder="you@example.com"
                     disabled={isLoading}
-                    autoFocus
                   />
                   <div className="absolute right-3 top-1/2 -translate-y-1/2">
                     <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -112,7 +139,7 @@ const AuthEmail = () => {
 
                 {/* Info Message */}
                 <div className="flex items-start gap-2 mt-3">
-                  <svg className="w-5 h-5 text-mokogo-blue flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-mokogo-primary flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   <p className="text-sm text-gray-600">
@@ -150,9 +177,9 @@ const AuthEmail = () => {
             <div className="mt-6 pt-6 border-t border-mokogo-gray">
               <p className="text-xs text-gray-500 text-center">
                 By continuing, you agree to MOKOGO's{' '}
-                <a href="#" className="text-mokogo-blue hover:underline">Terms of Service</a>
+                <a href="#" className="text-mokogo-primary hover:underline">Terms of Service</a>
                 {' '}and{' '}
-                <a href="#" className="text-mokogo-blue hover:underline">Privacy Policy</a>.
+                <a href="#" className="text-mokogo-primary hover:underline">Privacy Policy</a>.
               </p>
             </div>
           </div>
@@ -187,8 +214,8 @@ const AuthEmail = () => {
 
             {/* Performance Updates */}
             <div className="text-center">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-lg bg-mokogo-blue/10 flex items-center justify-center">
-                <svg className="w-8 h-8 text-mokogo-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-lg bg-mokogo-primary/10 flex items-center justify-center">
+                <svg className="w-8 h-8 text-mokogo-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                 </svg>
               </div>
@@ -226,7 +253,7 @@ const AuthEmail = () => {
           <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
             {/* Essential Notifications Only */}
             <div className="bg-white rounded-lg p-6 shadow-sm border border-mokogo-gray">
-              <div className="w-12 h-12 rounded-full bg-mokogo-blue flex items-center justify-center mb-4">
+              <div className="w-12 h-12 rounded-full bg-mokogo-primary flex items-center justify-center mb-4">
                 <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
@@ -239,7 +266,7 @@ const AuthEmail = () => {
 
             {/* Customizable Frequency */}
             <div className="bg-white rounded-lg p-6 shadow-sm border border-mokogo-gray">
-              <div className="w-12 h-12 rounded-full bg-mokogo-blue flex items-center justify-center mb-4">
+              <div className="w-12 h-12 rounded-full bg-mokogo-primary flex items-center justify-center mb-4">
                 <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
                 </svg>
@@ -252,7 +279,7 @@ const AuthEmail = () => {
 
             {/* Easy Unsubscribe */}
             <div className="bg-white rounded-lg p-6 shadow-sm border border-mokogo-gray">
-              <div className="w-12 h-12 rounded-full bg-mokogo-blue flex items-center justify-center mb-4">
+              <div className="w-12 h-12 rounded-full bg-mokogo-primary flex items-center justify-center mb-4">
                 <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -282,11 +309,11 @@ const AuthEmail = () => {
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Encrypted Storage */}
             <div className="bg-mokogo-off-white rounded-lg p-6 border border-mokogo-gray">
-              <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center mb-4 relative">
-                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-12 h-12 rounded-lg bg-mokogo-primary/10 flex items-center justify-center mb-4 relative">
+                <svg className="w-6 h-6 text-mokogo-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
-                <svg className="w-4 h-4 text-blue-600 absolute bottom-0 right-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-mokogo-primary absolute bottom-0 right-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
               </div>
@@ -441,14 +468,14 @@ const AuthEmail = () => {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* New Inquiry Notifications */}
             <div className="bg-mokogo-off-white rounded-lg p-6 border border-mokogo-gray">
-              <div className="w-12 h-12 rounded-lg bg-blue-500 flex items-center justify-center mb-4">
+              <div className="w-12 h-12 rounded-lg bg-mokogo-primary flex items-center justify-center mb-4">
                 <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                 </svg>
               </div>
               <div className="flex items-start justify-between mb-2">
                 <h3 className="text-lg font-semibold text-gray-900">New Inquiry Notifications</h3>
-                <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">Instant</span>
+                <span className="px-3 py-1 bg-mokogo-primary/20 text-mokogo-primary-dark rounded-full text-xs font-medium">Instant</span>
               </div>
               <p className="text-gray-600 text-sm">
                 Instant alerts when verified seekers express interest in your listing
@@ -553,18 +580,18 @@ const AuthEmail = () => {
           {/* Email Preview Card */}
           <div className="bg-white rounded-lg shadow-lg border border-mokogo-gray overflow-hidden">
             {/* Email Header */}
-            <div className="bg-mokogo-blue px-6 py-4">
+            <div className="bg-mokogo-primary px-6 py-4">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center">
-                    <span className="text-mokogo-blue font-bold text-lg">M</span>
+                    <span className="text-mokogo-primary font-bold text-lg">M</span>
                   </div>
                   <div>
                     <div className="text-white font-semibold">MOKOGO</div>
-                    <div className="text-blue-100 text-sm">notifications@mokogo.com</div>
+                    <div className="text-white/90 text-sm">notifications@mokogo.com</div>
                   </div>
                 </div>
-                <div className="text-blue-100 text-sm">2 mins ago</div>
+                <div className="text-white/90 text-sm">2 mins ago</div>
               </div>
               <div className="text-white text-xl font-semibold">
                 New Inquiry for Your Listing
@@ -593,7 +620,7 @@ const AuthEmail = () => {
                       <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
                         Verified ID
                       </span>
-                      <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+                      <span className="px-3 py-1 bg-mokogo-primary/20 text-mokogo-primary-dark rounded-full text-xs font-medium">
                         Background Checked
                       </span>
                     </div>
@@ -615,10 +642,10 @@ const AuthEmail = () => {
 
               {/* Action Buttons */}
               <div className="flex gap-3 mb-6">
-                <button className="px-6 py-3 bg-mokogo-blue text-white rounded-lg font-medium hover:bg-blue-700 transition-colors">
+                <button className="px-6 py-3 bg-mokogo-primary text-white rounded-lg font-medium hover:bg-mokogo-primary-dark transition-colors">
                   View Full Profile
                 </button>
-                <button className="px-6 py-3 bg-white text-mokogo-blue border-2 border-mokogo-blue rounded-lg font-medium hover:bg-blue-50 transition-colors">
+                <button className="px-6 py-3 bg-white text-mokogo-primary border-2 border-mokogo-primary rounded-lg font-medium hover:bg-mokogo-info-bg transition-colors">
                   Send Message
                 </button>
               </div>
@@ -646,10 +673,10 @@ const AuthEmail = () => {
 
             {/* Email Footer */}
             <div className="px-6 py-4 bg-mokogo-off-white border-t border-mokogo-gray flex items-center justify-between">
-              <a href="#" className="text-mokogo-blue text-sm hover:underline">
+              <a href="#" className="text-mokogo-primary text-sm hover:underline">
                 Manage Email Preferences
               </a>
-              <span className="text-gray-600 text-sm">© 2024 MOKOGO</span>
+              <span className="text-gray-600 text-sm">© 2025 MOKOGO</span>
             </div>
           </div>
         </div>
@@ -671,7 +698,7 @@ const AuthEmail = () => {
             {/* FAQ 1 */}
             <div className="bg-white rounded-lg p-6 border border-mokogo-gray">
               <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-full bg-mokogo-blue flex items-center justify-center flex-shrink-0">
+                <div className="w-10 h-10 rounded-full bg-mokogo-primary flex items-center justify-center flex-shrink-0">
                   <span className="text-white font-bold text-lg">?</span>
                 </div>
                 <div className="flex-1">
@@ -688,7 +715,7 @@ const AuthEmail = () => {
             {/* FAQ 2 */}
             <div className="bg-white rounded-lg p-6 border border-mokogo-gray">
               <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-full bg-mokogo-blue flex items-center justify-center flex-shrink-0">
+                <div className="w-10 h-10 rounded-full bg-mokogo-primary flex items-center justify-center flex-shrink-0">
                   <span className="text-white font-bold text-lg">?</span>
                 </div>
                 <div className="flex-1">
@@ -705,7 +732,7 @@ const AuthEmail = () => {
             {/* FAQ 3 */}
             <div className="bg-white rounded-lg p-6 border border-mokogo-gray">
               <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-full bg-mokogo-blue flex items-center justify-center flex-shrink-0">
+                <div className="w-10 h-10 rounded-full bg-mokogo-primary flex items-center justify-center flex-shrink-0">
                   <span className="text-white font-bold text-lg">?</span>
                 </div>
                 <div className="flex-1">
@@ -722,7 +749,7 @@ const AuthEmail = () => {
             {/* FAQ 4 */}
             <div className="bg-white rounded-lg p-6 border border-mokogo-gray">
               <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-full bg-mokogo-blue flex items-center justify-center flex-shrink-0">
+                <div className="w-10 h-10 rounded-full bg-mokogo-primary flex items-center justify-center flex-shrink-0">
                   <span className="text-white font-bold text-lg">?</span>
                 </div>
                 <div className="flex-1">
@@ -739,7 +766,7 @@ const AuthEmail = () => {
             {/* FAQ 5 */}
             <div className="bg-white rounded-lg p-6 border border-mokogo-gray">
               <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-full bg-mokogo-blue flex items-center justify-center flex-shrink-0">
+                <div className="w-10 h-10 rounded-full bg-mokogo-primary flex items-center justify-center flex-shrink-0">
                   <span className="text-white font-bold text-lg">?</span>
                 </div>
                 <div className="flex-1">
@@ -757,7 +784,7 @@ const AuthEmail = () => {
       </section>
 
       {/* Ready to get started Section */}
-      <section className="bg-mokogo-blue py-16 px-24">
+      <section className="bg-mokogo-primary py-16 px-24">
         <div className="max-w-4xl mx-auto text-center">
           <div className="flex justify-center mb-6">
             <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center">
@@ -771,7 +798,7 @@ const AuthEmail = () => {
             Ready to get started?
           </h2>
           
-          <p className="text-lg text-blue-100 mb-8 max-w-2xl mx-auto">
+          <p className="text-lg text-white/90 mb-8 max-w-2xl mx-auto">
             Enter your email above and continue to create your first listing. Find the perfect flatmate within days, not weeks.
           </p>
 

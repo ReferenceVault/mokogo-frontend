@@ -161,8 +161,8 @@ const Step5Photos = ({ data, onChange }: Step5PhotosProps) => {
           onClick={() => fileInputRef.current?.click()}
           className={`border-2 border-dashed rounded-lg p-12 text-center transition-colors cursor-pointer ${
             dragActive
-              ? 'border-mokogo-blue bg-blue-50'
-              : 'border-mokogo-gray bg-gray-50 hover:border-mokogo-blue hover:bg-blue-50/50'
+              ? 'border-mokogo-primary bg-mokogo-info-bg'
+              : 'border-mokogo-gray bg-gray-50 hover:border-mokogo-primary hover:bg-mokogo-info-bg/50'
           }`}
         >
           <input
@@ -279,7 +279,7 @@ const Step5Photos = ({ data, onChange }: Step5PhotosProps) => {
                     )}
                   </div>
                   {index === 0 && (
-                    <span className="absolute top-2 left-2 bg-mokogo-blue text-white text-xs font-semibold px-2.5 py-1 rounded">
+                    <span className="absolute top-2 left-2 bg-mokogo-primary text-white text-xs font-semibold px-2.5 py-1 rounded">
                       Main
                     </span>
                   )}

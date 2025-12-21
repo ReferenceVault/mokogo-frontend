@@ -32,7 +32,7 @@ const RequestsList = () => {
       </header>
 
       <main className="max-w-4xl mx-auto px-6 py-8">
-        <Link to="/dashboard" className="text-mokogo-blue hover:underline mb-4 inline-block">
+        <Link to="/dashboard" className="text-mokogo-primary hover:underline mb-4 inline-block">
           ← Back to dashboard
         </Link>
 
@@ -62,7 +62,7 @@ const RequestsList = () => {
               onClick={() => setFilter(f.key as any)}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 filter === f.key
-                  ? 'bg-mokogo-blue text-white'
+                  ? 'bg-mokogo-primary text-white'
                   : 'border border-mokogo-gray text-gray-700 hover:bg-gray-50'
               }`}
             >
@@ -92,8 +92,8 @@ const RequestsList = () => {
                 className="card cursor-pointer hover:shadow-md transition-shadow"
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-mokogo-blue/20 flex items-center justify-center flex-shrink-0">
-                    <span className="text-mokogo-blue font-medium">
+                  <div className="w-12 h-12 rounded-full bg-mokogo-primary/20 flex items-center justify-center flex-shrink-0">
+                    <span className="text-mokogo-primary font-medium">
                       {request.seekerName[0]?.toUpperCase()}
                     </span>
                   </div>

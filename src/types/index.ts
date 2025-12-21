@@ -27,7 +27,10 @@ export interface Listing {
   drinkingAllowed: string
   guestsAllowed: string
   notes?: string
+  description?: string
   photos: string[]
+  contactPreference?: string
+  contactNumber?: string
   status: 'draft' | 'live' | 'archived'
   boostEnabled?: boolean
   createdAt: string

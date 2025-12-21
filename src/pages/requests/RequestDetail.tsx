@@ -18,7 +18,7 @@ const RequestDetail = () => {
       <div className="min-h-screen bg-mokogo-off-white flex items-center justify-center">
         <div className="text-center">
           <p className="text-gray-600 mb-4">Request not found</p>
-          <Link to="/requests" className="text-mokogo-blue hover:underline">
+          <Link to="/requests" className="text-mokogo-primary hover:underline">
             Back to requests
           </Link>
         </div>
@@ -63,7 +63,7 @@ const RequestDetail = () => {
       </header>
 
       <main className="max-w-4xl mx-auto px-6 py-8">
-        <Link to="/requests" className="text-mokogo-blue hover:underline mb-4 inline-block">
+        <Link to="/requests" className="text-mokogo-primary hover:underline mb-4 inline-block">
           ← Back to requests
         </Link>
 
@@ -88,8 +88,8 @@ const RequestDetail = () => {
           <section className="mb-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Seeker summary</h2>
             <div className="flex items-center gap-4 mb-4">
-              <div className="w-16 h-16 rounded-full bg-mokogo-blue/20 flex items-center justify-center">
-                <span className="text-mokogo-blue font-medium text-xl">
+              <div className="w-16 h-16 rounded-full bg-mokogo-primary/20 flex items-center justify-center">
+                <span className="text-mokogo-primary font-medium text-xl">
                   {request.seekerName[0]?.toUpperCase()}
                 </span>
               </div>
@@ -127,8 +127,8 @@ const RequestDetail = () => {
 
           {/* Privacy Notice */}
           {request.status === 'pending' && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-              <p className="text-sm text-blue-800">
+            <div className="bg-mokogo-info-bg border border-mokogo-info-border rounded-lg p-4 mb-6">
+              <p className="text-sm text-mokogo-info-text">
                 Your phone number and email are hidden. They are only shared if you accept this request.
               </p>
             </div>

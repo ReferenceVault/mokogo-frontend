@@ -1,4 +1,5 @@
 import { Listing } from '@/types'
+import CustomSelect from '@/components/CustomSelect'
 
 interface Step1BasicsProps {
   data: Partial<Listing>
@@ -62,35 +63,25 @@ const Step1Basics = ({ data, onChange }: Step1BasicsProps) => {
 
       <div className="space-y-6">
         {/* City */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            City <span className="text-red-500">*</span>
-          </label>
-          <select
+        <div className="w-[110%]">
+          <CustomSelect
+            label="City"
             value={data.city || ''}
-            onChange={(e) => handleChange('city', e.target.value)}
-            className="input-field"
-          >
-            <option value="">Select a city</option>
-            <optgroup label="Popular">
-              {cities.filter(c => c.group === 'Popular').map(city => (
-                <option key={city.value} value={city.value}>{city.value}</option>
-              ))}
-            </optgroup>
-            <optgroup label="Major Cities">
-              {cities.filter(c => c.group === 'Major Cities').map(city => (
-                <option key={city.value} value={city.value}>{city.value}</option>
-              ))}
-            </optgroup>
-          </select>
+            onValueChange={(value) => handleChange('city', value)}
+            placeholder="Select a city"
+            options={[
+              ...cities.filter(c => c.group === 'Popular').map(city => ({ value: city.value, label: city.value, group: 'Popular' })),
+              ...cities.filter(c => c.group === 'Major Cities').map(city => ({ value: city.value, label: city.value, group: 'Major Cities' }))
+            ]}
+          />
           <p className="text-xs text-gray-500 mt-1.5">
             Choose the city where your property is located.
           </p>
         </div>
 
         {/* Locality */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+        <div className="w-[110%]">
+          <label className="block text-sm font-medium text-stone-700 mb-2">
             Locality <span className="text-red-500">*</span>
           </label>
           <div className="relative">
@@ -98,11 +89,11 @@ const Step1Basics = ({ data, onChange }: Step1BasicsProps) => {
               type="text"
               value={data.locality || ''}
               onChange={(e) => handleChange('locality', e.target.value)}
-              className="input-field pr-10"
+              className="w-full px-4 py-3 bg-white/50 backdrop-blur-sm border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400/50 focus:border-orange-400 transition-all duration-200 shadow-sm hover:shadow-md hover:border-orange-300 text-stone-900 font-medium pr-10"
               placeholder="e.g., Koregaon Park, Hinjewadi"
             />
-            <div className="absolute right-3 top-1/2 -translate-y-1/2">
-              <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="absolute right-4 top-1/2 -translate-y-1/2">
+              <svg className="w-5 h-5 text-mokogo-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
@@ -113,15 +104,15 @@ const Step1Basics = ({ data, onChange }: Step1BasicsProps) => {
         </div>
 
         {/* Society Name */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+        <div className="w-[110%]">
+          <label className="block text-sm font-medium text-stone-700 mb-2">
             Society Name <span className="text-gray-500 text-xs">(Optional)</span>
           </label>
           <input
             type="text"
             value={data.societyName || ''}
             onChange={(e) => handleChange('societyName', e.target.value)}
-            className="input-field"
+            className="w-full px-4 py-3 bg-gradient-to-br from-white via-white to-orange-50/30 border-2 border-orange-200/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-mokogo-primary/50 focus:border-mokogo-primary transition-all duration-200 shadow-sm hover:shadow-md hover:border-orange-300/70 text-gray-700 font-medium"
             placeholder="e.g., Kumar Paradise, Amanora Park Town"
           />
           <p className="text-xs text-gray-500 mt-1.5">
@@ -131,7 +122,7 @@ const Step1Basics = ({ data, onChange }: Step1BasicsProps) => {
 
         {/* BHK Type */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-stone-700 mb-2">
             BHK Type <span className="text-red-500">*</span>
           </label>
           <div className="flex flex-wrap gap-2">
@@ -144,8 +135,8 @@ const Step1Basics = ({ data, onChange }: Step1BasicsProps) => {
                   onClick={() => handleChange('bhkType', value)}
                   className={`px-6 py-2.5 rounded-full font-medium transition-colors border ${
                     data.bhkType === value
-                      ? 'bg-mokogo-blue text-white border-mokogo-blue'
-                      : 'bg-white text-gray-700 border-mokogo-gray hover:border-mokogo-blue hover:text-mokogo-blue'
+                      ? 'bg-orange-400 text-white border-orange-400'
+                      : 'bg-white/30 text-gray-700 border-stone-200 hover:border-orange-400 hover:text-orange-500'
                   }`}
                 >
                   {bhk}
@@ -157,7 +148,7 @@ const Step1Basics = ({ data, onChange }: Step1BasicsProps) => {
 
         {/* Room Type */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-stone-700 mb-2">
             Room Type <span className="text-red-500">*</span>
           </label>
           <div className="flex flex-wrap gap-3">
@@ -168,8 +159,8 @@ const Step1Basics = ({ data, onChange }: Step1BasicsProps) => {
                 onClick={() => handleChange('roomType', room.value)}
                 className={`flex items-center gap-2 px-6 py-3 rounded-full font-medium transition-colors border ${
                   data.roomType === room.value
-                    ? 'bg-mokogo-blue text-white border-mokogo-blue'
-                    : 'bg-white text-gray-700 border-mokogo-gray hover:border-mokogo-blue hover:text-mokogo-blue'
+                    ? 'bg-orange-400 text-white border-orange-400'
+                    : 'bg-white/30 text-gray-700 border-stone-200 hover:border-orange-400 hover:text-orange-500'
                 }`}
               >
                 {getRoomIcon(room.icon)}
@@ -184,18 +175,18 @@ const Step1Basics = ({ data, onChange }: Step1BasicsProps) => {
       </div>
 
       {/* Pro Tip Section */}
-      <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-4">
+      <div className="mt-8 bg-mokogo-info-bg border border-mokogo-info-border rounded-lg p-4">
         <div className="flex items-start gap-3">
-          <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-            <svg className="w-3 h-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="w-5 h-5 rounded-full bg-mokogo-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <svg className="w-3 h-3 text-mokogo-info-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
             </svg>
           </div>
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-sm font-semibold text-blue-900">Pro tip</span>
+              <span className="text-sm font-semibold text-mokogo-info-text">Pro tip</span>
             </div>
-            <p className="text-sm text-blue-800">
+            <p className="text-sm text-mokogo-info-text">
               Listings with complete and accurate details get 3x more inquiries. Take your time to fill in all the information.
             </p>
           </div>

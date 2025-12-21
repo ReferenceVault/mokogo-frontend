@@ -2,6 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Rounded corners for select dropdown options */
+select option {
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  margin: 0.25rem;
+}
+
 @layer base {
   body {
     @apply bg-mokogo-off-white font-sans antialiased;
@@ -22,7 +29,7 @@
 
 @layer components {
   .btn-primary {
-    @apply bg-mokogo-blue text-white px-6 py-2.5 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply bg-orange-400 text-white px-6 py-2.5 rounded-lg font-medium hover:bg-orange-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
   }
   
   .btn-secondary {
@@ -30,7 +37,7 @@
   }
   
   .input-field {
-    @apply w-full px-4 py-2.5 border border-mokogo-gray rounded-lg focus:outline-none focus:ring-2 focus:ring-mokogo-blue focus:border-transparent;
+    @apply w-full px-4 py-2.5 border border-mokogo-gray rounded-lg focus:outline-none focus:ring-2 focus:ring-mokogo-primary focus:border-transparent;
   }
   
   .card {
@@ -51,4 +58,15 @@
 
 .animate-in {
   animation: slideInFromBottom 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

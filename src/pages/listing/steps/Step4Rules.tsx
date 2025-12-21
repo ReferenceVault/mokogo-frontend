@@ -19,7 +19,7 @@ const Step4Rules = ({ data, onChange }: Step4RulesProps) => {
       <div className="space-y-6">
         {/* Preferred Gender */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-3">
+          <label className="block text-sm font-medium text-stone-700 mb-3">
             Preferred flatmate gender
           </label>
           <div className="flex gap-2">
@@ -30,8 +30,8 @@ const Step4Rules = ({ data, onChange }: Step4RulesProps) => {
                 onClick={() => handleChange('preferredGender', gender)}
                 className={`flex-1 px-4 py-2.5 rounded-lg font-medium transition-colors ${
                   data.preferredGender === gender
-                    ? 'bg-mokogo-blue text-white'
-                    : 'bg-mokogo-gray text-gray-700 hover:bg-gray-200'
+                    ? 'bg-orange-400 text-white'
+                    : 'bg-stone-200 text-gray-700 hover:bg-stone-300'
                 }`}
               >
                 {gender}
@@ -42,7 +42,7 @@ const Step4Rules = ({ data, onChange }: Step4RulesProps) => {
 
         {/* Food Preference */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-3">
+          <label className="block text-sm font-medium text-stone-700 mb-3">
             Food preference
           </label>
           <div className="space-y-2">
@@ -54,7 +54,7 @@ const Step4Rules = ({ data, onChange }: Step4RulesProps) => {
                   value={pref}
                   checked={data.foodPreference === pref}
                   onChange={(e) => handleChange('foodPreference', e.target.value)}
-                  className="w-4 h-4 text-mokogo-blue focus:ring-mokogo-blue"
+                  className="w-4 h-4 text-mokogo-primary focus:ring-mokogo-primary"
                 />
                 <span className="text-gray-700">{pref}</span>
               </label>
@@ -64,7 +64,7 @@ const Step4Rules = ({ data, onChange }: Step4RulesProps) => {
 
         {/* Smoking */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-3">
+          <label className="block text-sm font-medium text-stone-700 mb-3">
             Smoking allowed?
           </label>
           <div className="space-y-2">
@@ -76,7 +76,7 @@ const Step4Rules = ({ data, onChange }: Step4RulesProps) => {
                   value={option}
                   checked={data.smokingAllowed === option}
                   onChange={(e) => handleChange('smokingAllowed', e.target.value)}
-                  className="w-4 h-4 text-mokogo-blue focus:ring-mokogo-blue"
+                  className="w-4 h-4 text-mokogo-primary focus:ring-mokogo-primary"
                 />
                 <span className="text-gray-700">{option}</span>
               </label>
@@ -86,7 +86,7 @@ const Step4Rules = ({ data, onChange }: Step4RulesProps) => {
 
         {/* Drinking */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-3">
+          <label className="block text-sm font-medium text-stone-700 mb-3">
             Drinking allowed?
           </label>
           <div className="space-y-2">
@@ -98,7 +98,7 @@ const Step4Rules = ({ data, onChange }: Step4RulesProps) => {
                   value={option}
                   checked={data.drinkingAllowed === option}
                   onChange={(e) => handleChange('drinkingAllowed', e.target.value)}
-                  className="w-4 h-4 text-mokogo-blue focus:ring-mokogo-blue"
+                  className="w-4 h-4 text-mokogo-primary focus:ring-mokogo-primary"
                 />
                 <span className="text-gray-700">{option}</span>
               </label>
@@ -108,7 +108,7 @@ const Step4Rules = ({ data, onChange }: Step4RulesProps) => {
 
         {/* Guests */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-3">
+          <label className="block text-sm font-medium text-stone-700 mb-3">
             Guests allowed?
           </label>
           <div className="space-y-2">
@@ -120,7 +120,7 @@ const Step4Rules = ({ data, onChange }: Step4RulesProps) => {
                   value={option}
                   checked={data.guestsAllowed === option}
                   onChange={(e) => handleChange('guestsAllowed', e.target.value)}
-                  className="w-4 h-4 text-mokogo-blue focus:ring-mokogo-blue"
+                  className="w-4 h-4 text-mokogo-primary focus:ring-mokogo-primary"
                 />
                 <span className="text-gray-700">{option}</span>
               </label>
@@ -129,14 +129,14 @@ const Step4Rules = ({ data, onChange }: Step4RulesProps) => {
         </div>
 
         {/* Notes */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+        <div className="w-[110%]">
+          <label className="block text-sm font-medium text-stone-700 mb-2">
             Notes for flatmate (optional)
           </label>
           <textarea
             value={data.notes || ''}
             onChange={(e) => handleChange('notes', e.target.value)}
-            className="input-field min-h-[100px] resize-none"
+            className="w-full px-4 py-3 bg-gradient-to-br from-white via-white to-orange-50/30 border-2 border-orange-200/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-mokogo-primary/50 focus:border-mokogo-primary transition-all duration-200 shadow-sm hover:shadow-md hover:border-orange-300/70 text-gray-700 font-medium min-h-[100px] resize-none"
             placeholder="Any additional information or preferences..."
           />
         </div>
