@@ -157,6 +157,7 @@ const CityListings = () => {
                   type="date"
                   value={filters.moveInDate}
                   onChange={(e) => handleFilterChange('moveInDate', e.target.value)}
+                  min={new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
                   className="w-full h-[52px] px-4 rounded-xl border border-mokogo-gray focus:outline-none focus:ring-2 focus:ring-mokogo-primary bg-white/80"
                 />
               </div>

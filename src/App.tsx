@@ -10,6 +10,7 @@ import ListingDetail from './pages/ListingDetail'
 import ExploreProperties from './pages/ExploreProperties'
 import CityListings from './pages/CityListings'
 import SafetyTips from './pages/SafetyTips'
+import HowItWorks from './pages/HowItWorks'
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
         <Route path="/explore" element={<ExploreProperties />} />
         <Route path="/city/:cityName" element={<CityListings />} />
         <Route path="/safety-tips" element={<SafetyTips />} />
+        <Route path="/how-it-works" element={<HowItWorks />} />
       </Routes>
     </Router>
   )

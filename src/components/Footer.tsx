@@ -64,10 +64,7 @@ const Footer = () => {
             <h3 className="font-semibold text-gray-900 mb-4">For Seekers</h3>
             <ul className="space-y-2 text-sm text-gray-600">
               <li><Link to="/explore" className="hover:text-mokogo-primary">Browse Rooms</Link></li>
-              <li><Link to="#" className="hover:text-mokogo-primary">Search by Area</Link></li>
-              <li><Link to="#" className="hover:text-mokogo-primary">Budget Calculator</Link></li>
               <li><Link to="/safety-tips" className="hover:text-mokogo-primary">Safety Tips</Link></li>
-              <li><Link to="#" className="hover:text-mokogo-primary">Success Stories</Link></li>
             </ul>
           </div>
           
@@ -75,9 +72,7 @@ const Footer = () => {
           <div>
             <h3 className="font-semibold text-gray-900 mb-4">For Listers</h3>
             <ul className="space-y-2 text-sm text-gray-600">
-              <li><Link to="/auth" className="hover:text-mokogo-primary">List Your Room</Link></li>
-              <li><Link to="#" className="hover:text-mokogo-primary">Pricing Guide</Link></li>
-              <li><Link to="#" className="hover:text-mokogo-primary">Photography Tips</Link></li>
+              <li><Link to="/auth" className="hover:text-mokogo-primary">List Your Space</Link></li>
               <li><Link to="#" className="hover:text-mokogo-primary">Verification Process</Link></li>
               <li><Link to="#" className="hover:text-mokogo-primary">Premium Features</Link></li>
             </ul>
@@ -88,7 +83,7 @@ const Footer = () => {
             <h3 className="font-semibold text-gray-900 mb-4">Company</h3>
             <ul className="space-y-2 text-sm text-gray-600">
               <li><Link to="#" className="hover:text-mokogo-primary">About Us</Link></li>
-              <li><Link to="#" className="hover:text-mokogo-primary">How It Works</Link></li>
+              <li><Link to="/how-it-works" className="hover:text-mokogo-primary">How It Works</Link></li>
               <li><Link to="#" className="hover:text-mokogo-primary">Contact</Link></li>
               <li><Link to="#" className="hover:text-mokogo-primary">Careers</Link></li>
               <li><Link to="#" className="hover:text-mokogo-primary">Press</Link></li>

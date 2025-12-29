@@ -508,7 +508,7 @@ const ListingWizard = () => {
           <div className="max-w-[900px] mx-auto px-8 py-4">
           {/* Page Header */}
           <div className="mb-3">
-            <h1 className="text-[1.375rem] font-bold text-gray-900 mb-0.5">List Your Room</h1>
+            <h1 className="text-[1.375rem] font-bold text-gray-900 mb-0.5">List Your Space</h1>
             <p className="text-[0.825rem] text-gray-600">Find your perfect flatmate in under 5 minutes</p>
           </div>
 

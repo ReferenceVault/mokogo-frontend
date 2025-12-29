@@ -315,7 +315,7 @@ const LandingPage = () => {
                   <div className="grid md:grid-cols-4 gap-4 items-end">
                     <div className="[&_button]:h-[52px] [&_button]:py-0">
                       <CustomSelect
-                        label="City"
+                        label="Select City"
                         value={searchFilters.city}
                         onValueChange={(value) => setSearchFilters({ ...searchFilters, city: value })}
                         placeholder="Select your city"
@@ -330,6 +330,7 @@ const LandingPage = () => {
                         type="date"
                         value={searchFilters.moveInDate}
                         onChange={(e) => setSearchFilters({ ...searchFilters, moveInDate: e.target.value })}
+                        min={new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
                         className="w-full h-[52px] px-4 rounded-xl border border-mokogo-gray focus:outline-none focus:ring-2 focus:ring-mokogo-primary bg-white/80"
                       />
                     </div>
