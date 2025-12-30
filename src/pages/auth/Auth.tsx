@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import TermsModal from '@/components/TermsModal'
 
 const Auth = () => {
   const navigate = useNavigate()
@@ -15,6 +16,8 @@ const Auth = () => {
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin')
+  const [showModal, setShowModal] = useState(false)
+  const [modalType, setModalType] = useState<'terms' | 'privacy'>('terms')
 
   const formatPhoneNumber = (value: string) => {
     const cleaned = value.replace(/\D/g, '')
@@ -527,7 +530,30 @@ const Auth = () => {
                           className="w-4 h-4 mt-0.5 text-mokogo-primary border-gray-300 rounded focus:ring-mokogo-primary"
                         />
                         <label htmlFor="agree-terms" className="text-sm text-gray-700 cursor-pointer">
-                          I agree to the <span className="font-semibold">Terms of Service</span> and <span className="font-semibold">Privacy Policy</span>
+                          I agree to the{' '}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault()
+                              setModalType('terms')
+                              setShowModal(true)
+                            }}
+                            className="font-semibold text-orange-400 hover:text-orange-500 underline"
+                          >
+                            Terms of Service
+                          </button>
+                          {' '}and{' '}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault()
+                              setModalType('privacy')
+                              setShowModal(true)
+                            }}
+                            className="font-semibold text-orange-400 hover:text-orange-500 underline"
+                          >
+                            Privacy Policy
+                          </button>
                         </label>
                       </div>
                       
@@ -834,6 +860,13 @@ const Auth = () => {
       </section>
 
       <Footer />
+
+      {/* Terms/Privacy Modal */}
+      <TermsModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        type={modalType}
+      />
     </div>
   )
 }

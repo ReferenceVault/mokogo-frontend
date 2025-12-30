@@ -11,6 +11,10 @@ import ExploreProperties from './pages/ExploreProperties'
 import CityListings from './pages/CityListings'
 import SafetyTips from './pages/SafetyTips'
 import HowItWorks from './pages/HowItWorks'
+import PrivacyPolicy from './pages/PrivacyPolicy'
+import TermsOfService from './pages/TermsOfService'
+import CookiePolicy from './pages/CookiePolicy'
+import HelpCentre from './pages/HelpCentre'
 
 function App() {
   return (
@@ -28,6 +32,10 @@ function App() {
         <Route path="/city/:cityName" element={<CityListings />} />
         <Route path="/safety-tips" element={<SafetyTips />} />
         <Route path="/how-it-works" element={<HowItWorks />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/terms-of-service" element={<TermsOfService />} />
+        <Route path="/cookie-policy" element={<CookiePolicy />} />
+        <Route path="/help-centre" element={<HelpCentre />} />
       </Routes>
     </Router>
   )

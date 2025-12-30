@@ -93,16 +93,16 @@ const Footer = () => {
         <div className="border-t border-mokogo-gray mt-8 pt-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-gray-600">
             <div className="flex flex-wrap items-center gap-4 justify-center md:justify-start">
-              <Link to="#" className="hover:text-mokogo-primary transition-colors">
+              <Link to="/privacy-policy" className="hover:text-mokogo-primary transition-colors">
                 Privacy Policy
               </Link>
-              <Link to="#" className="hover:text-mokogo-primary transition-colors">
+              <Link to="/terms-of-service" className="hover:text-mokogo-primary transition-colors">
                 Terms of Service
               </Link>
-              <Link to="#" className="hover:text-mokogo-primary transition-colors">
+              <Link to="/cookie-policy" className="hover:text-mokogo-primary transition-colors">
                 Cookie Policy
               </Link>
-              <Link to="#" className="hover:text-mokogo-primary transition-colors">
+              <Link to="/help-centre" className="hover:text-mokogo-primary transition-colors">
                 Help Center
               </Link>
             </div>
