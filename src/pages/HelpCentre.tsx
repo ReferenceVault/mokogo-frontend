@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
-import { HelpCircle, Users, Home, Search, Shield, Lock, AlertCircle, DollarSign, Mail, CheckCircle, FileText, MessageSquare } from 'lucide-react'
+import { HelpCircle, Users, Home, Shield, Lock, DollarSign, Mail, CheckCircle, FileText, MessageSquare } from 'lucide-react'
 
 const HelpCentre = () => {
   // Scroll to top when component mounts

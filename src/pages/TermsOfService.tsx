@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
-import { FileText, Users, Shield, Lock, AlertCircle, DollarSign, Eye, Key, Ban, Scale, Mail, CheckCircle, Globe, Heart } from 'lucide-react'
+import { FileText, Users, Shield, Lock, AlertCircle, DollarSign, Eye, Key, Ban, Scale, Mail, CheckCircle, Heart } from 'lucide-react'
 
 const TermsOfService = () => {
   // Scroll to top when component mounts

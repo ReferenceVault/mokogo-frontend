@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
-import { Search, Home, Users, MessageSquare, MapPin, Eye, UserPlus, FileText, Camera, Globe, MessageCircle } from 'lucide-react'
+import { Search, Home, Users, MessageSquare } from 'lucide-react'
 
 const HowItWorks = () => {
   // Scroll to top when component mounts
