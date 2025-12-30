@@ -1,10 +1,16 @@
 import { Link } from 'react-router-dom'
+import { useEffect } from 'react'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import { useStore } from '@/store/useStore'
 
 const ExploreProperties = () => {
   const { allListings } = useStore()
+
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [])
 
   // Calculate listings count per city from actual listings
   const getCityListingsCount = (cityName: string) => {

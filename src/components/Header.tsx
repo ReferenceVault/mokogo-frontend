@@ -28,7 +28,17 @@ const Header = () => {
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
-            Find Rooms
+            Find Your Place
+          </Link>
+          <Link 
+            to="/how-it-works" 
+            className={`text-sm font-medium transition-colors ${
+              isActive('/how-it-works')
+                ? 'text-mokogo-primary font-semibold' 
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            How It Works
           </Link>
           <Link 
             to="/auth" 
@@ -38,26 +48,17 @@ const Header = () => {
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
-            List Your Room
+            List Your Space
           </Link>
         </nav>
 
-        {/* Right section with Log in and List a Room buttons */}
-        <div className="flex items-center gap-4">
+        {/* Right section with Log in button */}
+        <div className="flex items-center">
           <Link 
             to="/auth" 
             className="bg-orange-400 text-white px-4 py-2 rounded-full font-medium hover:bg-orange-500 transition-colors shadow-md"
           >
             Log in
-          </Link>
-          <Link 
-            to="/auth" 
-            className="bg-orange-400 text-white px-4 py-2 rounded-full font-medium hover:bg-orange-500 transition-colors flex items-center gap-2 shadow-md"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            List a Room
           </Link>
         </div>
       </div>

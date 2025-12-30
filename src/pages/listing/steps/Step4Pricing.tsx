@@ -11,7 +11,7 @@ const Step4Pricing = ({ data, onChange, error }: Step4PricingProps) => {
     onChange({ [field]: value })
   }
 
-  const today = new Date().toISOString().split('T')[0]
+  const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 
   return (
     <div>
@@ -85,7 +85,7 @@ const Step4Pricing = ({ data, onChange, error }: Step4PricingProps) => {
               value={data.moveInDate || ''}
               onChange={(e) => handleChange('moveInDate', e.target.value)}
               className="w-full px-4 py-3 bg-gradient-to-br from-white via-white to-orange-50/40 border-2 border-orange-300/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400/60 focus:border-orange-400 transition-all duration-200 shadow-md hover:shadow-lg hover:border-orange-400 text-gray-900 font-medium pl-12 cursor-pointer"
-              min={today}
+              min={tomorrow}
               style={{
                 colorScheme: 'light',
               }}
