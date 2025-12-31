@@ -41,6 +41,13 @@ const ListingDetail = () => {
   const { listingId } = useParams()
   const navigate = useNavigate()
   const { allListings, user, setUser } = useStore()
+
+  // Redirect to dashboard if user is logged in
+  useEffect(() => {
+    if (user && listingId) {
+      navigate(`/dashboard?listing=${listingId}`, { replace: true })
+    }
+  }, [user, listingId, navigate])
   const [isSaved, setIsSaved] = useState(false)
   const [expandedFAQ, setExpandedFAQ] = useState<string | null>(null)
   const [moveInDate, setMoveInDate] = useState('')
