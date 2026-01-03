@@ -1,15 +1,7 @@
 import { useState } from 'react'
 import { 
-  Search, 
-  Phone, 
-  Video, 
   MoreVertical, 
-  CheckCircle2, 
-  Clock, 
   Shield,
-  Star,
-  Calendar,
-  FileText,
   Paperclip,
   Image as ImageIcon,
   Send,
@@ -19,7 +11,6 @@ import {
 } from 'lucide-react'
 
 const MessagesContent = () => {
-  const [activeTab, setActiveTab] = useState<'all' | 'active' | 'archived'>('all')
   const [selectedConversation, setSelectedConversation] = useState<string | null>('rahul')
   const [message, setMessage] = useState('')
   const [showProfile, setShowProfile] = useState(true)
@@ -162,20 +153,8 @@ const MessagesContent = () => {
     }
   ]
 
-  const quickReplies = [
-    "Thanks for the info!",
-    "Can we schedule a call?",
-    "I'm interested!",
-    "What about the deposit?"
-  ]
-
   const selectedConv = conversations.find(c => c.id === selectedConversation)
 
-  const filteredConversations = conversations.filter(conv => {
-    if (activeTab === 'active') return conv.isOnline
-    if (activeTab === 'archived') return false // You can add archived logic
-    return true
-  })
 
   return (
     <div className="h-[calc(100vh-120px)] flex bg-gray-50">
@@ -183,61 +162,12 @@ const MessagesContent = () => {
       <div className="w-80 border-r border-gray-200 bg-white flex flex-col">
         {/* Header */}
         <div className="p-4 border-b border-gray-200">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-gray-900">Messages</h2>
-            <button className="w-8 h-8 rounded-full bg-orange-400 text-white flex items-center justify-center hover:bg-orange-500 transition-colors">
-              <span className="text-xl">+</span>
-            </button>
-          </div>
-          
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search conversations..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent"
-            />
-          </div>
-        </div>
-
-        {/* Tabs */}
-        <div className="flex border-b border-gray-200 px-4">
-          <button
-            onClick={() => setActiveTab('all')}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === 'all'
-                ? 'border-orange-400 text-orange-400'
-                : 'border-transparent text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            All (12)
-          </button>
-          <button
-            onClick={() => setActiveTab('active')}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === 'active'
-                ? 'border-orange-400 text-orange-400'
-                : 'border-transparent text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            Active (8)
-          </button>
-          <button
-            onClick={() => setActiveTab('archived')}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === 'archived'
-                ? 'border-orange-400 text-orange-400'
-                : 'border-transparent text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            Archived (4)
-          </button>
+          <h2 className="text-lg font-bold text-gray-900">Messages</h2>
         </div>
 
         {/* Conversations List */}
-        <div className="flex-1 overflow-y-auto">
-          {filteredConversations.map((conv) => (
+        <div className="flex-1 overflow-y-auto border-t border-gray-200">
+          {conversations.map((conv) => (
             <div
               key={conv.id}
               onClick={() => setSelectedConversation(conv.id)}
@@ -258,28 +188,17 @@ const MessagesContent = () => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-1">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-sm font-semibold text-gray-900 truncate">{conv.name}</span>
-                      {conv.isVerified && (
-                        <CheckCircle2 className="w-4 h-4 text-blue-500 flex-shrink-0" />
-                      )}
-                    </div>
+                    <span className="text-sm font-semibold text-gray-900 truncate">{conv.name}</span>
                     <span className="text-xs text-gray-500 flex-shrink-0">{conv.timestamp}</span>
                   </div>
                   <p className="text-xs text-gray-600 truncate mb-1">{conv.lastMessage}</p>
-                  <div className="flex items-center gap-2 text-xs text-gray-500">
-                    <span>{conv.role}</span>
-                    <span>•</span>
-                    <span>{conv.location}</span>
-                    {conv.unread > 0 && (
-                      <>
-                        <span>•</span>
-                        <span className="bg-red-500 text-white px-1.5 py-0.5 rounded-full text-xs font-semibold">
-                          {conv.unread}
-                        </span>
-                      </>
-                    )}
-                  </div>
+                  {conv.unread > 0 && (
+                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                      <span className="bg-red-500 text-white px-1.5 py-0.5 rounded-full text-xs font-semibold">
+                        {conv.unread}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -305,12 +224,7 @@ const MessagesContent = () => {
                   )}
                 </div>
                 <div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-sm font-semibold text-gray-900">{selectedConv.name}</span>
-                    {selectedConv.isVerified && (
-                      <CheckCircle2 className="w-4 h-4 text-blue-500" />
-                    )}
-                  </div>
+                  <span className="text-sm font-semibold text-gray-900">{selectedConv.name}</span>
                   <div className="flex items-center gap-2 text-xs text-gray-500">
                     {selectedConv.isOnline && <span className="text-green-500">Online now</span>}
                     <span>•</span>
@@ -320,37 +234,7 @@ const MessagesContent = () => {
               </div>
               <div className="flex items-center gap-2">
                 <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                  <Phone className="w-5 h-5 text-gray-600" />
-                </button>
-                <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                  <Video className="w-5 h-5 text-gray-600" />
-                </button>
-                <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
                   <MoreVertical className="w-5 h-5 text-gray-600" />
-                </button>
-              </div>
-            </div>
-
-            {/* Room Listing Banner */}
-            <div className="p-4 border-b border-gray-200 bg-orange-50/50">
-              <div className="flex items-center gap-4">
-                <img
-                  src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=100&h=100&fit=crop"
-                  alt="Room"
-                  className="w-16 h-16 rounded-lg object-cover"
-                />
-                <div className="flex-1">
-                  <div className="text-sm font-semibold text-gray-900 mb-1">Spacious Room in Baner</div>
-                  <div className="flex items-center gap-2 text-xs text-gray-600">
-                    <span>₹12,000/month</span>
-                    <span>•</span>
-                    <span>Baner Road, Near Symbiosis</span>
-                    <span>•</span>
-                    <span className="text-green-600 font-medium">Available Now</span>
-                  </div>
-                </div>
-                <button className="px-4 py-2 bg-orange-400 text-white text-sm font-semibold rounded-lg hover:bg-orange-500 transition-colors">
-                  View Listing
                 </button>
               </div>
             </div>
@@ -391,36 +275,11 @@ const MessagesContent = () => {
               })}
             </div>
 
-            {/* Action Buttons */}
-            <div className="px-4 py-3 border-t border-gray-200 flex items-center justify-between bg-gray-50">
-              <div className="flex items-center gap-3">
-                <button className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-white transition-colors flex items-center gap-2">
-                  <Calendar className="w-4 h-4" />
-                  Schedule Visit
-                </button>
-                <button className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-white transition-colors flex items-center gap-2">
-                  <Phone className="w-4 h-4" />
-                  Request Call
-                </button>
-                <button className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-white transition-colors flex items-center gap-2">
-                  <FileText className="w-4 h-4" />
-                  View Agreement
-                </button>
-              </div>
-              <div className="flex items-center gap-2 text-xs text-gray-600">
-                <Shield className="w-4 h-4 text-green-500" />
-                <span>End-to-end encrypted</span>
-              </div>
-            </div>
-
             {/* Message Input */}
             <div className="p-4 border-t border-gray-200 bg-white">
-              <div className="flex items-end gap-2 mb-3">
+              <div className="flex items-end gap-2">
                 <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
                   <span className="text-xl text-gray-600">+</span>
-                </button>
-                <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                  <span className="text-lg">😊</span>
                 </button>
                 <input
                   type="text"
@@ -438,20 +297,6 @@ const MessagesContent = () => {
                 <button className="w-10 h-10 bg-orange-400 text-white rounded-full flex items-center justify-center hover:bg-orange-500 transition-colors">
                   <Send className="w-5 h-5" />
                 </button>
-              </div>
-              
-              {/* Quick Replies */}
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs text-gray-500">Quick replies:</span>
-                {quickReplies.map((reply, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setMessage(reply)}
-                    className="px-3 py-1 bg-orange-100 text-orange-600 text-xs font-medium rounded-full hover:bg-orange-200 transition-colors"
-                  >
-                    {reply}
-                  </button>
-                ))}
               </div>
             </div>
           </>
@@ -479,12 +324,7 @@ const MessagesContent = () => {
                   )}
                 </div>
                 <div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-sm font-semibold text-gray-900">{selectedConv.name}</span>
-                    {selectedConv.isVerified && (
-                      <CheckCircle2 className="w-4 h-4 text-blue-500" />
-                    )}
-                  </div>
+                  <span className="text-sm font-semibold text-gray-900">{selectedConv.name}</span>
                   <div className="text-xs text-green-500">Online now</div>
                 </div>
               </div>
@@ -495,22 +335,9 @@ const MessagesContent = () => {
                 <X className="w-5 h-5 text-gray-600" />
               </button>
             </div>
-            <div className="flex items-center gap-2">
-              <button className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
-                <Phone className="w-4 h-4" />
-                Call
-              </button>
-              <button className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
-                <Video className="w-4 h-4" />
-                Video
-              </button>
-              <button className="p-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
-                <MoreVertical className="w-4 h-4" />
-              </button>
-            </div>
           </div>
 
-          <div className="p-4 space-y-6">
+              <div className="p-4 space-y-6">
             {/* Basic Information */}
             <div>
               <h3 className="text-sm font-semibold text-gray-900 mb-3">Basic Information</h3>
@@ -530,30 +357,6 @@ const MessagesContent = () => {
                 <div className="flex justify-between">
                   <span className="text-gray-600">Location</span>
                   <span className="text-gray-900 font-medium">Baner, Pune</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Verification Status */}
-            <div>
-              <h3 className="text-sm font-semibold text-gray-900 mb-3">Verification Status</h3>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Email Verified</span>
-                  <CheckCircle2 className="w-4 h-4 text-green-500" />
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Phone Verified</span>
-                  <CheckCircle2 className="w-4 h-4 text-green-500" />
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">ID Verified</span>
-                  <CheckCircle2 className="w-4 h-4 text-green-500" />
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Background Check</span>
-                  <Clock className="w-4 h-4 text-yellow-500" />
-                  <span className="text-xs text-yellow-600">Pending</span>
                 </div>
               </div>
             </div>
@@ -578,67 +381,6 @@ const MessagesContent = () => {
                     {pref}
                   </span>
                 ))}
-              </div>
-            </div>
-
-            {/* Reviews */}
-            <div>
-              <h3 className="text-sm font-semibold text-gray-900 mb-3">Reviews (4.8/5)</h3>
-              <div className="space-y-3">
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-medium text-gray-900">Sneha J.</span>
-                    <div className="flex items-center gap-1">
-                      {[...Array(5)].map((_, i) => (
-                        <Star key={i} className={`w-3 h-3 ${i < 5 ? 'text-yellow-500 fill-yellow-500' : 'text-gray-300'}`} />
-                      ))}
-                    </div>
-                  </div>
-                  <p className="text-xs text-gray-600">"Excellent roommate! Very clean and respectful. Great communication."</p>
-                </div>
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-medium text-gray-900">Vikram S.</span>
-                    <div className="flex items-center gap-1">
-                      {[...Array(5)].map((_, i) => (
-                        <Star key={i} className={`w-3 h-3 ${i < 5 ? 'text-yellow-500 fill-yellow-500' : 'text-gray-300'}`} />
-                      ))}
-                    </div>
-                  </div>
-                  <p className="text-xs text-gray-600">"Responsible and friendly. Would definitely recommend as a roommate."</p>
-                </div>
-                <button className="text-xs text-orange-400 hover:text-orange-500 font-medium">
-                  View all reviews
-                </button>
-              </div>
-            </div>
-
-            {/* Mutual Connections */}
-            <div>
-              <h3 className="text-sm font-semibold text-gray-900 mb-3">Mutual Connections (2)</h3>
-              <div className="space-y-2">
-                <div className="flex items-center gap-3">
-                  <img
-                    src="https://i.pravatar.cc/150?img=15"
-                    alt="Amit"
-                    className="w-10 h-10 rounded-full object-cover"
-                  />
-                  <div className="flex-1">
-                    <div className="text-sm font-medium text-gray-900">Amit Patel</div>
-                    <div className="text-xs text-gray-600">Software Engineer at TechCorp</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <img
-                    src="https://i.pravatar.cc/150?img=1"
-                    alt="Anita"
-                    className="w-10 h-10 rounded-full object-cover"
-                  />
-                  <div className="flex-1">
-                    <div className="text-sm font-medium text-gray-900">Anita Desai</div>
-                    <div className="text-xs text-gray-600">Marketing Manager</div>
-                  </div>
-                </div>
               </div>
             </div>
 

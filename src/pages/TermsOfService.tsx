@@ -22,7 +22,10 @@ const TermsOfService = () => {
     content: false,
     termination: false,
     liability: false,
-    legal: false,
+    indemnification: false,
+    privacy: false,
+    changes: false,
+    governing: false,
   })
 
   const toggleSection = (section: string) => {
@@ -202,16 +205,26 @@ const TermsOfService = () => {
     {
       id: 'liability',
       icon: AlertCircle,
-      title: 'Limitation of Liability & Indemnification',
+      title: 'Limitation of Liability',
       number: 11,
       content: {
-        liability: [
+        description: 'To the maximum extent permitted by law:',
+        list: [
           'Mokogo is not liable for losses, damages, or disputes between users',
           'Mokogo does not guarantee availability, accuracy, or outcomes',
           'Use of the Platform is at your own risk',
           'Any liability, if applicable, shall be limited as required under law'
-        ],
-        indemnification: [
+        ]
+      }
+    },
+    {
+      id: 'indemnification',
+      icon: Shield,
+      title: 'Indemnification',
+      number: 12,
+      content: {
+        description: 'You agree to indemnify and hold Mokogo harmless from any claims, damages, or expenses arising from:',
+        list: [
           'Your use of the Platform',
           'Your violation of these Terms',
           'Your interactions with other users'
@@ -219,14 +232,30 @@ const TermsOfService = () => {
       }
     },
     {
-      id: 'legal',
-      icon: Scale,
-      title: 'Legal & Contact',
-      number: 12,
+      id: 'privacy',
+      icon: Lock,
+      title: 'Privacy',
+      number: 13,
       content: {
-        privacy: 'Your use of Mokogo is governed by our Privacy Policy, which explains how we collect, process, and protect personal data, including data related to authentication and login methods.',
-        changes: 'We may update these Terms periodically. Updated versions will be posted on this page with a revised "Last updated" date. Continued use of Mokogo constitutes acceptance of the updated Terms.',
-        governing: [
+        description: 'Your use of Mokogo is governed by our Privacy Policy, which explains how we collect, process, and protect personal data, including data related to authentication and login methods.'
+      }
+    },
+    {
+      id: 'changes',
+      icon: FileText,
+      title: 'Changes to These Terms',
+      number: 14,
+      content: {
+        description: 'We may update these Terms periodically. Updated versions will be posted on this page with a revised "Last updated" date. Continued use of Mokogo constitutes acceptance of the updated Terms.'
+      }
+    },
+    {
+      id: 'governing',
+      icon: Scale,
+      title: 'Governing Law & Jurisdiction',
+      number: 15,
+      content: {
+        list: [
           'These Terms are governed by the laws of India.',
           'Any disputes shall be subject to the exclusive jurisdiction of courts located in India.'
         ]
@@ -442,52 +471,6 @@ const TermsOfService = () => {
                             </div>
                           )}
 
-                          {section.content.liability && (
-                            <>
-                              <p className="text-sm font-medium text-gray-800 mb-3">To the maximum extent permitted by law:</p>
-                              <ul className="space-y-2 text-sm text-gray-700 mb-6">
-                                {section.content.liability.map((item, index) => (
-                                  <li key={index} className="flex items-start gap-2">
-                                    <span className="text-orange-400 font-bold">•</span>
-                                    <span>{item}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                              <p className="text-sm font-medium text-gray-800 mb-3">You agree to indemnify and hold Mokogo harmless from any claims, damages, or expenses arising from:</p>
-                              <ul className="space-y-2 text-sm text-gray-700">
-                                {section.content.indemnification?.map((item, index) => (
-                                  <li key={index} className="flex items-start gap-2">
-                                    <span className="text-orange-400 font-bold">•</span>
-                                    <span>{item}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                            </>
-                          )}
-
-                          {section.content.privacy && (
-                            <>
-                              <div className="bg-white rounded-xl p-4 border border-orange-200 mb-4">
-                                <h4 className="text-sm font-semibold text-gray-900 mb-2">Privacy</h4>
-                                <p className="text-sm text-gray-700">{section.content.privacy}</p>
-                              </div>
-                              <div className="bg-white rounded-xl p-4 border border-orange-200 mb-4">
-                                <h4 className="text-sm font-semibold text-gray-900 mb-2">Changes to These Terms</h4>
-                                <p className="text-sm text-gray-700">{section.content.changes}</p>
-                              </div>
-                              <div className="bg-white rounded-xl p-4 border border-orange-200">
-                                <h4 className="text-sm font-semibold text-gray-900 mb-2">Governing Law & Jurisdiction</h4>
-                                <ul className="space-y-2 text-sm text-gray-700">
-                                  {section.content.governing?.map((item, index) => (
-                                    <li key={index} className="flex items-start gap-2">
-                                      <CheckCircle className="w-4 h-4 text-orange-400 mt-0.5 flex-shrink-0" />
-                                      <span>{item}</span>
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-                            </>
-                          )}
 
                           {section.content.mustNot && !section.content.mustDo && (
                             <ul className="space-y-2 text-sm text-gray-700">
