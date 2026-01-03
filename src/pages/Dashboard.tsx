@@ -231,10 +231,7 @@ const Dashboard = () => {
           ) : activeView === 'profile' ? (
             <ProfileContent />
           ) : activeView === 'requests' ? (
-            <RequestsContent onViewListing={(listingId) => {
-              setViewingListingId(listingId)
-              setActiveView('listing-detail')
-            }} />
+            <RequestsContent />
           ) : activeView === 'overview' ? (
             <>
               {/* Hero Stats Section */}
