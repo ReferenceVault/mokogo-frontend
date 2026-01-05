@@ -5,6 +5,7 @@ import Toast from '@/components/Toast'
 import Logo from '@/components/Logo'
 import { useStore } from '@/store/useStore'
 import { Listing } from '@/types'
+import { authApi } from '@/services/api'
 import { Search, Bell, Heart as HeartIcon, LayoutGrid, Home, MessageSquare, Bookmark, Calendar, MapPin, DollarSign, Star, Clock, Plus, MoreHorizontal } from 'lucide-react'
 import Step1Photos from './steps/Step1Photos'
 import Step2Location from './steps/Step2Location'
@@ -73,7 +74,7 @@ const STEPS = [
 
 const ListingWizard = () => {
   const navigate = useNavigate()
-  const { currentListing, setCurrentListing, allListings, addListing, setAllListings, user, setUser } = useStore()
+  const { currentListing, setCurrentListing, allListings, addListing, setAllListings, user, setUser, setRequests } = useStore()
   const [currentStep, setCurrentStep] = useState(0)
   const [expandedSections, setExpandedSections] = useState<Set<number>>(new Set([0])) // Only first section expanded by default
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
@@ -84,10 +85,24 @@ const ListingWizard = () => {
 
   const userInitial = user?.name?.[0]?.toUpperCase() || 'U'
 
-  const handleLogout = () => {
-    setUser(null)
-    localStorage.removeItem('mokogo-user')
-    navigate('/')
+  const handleLogout = async () => {
+    try {
+      await authApi.logout()
+    } catch (error) {
+      console.error('Logout error:', error)
+    } finally {
+      setUser(null)
+      setCurrentListing(null)
+      setAllListings([])
+      setRequests([])
+      localStorage.removeItem('mokogo-user')
+      localStorage.removeItem('mokogo-listing')
+      localStorage.removeItem('mokogo-all-listings')
+      localStorage.removeItem('mokogo-requests')
+      localStorage.removeItem('mokogo-access-token')
+      localStorage.removeItem('mokogo-refresh-token')
+      navigate('/auth')
+    }
   }
   
   const listingDataRef = useRef<Partial<Listing>>(

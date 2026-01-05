@@ -4,6 +4,7 @@ import Footer from '@/components/Footer'
 import Header from '@/components/Header'
 import Logo from '@/components/Logo'
 import { useStore } from '@/store/useStore'
+import { authApi } from '@/services/api'
 import {
   MapPin,
   Star,
@@ -40,7 +41,7 @@ import {
 const ListingDetail = () => {
   const { listingId } = useParams()
   const navigate = useNavigate()
-  const { allListings, user, setUser } = useStore()
+  const { allListings, user, setUser, setAllListings, setRequests } = useStore()
   const [isSaved, setIsSaved] = useState(false)
   const [expandedFAQ, setExpandedFAQ] = useState<string | null>(null)
   const [moveInDate, setMoveInDate] = useState('')
@@ -49,10 +50,23 @@ const ListingDetail = () => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showUserMenu, setShowUserMenu] = useState(false)
 
-  const handleLogout = () => {
-    setUser(null)
-    localStorage.removeItem('mokogo-user')
-    navigate('/')
+  const handleLogout = async () => {
+    try {
+      await authApi.logout()
+    } catch (error) {
+      console.error('Logout error:', error)
+    } finally {
+      setUser(null)
+      setAllListings([])
+      setRequests([])
+      localStorage.removeItem('mokogo-user')
+      localStorage.removeItem('mokogo-listing')
+      localStorage.removeItem('mokogo-all-listings')
+      localStorage.removeItem('mokogo-requests')
+      localStorage.removeItem('mokogo-access-token')
+      localStorage.removeItem('mokogo-refresh-token')
+      navigate('/auth')
+    }
   }
 
   const userInitial = user?.name?.[0]?.toUpperCase() || 'U'
