@@ -84,6 +84,23 @@ export interface SignupResponse {
   name: string
 }
 
+export interface ForgotPasswordRequest {
+  email: string
+}
+
+export interface ForgotPasswordResponse {
+  message: string
+}
+
+export interface ResetPasswordRequest {
+  token: string
+  newPassword: string
+}
+
+export interface ResetPasswordResponse {
+  message: string
+}
+
 export const authApi = {
   signup: async (data: SignupRequest): Promise<SignupResponse> => {
     const response = await api.post<SignupResponse>('/auth/signup', data)
@@ -99,6 +116,16 @@ export const authApi = {
     await api.post('/auth/logout')
     localStorage.removeItem('mokogo-access-token')
     localStorage.removeItem('mokogo-refresh-token')
+  },
+
+  forgotPassword: async (data: ForgotPasswordRequest): Promise<ForgotPasswordResponse> => {
+    const response = await api.post<ForgotPasswordResponse>('/auth/forgot-password', data)
+    return response.data
+  },
+
+  resetPassword: async (data: ResetPasswordRequest): Promise<ResetPasswordResponse> => {
+    const response = await api.post<ResetPasswordResponse>('/auth/reset-password', data)
+    return response.data
   },
 }
 

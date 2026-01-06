@@ -2,6 +2,8 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import LandingPage from './pages/LandingPage'
 import Auth from './pages/auth/Auth'
 import AuthEmail from './pages/auth/AuthEmail'
+import ForgotPassword from './pages/auth/ForgotPassword'
+import ResetPassword from './pages/auth/ResetPassword'
 import ListingWizard from './pages/listing/ListingWizard'
 import Dashboard from './pages/Dashboard'
 import RequestsList from './pages/requests/RequestsList'
@@ -23,6 +25,8 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/auth" element={<Auth />} />
         <Route path="/auth/email" element={<AuthEmail />} />
+        <Route path="/auth/forgot-password" element={<ForgotPassword />} />
+        <Route path="/auth/reset-password" element={<ResetPassword />} />
         <Route path="/listing/wizard" element={<ListingWizard />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/requests" element={<RequestsList />} />
