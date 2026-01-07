@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import TermsModal from '@/components/TermsModal'
@@ -414,9 +414,9 @@ const Auth = () => {
                               />
                               <span className="text-sm text-gray-700 group-hover:text-gray-900">Remember me</span>
                             </label>
-                            <a href="#" className="text-sm font-semibold text-orange-500 hover:text-orange-600 transition-colors">
+                            <Link to="/auth/forgot-password" className="text-sm font-semibold text-orange-500 hover:text-orange-600 transition-colors">
                               Forgot password?
-                            </a>
+                            </Link>
                           </div>
 
                           {/* Submit Button */}
