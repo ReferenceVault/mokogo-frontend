@@ -1,13 +1,17 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import TermsModal from '@/components/TermsModal'
+
+import { authApi } from '@/services/api'
+import { useStore } from '@/store/useStore'
 import SocialSidebar from '@/components/SocialSidebar'
 import { Shield, Zap, Users, CheckCircle, Lock, Eye, EyeOff, ChevronDown } from 'lucide-react'
 
 const Auth = () => {
   const navigate = useNavigate()
+  const setUser = useStore((state) => state.setUser)
   const [phone, setPhone] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -22,6 +26,7 @@ const Auth = () => {
   const [modalType, setModalType] = useState<'terms' | 'privacy'>('terms')
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null)
 
   const formatPhoneNumber = (value: string) => {
@@ -44,6 +49,11 @@ const Auth = () => {
 
   const handleSignInSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (isLoading) {
+      return
+    }
+    
     setError('')
 
     if (!email.trim()) {
@@ -63,16 +73,39 @@ const Auth = () => {
 
     setIsLoading(true)
     
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 500))
-
-    // TODO: Implement actual sign in logic
-    // For now, navigate to dashboard
-    navigate('/dashboard')
+    try {
+      const response = await authApi.login({ email, password })
+      
+      localStorage.setItem('mokogo-access-token', response.accessToken)
+      localStorage.setItem('mokogo-refresh-token', response.refreshToken)
+      
+      setUser({
+        id: response.user.id,
+        email: response.user.email,
+        name: response.user.email.split('@')[0],
+        phone: '',
+      })
+      
+      navigate('/dashboard')
+    } catch (err: any) {
+      if (err.response?.status === 429) {
+        setError('Too many login attempts. Please wait a minute and try again.')
+      } else {
+        const errorMessage = err.response?.data?.message || err.message || 'Login failed. Please try again.'
+        setError(errorMessage)
+      }
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handleSignUpSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (isLoading) {
+      return
+    }
+    
     setError('')
 
     if (!name.trim()) {
@@ -100,8 +133,8 @@ const Auth = () => {
       return
     }
 
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters')
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters')
       return
     }
 
@@ -117,12 +150,39 @@ const Auth = () => {
 
     setIsLoading(true)
     
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 500))
-
-    // TODO: Implement actual sign up logic
-    // For now, navigate to dashboard
-    navigate('/dashboard')
+    try {
+      const phoneNumber = `+91${phone.replace(/\D/g, '')}`
+      await authApi.signup({
+        name: name.trim(),
+        email: email.trim(),
+        phoneNumber,
+        password,
+        termsAccepted: agreeToTerms,
+      })
+      
+      const loginResponse = await authApi.login({ email: email.trim(), password })
+      
+      localStorage.setItem('mokogo-access-token', loginResponse.accessToken)
+      localStorage.setItem('mokogo-refresh-token', loginResponse.refreshToken)
+      
+      setUser({
+        id: loginResponse.user.id,
+        email: loginResponse.user.email,
+        name: name.trim(),
+        phone: phone,
+      })
+      
+      navigate('/dashboard')
+    } catch (err: any) {
+      if (err.response?.status === 429) {
+        setError('Too many signup attempts. Please wait a minute and try again.')
+      } else {
+        const errorMessage = err.response?.data?.message || err.message || 'Signup failed. Please try again.'
+        setError(errorMessage)
+      }
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -226,15 +286,7 @@ const Auth = () => {
                 </div>
               </div>
 
-              {/* Right Section - Sign In / Sign Up Forms */}
-              <div className="relative">
-                <div className="relative bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-orange-200/50 p-6 md:p-8 overflow-hidden">
-                  {/* Decorative gradient */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-orange-50/50 via-transparent to-orange-100/30 pointer-events-none" />
                   
-                  <div className="relative">
-                    {/* Tab Switcher */}
-                    <div className="flex gap-1.5 mb-6 bg-orange-100/50 p-1.5 rounded-lg border border-orange-200/50">
                       <button
                         onClick={() => {
                           setAuthMode('signin')
@@ -428,66 +480,154 @@ const Auth = () => {
                             />
                           </div>
 
-                          <div>
-                            <label htmlFor="signup-email" className="block text-sm font-semibold text-gray-700 mb-2">
-                              Email address
-                            </label>
-                            <input
-                              id="signup-email"
-                              type="email"
-                              value={email}
-                              onChange={(e) => {
-                                setEmail(e.target.value)
-                                setError('')
-                              }}
-                              className={`w-full px-4 py-3.5 border-2 rounded-xl focus:outline-none focus:ring-2 transition-all ${
-                                error && email 
-                                  ? 'border-red-400 focus:ring-red-400 focus:border-red-400' 
-                                  : 'border-orange-200 focus:ring-orange-400 focus:border-orange-400'
-                              } ${isLoading ? 'opacity-50 cursor-not-allowed' : 'bg-white/80 hover:border-orange-300'}`}
-                              placeholder="Enter your email"
-                              disabled={isLoading}
-                            />
-                          </div>
+{/* Email */}
+<div>
+  <label htmlFor="signup-email" className="block text-sm font-semibold text-gray-700 mb-2">
+    Email address
+  </label>
+  <input
+    id="signup-email"
+    type="email"
+    value={email}
+    onChange={(e) => {
+      setEmail(e.target.value)
+      setError('')
+    }}
+    className={`w-full px-4 py-3.5 border-2 rounded-xl focus:outline-none focus:ring-2 transition-all ${
+      error && email
+        ? 'border-red-400 focus:ring-red-400 focus:border-red-400'
+        : 'border-orange-200 focus:ring-orange-400 focus:border-orange-400'
+    } ${isLoading ? 'opacity-50 cursor-not-allowed' : 'bg-white/80 hover:border-orange-300'}`}
+    placeholder="Enter your email"
+    disabled={isLoading}
+  />
+</div>
 
-                          <div>
-                            <label htmlFor="signup-phone" className="block text-sm font-semibold text-gray-700 mb-2">
-                              Phone Number
-                            </label>
-                            <div className="flex gap-2">
-                              <div className="flex-shrink-0">
-                                <div className="relative">
-                                  <select
-                                    className="w-24 px-3 py-3.5 border-2 border-orange-200 rounded-xl bg-white/80 appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400 hover:border-orange-300 transition-all"
-                                    defaultValue="+91"
-                                  >
-                                    <option value="+91">IN +91</option>
-                                  </select>
-                                  <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
-                                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                    </svg>
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="flex-1">
-                                <input
-                                  id="signup-phone"
-                                  type="tel"
-                                  value={displayPhone}
-                                  onChange={handlePhoneChange}
-                                  className={`w-full px-4 py-3.5 border-2 rounded-xl focus:outline-none focus:ring-2 transition-all ${
-                                    error && phone 
-                                      ? 'border-red-400 focus:ring-red-400 focus:border-red-400' 
-                                      : 'border-orange-200 focus:ring-orange-400 focus:border-orange-400'
-                                  } ${isLoading ? 'opacity-50 cursor-not-allowed' : 'bg-white/80 hover:border-orange-300'}`}
-                                  placeholder="Enter your phone number"
-                                  maxLength={12}
-                                  disabled={isLoading}
-                                />
-                              </div>
-                            </div>
-                          </div>
+{/* Phone Number */}
+<div>
+  <label htmlFor="signup-phone" className="block text-sm font-semibold text-gray-700 mb-2">
+    Phone Number
+  </label>
+  <div className="flex gap-2">
+    <div className="flex-shrink-0">
+      <div className="relative">
+        <select
+          className="w-24 px-3 py-3.5 border-2 border-orange-200 rounded-xl bg-white/80 appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400 hover:border-orange-300 transition-all"
+          defaultValue="+91"
+        >
+          <option value="+91">IN +91</option>
+        </select>
+        <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
+          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <div className="flex-1">
+      <input
+        id="signup-phone"
+        type="tel"
+        value={displayPhone}
+        onChange={handlePhoneChange}
+        className={`w-full px-4 py-3.5 border-2 rounded-xl focus:outline-none focus:ring-2 transition-all ${
+          error && phone
+            ? 'border-red-400 focus:ring-red-400 focus:border-red-400'
+            : 'border-orange-200 focus:ring-orange-400 focus:border-orange-400'
+        } ${isLoading ? 'opacity-50 cursor-not-allowed' : 'bg-white/80 hover:border-orange-300'}`}
+        placeholder="Enter your phone number"
+        maxLength={12}
+        disabled={isLoading}
+      />
+    </div>
+  </div>
+</div>
+
+{/* Password */}
+<div>
+  <label htmlFor="signup-password" className="block text-sm font-medium text-gray-700 mb-2">
+    Password
+  </label>
+  <div className="relative">
+    <input
+      id="signup-password"
+      type={showPassword ? 'text' : 'password'}
+      value={password}
+      onChange={(e) => {
+        setPassword(e.target.value)
+        setError('')
+      }}
+      className={`input-field pr-10 ${
+        error && password && !confirmPassword
+          ? 'border-red-500 focus:ring-red-500'
+          : 'focus:ring-mokogo-primary'
+      } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+      placeholder="Enter your password"
+      disabled={isLoading}
+    />
+    <button
+      type="button"
+      onClick={() => setShowPassword(!showPassword)}
+      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+      disabled={isLoading}
+    >
+      {showPassword ? (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+        </svg>
+      ) : (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+        </svg>
+      )}
+    </button>
+  </div>
+</div>
+
+{/* Confirm Password */}
+<div>
+  <label htmlFor="signup-confirm-password" className="block text-sm font-medium text-gray-700 mb-2">
+    Confirm Password
+  </label>
+  <div className="relative">
+    <input
+      id="signup-confirm-password"
+      type={showConfirmPassword ? 'text' : 'password'}
+      value={confirmPassword}
+      onChange={(e) => {
+        setConfirmPassword(e.target.value)
+        setError('')
+      }}
+      className={`input-field pr-10 ${
+        error && confirmPassword
+          ? 'border-red-500 focus:ring-red-500'
+          : 'focus:ring-mokogo-primary'
+      } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+      placeholder="Confirm your password"
+      disabled={isLoading}
+    />
+    <button
+      type="button"
+      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+      disabled={isLoading}
+    >
+      {showConfirmPassword ? (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+        </svg>
+      ) : (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+        </svg>
+      )}
+    </button>
+  </div>
+</div>
+
 
                           <div>
                             <label htmlFor="signup-password" className="block text-sm font-semibold text-gray-700 mb-2">

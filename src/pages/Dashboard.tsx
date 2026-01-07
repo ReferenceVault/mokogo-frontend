@@ -9,6 +9,7 @@ import ListingDetailContent from '@/components/ListingDetailContent'
 import MessagesContent from '@/components/MessagesContent'
 import ProfileContent from '@/components/ProfileContent'
 import { useStore } from '@/store/useStore'
+import { authApi } from '@/services/api'
 import { 
   LayoutGrid, 
   Home, 
@@ -31,7 +32,7 @@ type ViewType = 'overview' | 'listings' | 'requests' | 'listing-detail' | 'messa
 
 const Dashboard = () => {
   const navigate = useNavigate()
-  const { user, currentListing, setCurrentListing, setUser, allListings } = useStore()
+  const { user, currentListing, setCurrentListing, setUser, allListings, setAllListings, setRequests } = useStore()
   const [showBoostModal, setShowBoostModal] = useState(false)
   const [showArchiveModal, setShowArchiveModal] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
@@ -113,10 +114,24 @@ const Dashboard = () => {
     return `${Math.floor(diff / 86400)} day${Math.floor(diff / 86400) > 1 ? 's' : ''} ago`
   }
 
-  const handleLogout = () => {
-    setUser(null)
-    localStorage.removeItem('mokogo-user')
-    navigate('/')
+  const handleLogout = async () => {
+    try {
+      await authApi.logout()
+    } catch (error) {
+      console.error('Logout error:', error)
+    } finally {
+      setUser(null)
+      setCurrentListing(null)
+      setAllListings([])
+      setRequests([])
+      localStorage.removeItem('mokogo-user')
+      localStorage.removeItem('mokogo-listing')
+      localStorage.removeItem('mokogo-all-listings')
+      localStorage.removeItem('mokogo-requests')
+      localStorage.removeItem('mokogo-access-token')
+      localStorage.removeItem('mokogo-refresh-token')
+      navigate('/auth')
+    }
   }
 
   const activeListings = allListings.filter(l => l.status === 'live')
