@@ -26,6 +26,20 @@ const Auth = () => {
   const [modalType, setModalType] = useState<'terms' | 'privacy'>('terms')
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [expandedFaq, setExpandedFaq] = useState<number | null>(null)
+
+  const handleGoogleSignIn = async () => {
+    try {
+      const response = await authApi.getGoogleAuthUrl()
+      window.location.href = response.url
+    } catch (error) {
+      setError('Failed to initiate Google sign in. Please try again.')
+    }
+  }
+
+  const handleGoogleSignUp = async () => {
+    await handleGoogleSignIn()
+  }
 
   const formatPhoneNumber = (value: string) => {
     const cleaned = value.replace(/\D/g, '')
@@ -288,7 +302,10 @@ const Auth = () => {
                 </div>
               </div>
 
-                  
+              {/* Right Section - Auth Form */}
+              <div className="relative bg-white/90 backdrop-blur-sm rounded-2xl border border-orange-200/50 shadow-2xl shadow-orange-100/40 p-8">
+                {/* Tab Switcher */}
+                <div className="flex gap-2 mb-6 bg-orange-50/50 p-1 rounded-lg">
                       <button
                         onClick={() => {
                           setAuthMode('signin')
@@ -397,9 +414,9 @@ const Auth = () => {
                               />
                               <span className="text-sm text-gray-700 group-hover:text-gray-900">Remember me</span>
                             </label>
-                            <a href="#" className="text-sm font-semibold text-orange-500 hover:text-orange-600 transition-colors">
+                            <Link to="/auth/forgot-password" className="text-sm font-semibold text-orange-500 hover:text-orange-600 transition-colors">
                               Forgot password?
-                            </a>
+                            </Link>
                           </div>
 
                           {/* Submit Button */}
@@ -806,7 +823,9 @@ const Auth = () => {
                     <div className="mt-4">
                       <button
                         type="button"
-                        className="w-full inline-flex items-center justify-center py-4 px-6 border-2 border-orange-400 rounded-lg bg-white text-orange-400 font-medium text-base hover:bg-orange-50 transition-colors"
+                        onClick={handleGoogleSignUp}
+                        disabled={isLoading}
+                        className="w-full inline-flex items-center justify-center py-4 px-6 border-2 border-orange-400 rounded-lg bg-white text-orange-400 font-medium text-base hover:bg-orange-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <svg className="w-6 h-6 mr-3" viewBox="0 0 24 24">
                           <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -834,8 +853,8 @@ const Auth = () => {
                         <span className="text-xs text-gray-600 font-medium">256-bit SSL</span>
                       </div>
                     </div>
-                  </div>
-                </div>
+                  </>
+                )}
               </div>
             </div>
           </div>

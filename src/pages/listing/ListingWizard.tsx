@@ -7,7 +7,7 @@ import { useStore } from '@/store/useStore'
 import { Listing } from '@/types'
 
 import { authApi } from '@/services/api'
-import { Search, Bell, Heart as HeartIcon, LayoutGrid, Home, MessageSquare, Bookmark, Calendar, Plus, MoreHorizontal, MapPin, DollarSign, Star, Clock } from 'lucide-react'
+import { Search, Bell, Heart as HeartIcon, LayoutGrid, Home, MessageSquare, Bookmark, Calendar, Plus, MoreHorizontal } from 'lucide-react'
 
 import Step1Photos from './steps/Step1Photos'
 import Step2Location from './steps/Step2Location'
