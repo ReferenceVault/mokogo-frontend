@@ -1,7 +1,8 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
-import { FileText, Users, Shield, Lock, AlertCircle, DollarSign, Eye, Key, Ban, Scale, Mail, CheckCircle, Heart } from 'lucide-react'
+import SocialSidebar from '@/components/SocialSidebar'
+import { FileText, Users, Shield, Lock, AlertCircle, DollarSign, Key, Ban, Scale, Mail, CheckCircle, Heart, ChevronDown, ChevronUp } from 'lucide-react'
 
 const TermsOfService = () => {
   // Scroll to top when component mounts
@@ -9,586 +10,533 @@ const TermsOfService = () => {
     window.scrollTo(0, 0)
   }, [])
 
+  const [expandedSections, setExpandedSections] = useState<{ [key: string]: boolean }>({
+    about: true,
+    eligibility: false,
+    account: false,
+    thirdParty: false,
+    responsibilities: false,
+    listings: false,
+    payments: false,
+    safety: false,
+    content: false,
+    termination: false,
+    liability: false,
+    indemnification: false,
+    privacy: false,
+    changes: false,
+    governing: false,
+  })
+
+  const toggleSection = (section: string) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }))
+  }
+
+  const termSections = [
+    {
+      id: 'about',
+      icon: Users,
+      title: 'About Mokogo',
+      number: 1,
+      content: {
+        description: 'Mokogo is a platform that helps people list and discover rooms, shared spaces, and flatmates. Mokogo acts only as a discovery and connection platform.',
+        points: [
+          'Is not a broker, agent, or property manager',
+          'Does not own, manage, or inspect properties',
+          'Does not participate in payments or agreements'
+        ],
+        note: 'All interactions, decisions, and arrangements are made directly between users.'
+      }
+    },
+    {
+      id: 'eligibility',
+      icon: CheckCircle,
+      title: 'Eligibility',
+      number: 2,
+      content: {
+        description: 'To use Mokogo, you must:',
+        list: [
+          'Be at least 18 years old',
+          'Be legally capable of entering into agreements',
+          'Provide accurate and truthful information'
+        ],
+        note: 'By using the Platform, you confirm that you meet these requirements.'
+      }
+    },
+    {
+      id: 'account',
+      icon: Lock,
+      title: 'Account Registration & Login Methods',
+      number: 3,
+      content: {
+        description: 'To access certain features, you must create an account. Mokogo supports multiple authentication methods, including:',
+        methods: [
+          'Email and password',
+          'Email-based login links (magic links)',
+          'Phone number verification via OTP',
+          'Third-party authentication services such as Google Sign-In'
+        ],
+        agreements: [
+          'Provide valid and accessible contact details (email and/or phone number)',
+          'Keep your login credentials secure',
+          'Be responsible for all activity that occurs under your account'
+        ],
+        note: 'Mokogo does not store third-party passwords (e.g., Google account passwords).'
+      }
+    },
+    {
+      id: 'thirdParty',
+      icon: Key,
+      title: 'Third-Party Authentication Services',
+      number: 4,
+      content: {
+        description: 'If you choose to sign in using third-party services (such as Google):',
+        list: [
+          'Mokogo receives limited information (e.g., name, email address, profile image) as permitted by the provider',
+          'Your use of such services is governed by their respective terms and privacy policies',
+          'Mokogo is not responsible for the availability, security, or practices of third-party authentication providers'
+        ]
+      }
+    },
+    {
+      id: 'responsibilities',
+      icon: Shield,
+      title: 'User Responsibilities',
+      number: 5,
+      content: {
+        mustDo: [
+          'Provide accurate, complete, and up-to-date information',
+          'Use the Platform only for lawful purposes',
+          'Communicate respectfully with other users',
+          'Follow all applicable local, state, and national laws'
+        ],
+        mustNot: [
+          'Create fake or misleading accounts',
+          'Impersonate another person',
+          'Post false, misleading, or fraudulent listings',
+          'Harass, threaten, or abuse other users',
+          'Request or share sensitive personal or financial information',
+          'Attempt to bypass security or authentication mechanisms',
+          'Use Mokogo for illegal or commercial solicitation'
+        ]
+      }
+    },
+    {
+      id: 'listings',
+      icon: Users,
+      title: 'Listings & User Interactions',
+      number: 6,
+      content: {
+        listers: [
+          'You are responsible for the accuracy and legitimacy of your listing',
+          'You confirm that you have the right to list the space',
+          'You control who you engage with and on what terms'
+        ],
+        seekers: [
+          'You are responsible for verifying listings independently',
+          'You should visit properties and meet listers before making any payments',
+          'Any agreements are solely between you and the lister'
+        ],
+        warning: 'Mokogo is not responsible for disputes, losses, or damages arising from user interactions.'
+      }
+    },
+    {
+      id: 'payments',
+      icon: DollarSign,
+      title: 'Payments & Transactions',
+      number: 7,
+      content: {
+        description: 'Mokogo does not:',
+        list: [
+          'Collect rent, deposits, or booking fees',
+          'Facilitate or guarantee payments',
+          'Act as an escrow or intermediary'
+        ],
+        note: 'All financial arrangements are made directly between users, at their own discretion and risk.'
+      }
+    },
+    {
+      id: 'safety',
+      icon: Shield,
+      title: 'Safety & Verification Disclaimer',
+      number: 8,
+      content: {
+        description: 'While Mokogo may implement basic verification measures (such as phone or email verification), we do not:',
+        list: [
+          'Conduct background checks',
+          'Verify property ownership',
+          'Guarantee the identity, intent, or behavior of any user'
+        ],
+        note: 'Users are expected to exercise independent judgment and follow the Safety Tips provided on the Platform.'
+      }
+    },
+    {
+      id: 'content',
+      icon: FileText,
+      title: 'Content & Intellectual Property',
+      number: 9,
+      content: {
+        description: 'All content on Mokogo, including text, logos, design, and software, is owned by Mokogo or its licensors.',
+        mustNot: [
+          'Copy, modify, or distribute Platform content without permission',
+          'Use Mokogo branding without authorization'
+        ],
+        note: 'By posting content (such as listings or photos), you grant Mokogo a non-exclusive, royalty-free right to use, display, and distribute such content solely for operating and promoting the Platform.'
+      }
+    },
+    {
+      id: 'termination',
+      icon: Ban,
+      title: 'Account Suspension or Termination',
+      number: 10,
+      content: {
+        description: 'Mokogo may suspend or terminate your account if:',
+        list: [
+          'These Terms are violated',
+          'Fraudulent, abusive, or harmful activity is suspected',
+          'Required by law or regulatory authorities'
+        ],
+        note: 'You may stop using the Platform at any time.'
+      }
+    },
+    {
+      id: 'liability',
+      icon: AlertCircle,
+      title: 'Limitation of Liability',
+      number: 11,
+      content: {
+        description: 'To the maximum extent permitted by law:',
+        list: [
+          'Mokogo is not liable for losses, damages, or disputes between users',
+          'Mokogo does not guarantee availability, accuracy, or outcomes',
+          'Use of the Platform is at your own risk',
+          'Any liability, if applicable, shall be limited as required under law'
+        ]
+      }
+    },
+    {
+      id: 'indemnification',
+      icon: Shield,
+      title: 'Indemnification',
+      number: 12,
+      content: {
+        description: 'You agree to indemnify and hold Mokogo harmless from any claims, damages, or expenses arising from:',
+        list: [
+          'Your use of the Platform',
+          'Your violation of these Terms',
+          'Your interactions with other users'
+        ]
+      }
+    },
+    {
+      id: 'privacy',
+      icon: Lock,
+      title: 'Privacy',
+      number: 13,
+      content: {
+        description: 'Your use of Mokogo is governed by our Privacy Policy, which explains how we collect, process, and protect personal data, including data related to authentication and login methods.'
+      }
+    },
+    {
+      id: 'changes',
+      icon: FileText,
+      title: 'Changes to These Terms',
+      number: 14,
+      content: {
+        description: 'We may update these Terms periodically. Updated versions will be posted on this page with a revised "Last updated" date. Continued use of Mokogo constitutes acceptance of the updated Terms.'
+      }
+    },
+    {
+      id: 'governing',
+      icon: Scale,
+      title: 'Governing Law & Jurisdiction',
+      number: 15,
+      content: {
+        list: [
+          'These Terms are governed by the laws of India.',
+          'Any disputes shall be subject to the exclusive jurisdiction of courts located in India.'
+        ]
+      }
+    }
+  ]
+
   return (
-    <div className="min-h-screen bg-mokogo-off-white flex flex-col">
+    <div className="min-h-screen bg-white flex flex-col">
       <Header />
+      <SocialSidebar />
       
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="bg-gradient-to-br from-mokogo-primary/20 to-mokogo-primary/10 py-6 md:py-8">
-          <div className="max-w-4xl mx-auto px-6 md:px-12 text-center">
-            <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-orange-400/20 mb-3">
-              <FileText className="w-5 h-5 text-orange-400" />
-            </div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+        <section className="relative overflow-hidden bg-gradient-to-br from-orange-50 via-orange-100/50 to-orange-50 px-6 md:px-[10%] pt-14 pb-16 sm:pt-16 sm:pb-20">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(249,115,22,0.15),transparent_60%),radial-gradient(circle_at_bottom_right,rgba(251,146,60,0.12),transparent_60%),radial-gradient(circle_at_center,rgba(254,215,170,0.10),transparent_65%),radial-gradient(circle_at_top_right,rgba(255,237,213,0.08),transparent_70%)]" />
+          
+          <div className="relative mx-auto max-w-4xl text-center">
+            <span className="inline-flex items-center gap-2 rounded-full border border-orange-300/50 bg-orange-200/30 px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-orange-800/80">
+              Terms of Service • Legal Agreement
+            </span>
+            <h1 className="mt-6 text-3xl sm:text-4xl lg:text-[2.9rem] font-bold leading-tight text-gray-900">
               Terms of Service
             </h1>
-            <p className="text-sm text-gray-700 max-w-3xl mx-auto mb-1">
-              Welcome to Mokogo. These Terms of Service ("Terms") govern your access to and use of the Mokogo website, app, and related services ("Platform").
+            <p className="mt-5 text-lg sm:text-xl leading-relaxed text-gray-800">
+              Welcome to Mokogo. These Terms of Service govern your access to and use of the Mokogo website, app, and related services.
             </p>
-            <p className="text-sm text-gray-600">
+            <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-orange-400/20 border border-orange-300/40 px-6 py-2 text-xs font-semibold uppercase tracking-[0.35em] text-orange-800 shadow-lg shadow-orange-200/50 ring-1 ring-orange-300/30">
               Last updated: 28th December, 2025
-            </p>
+            </div>
           </div>
         </section>
 
         {/* Main Content */}
-        <section className="max-w-4xl mx-auto px-6 md:px-12 py-6">
-          {/* Introduction */}
-          <div className="bg-white rounded-xl shadow-sm border border-mokogo-gray p-4 mb-5 transform transition-all duration-300 hover:shadow-md hover:scale-[1.01] hover:border-orange-200">
-            <p className="text-gray-700 leading-relaxed mb-3">
-              By accessing or using Mokogo, you agree to be bound by these Terms.
-            </p>
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-              <p className="text-yellow-800 text-sm font-medium">
-                If you do not agree to these Terms, please do not use the Platform.
-              </p>
-            </div>
-          </div>
-
-          {/* Section 1: About Mokogo */}
-          <div className="mb-6">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 rounded-lg bg-orange-400/10 flex items-center justify-center">
-                <Users className="w-4 h-4 text-orange-400" />
-              </div>
-              <h2 className="text-xl font-bold text-gray-900">1. About Mokogo</h2>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm border border-mokogo-gray p-4 transform transition-all duration-300 hover:shadow-md hover:scale-[1.01] hover:border-orange-200">
-              <p className="text-sm text-gray-700 mb-2">
-                Mokogo is a platform that helps people list and discover rooms, shared spaces, and flatmates. Mokogo acts only as a discovery and connection platform.
-              </p>
-              <p className="text-sm text-gray-700 font-medium mb-2">Mokogo:</p>
-              <ul className="space-y-1.5 text-sm text-gray-700 mb-2">
-                <li className="flex items-start gap-2">
-                  <span className="text-orange-400 font-bold">•</span>
-                  <span>Is not a broker, agent, or property manager</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-orange-400 font-bold">•</span>
-                  <span>Does not own, manage, or inspect properties</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-orange-400 font-bold">•</span>
-                  <span>Does not participate in payments or agreements</span>
-                </li>
-              </ul>
-              <p className="text-sm text-gray-700 font-medium">
-                All interactions, decisions, and arrangements are made directly between users.
-              </p>
-            </div>
-          </div>
-
-          {/* Section 2: Eligibility */}
-          <div className="mb-6">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 rounded-lg bg-orange-400/10 flex items-center justify-center">
-                <CheckCircle className="w-4 h-4 text-orange-400" />
-              </div>
-              <h2 className="text-xl font-bold text-gray-900">2. Eligibility</h2>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm border border-mokogo-gray p-4 transform transition-all duration-300 hover:shadow-md hover:scale-[1.01] hover:border-orange-200">
-              <p className="text-sm text-gray-700 mb-2">To use Mokogo, you must:</p>
-              <ul className="space-y-1.5 text-sm text-gray-700 mb-2">
-                <li className="flex items-start gap-2">
-                  <CheckCircle className="w-4 h-4 text-orange-400 mt-0.5 flex-shrink-0" />
-                  <span>Be at least 18 years old</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle className="w-4 h-4 text-orange-400 mt-0.5 flex-shrink-0" />
-                  <span>Be legally capable of entering into agreements</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle className="w-4 h-4 text-orange-400 mt-0.5 flex-shrink-0" />
-                  <span>Provide accurate and truthful information</span>
-                </li>
-              </ul>
-              <p className="text-sm text-gray-700">
-                By using the Platform, you confirm that you meet these requirements.
-              </p>
-            </div>
-          </div>
-
-          {/* Section 3: Account Registration & Login Methods */}
-          <div className="mb-6">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 rounded-lg bg-orange-400/10 flex items-center justify-center">
-                <Lock className="w-4 h-4 text-orange-400" />
-              </div>
-              <h2 className="text-xl font-bold text-gray-900">3. Account Registration & Login Methods</h2>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm border border-mokogo-gray p-4 mb-3 transform transition-all duration-300 hover:shadow-md hover:scale-[1.01] hover:border-orange-200">
-              <p className="text-sm text-gray-700 mb-2">To access certain features, you must create an account. Mokogo supports multiple authentication methods, including:</p>
-              <ul className="space-y-1.5 text-sm text-gray-700 mb-2">
-                <li className="flex items-start gap-2">
-                  <span className="text-orange-400 font-bold">•</span>
-                  <span>Email and password</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-orange-400 font-bold">•</span>
-                  <span>Email-based login links (magic links)</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-orange-400 font-bold">•</span>
-                  <span>Phone number verification via OTP</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-orange-400 font-bold">•</span>
-                  <span>Third-party authentication services such as Google Sign-In</span>
-                </li>
-              </ul>
-              <p className="text-gray-700 font-medium mb-2">You agree to:</p>
-              <ul className="space-y-2 text-gray-700">
-                <li className="flex items-start gap-2">
-                  <CheckCircle className="w-4 h-4 text-orange-400 mt-0.5 flex-shrink-0" />
-                  <span>Provide valid and accessible contact details (email and/or phone number)</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle className="w-4 h-4 text-orange-400 mt-0.5 flex-shrink-0" />
-                  <span>Keep your login credentials secure</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle className="w-4 h-4 text-orange-400 mt-0.5 flex-shrink-0" />
-                  <span>Be responsible for all activity that occurs under your account</span>
-                </li>
-              </ul>
-              <p className="text-gray-700 mt-3 text-sm italic">
-                Mokogo does not store third-party passwords (e.g., Google account passwords).
-              </p>
-            </div>
-          </div>
-
-          {/* Section 4: Third-Party Authentication Services */}
-          <div className="mb-6">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 rounded-lg bg-orange-400/10 flex items-center justify-center">
-                <Key className="w-4 h-4 text-orange-400" />
-              </div>
-              <h2 className="text-xl font-bold text-gray-900">4. Third-Party Authentication Services</h2>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm border border-mokogo-gray p-4 transform transition-all duration-300 hover:shadow-md hover:scale-[1.01] hover:border-orange-200">
-              <p className="text-sm text-gray-700 mb-2">If you choose to sign in using third-party services (such as Google):</p>
-              <ul className="space-y-2 text-gray-700">
-                <li className="flex items-start gap-2">
-                  <span className="text-orange-400 font-bold">•</span>
-                  <span>Mokogo receives limited information (e.g., name, email address, profile image) as permitted by the provider</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-orange-400 font-bold">•</span>
-                  <span>Your use of such services is governed by their respective terms and privacy policies</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-orange-400 font-bold">•</span>
-                  <span>Mokogo is not responsible for the availability, security, or practices of third-party authentication providers</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          {/* Section 5: User Responsibilities */}
-          <div className="mb-6">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 rounded-lg bg-orange-400/10 flex items-center justify-center">
-                <Shield className="w-4 h-4 text-orange-400" />
-              </div>
-              <h2 className="text-xl font-bold text-gray-900">5. User Responsibilities</h2>
-            </div>
-
-            <div className="space-y-4">
-              <div className="bg-white rounded-xl shadow-sm border border-mokogo-gray p-4 transform transition-all duration-300 hover:shadow-md hover:scale-[1.01] hover:border-orange-200">
-                <p className="text-gray-700 font-medium mb-3">By using Mokogo, you agree to:</p>
-                <ul className="space-y-2 text-gray-700">
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 text-orange-400 mt-0.5 flex-shrink-0" />
-                    <span>Provide accurate, complete, and up-to-date information</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 text-orange-400 mt-0.5 flex-shrink-0" />
-                    <span>Use the Platform only for lawful purposes</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 text-orange-400 mt-0.5 flex-shrink-0" />
-                    <span>Communicate respectfully with other users</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 text-orange-400 mt-0.5 flex-shrink-0" />
-                    <span>Follow all applicable local, state, and national laws</span>
-                  </li>
-                </ul>
-              </div>
-
-              <div className="bg-white rounded-xl shadow-sm border border-mokogo-gray p-4 transform transition-all duration-300 hover:shadow-md hover:scale-[1.01] hover:border-orange-200">
-                <p className="text-gray-700 font-medium mb-3">You must not:</p>
-                <ul className="space-y-2 text-gray-700">
-                  <li className="flex items-start gap-2">
-                    <Ban className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
-                    <span>Create fake or misleading accounts</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Ban className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
-                    <span>Impersonate another person</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Ban className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
-                    <span>Post false, misleading, or fraudulent listings</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Ban className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
-                    <span>Harass, threaten, or abuse other users</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Ban className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
-                    <span>Request or share sensitive personal or financial information</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Ban className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
-                    <span>Attempt to bypass security or authentication mechanisms</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Ban className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
-                    <span>Use Mokogo for illegal or commercial solicitation</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </div>
-
-          {/* Section 6: Listings & User Interactions */}
-          <div className="mb-6">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 rounded-lg bg-orange-400/10 flex items-center justify-center">
-                <Users className="w-4 h-4 text-orange-400" />
-              </div>
-              <h2 className="text-xl font-bold text-gray-900">6. Listings & User Interactions</h2>
-            </div>
-
-            <div className="space-y-4">
-              <div className="bg-white rounded-xl shadow-sm border border-mokogo-gray p-4 transform transition-all duration-300 hover:shadow-md hover:scale-[1.01] hover:border-orange-200">
-                <h3 className="text-sm font-semibold text-gray-900 mb-1.5">a. For Listers</h3>
-                <ul className="space-y-2 text-gray-700">
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 text-orange-400 mt-0.5 flex-shrink-0" />
-                    <span>You are responsible for the accuracy and legitimacy of your listing</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 text-orange-400 mt-0.5 flex-shrink-0" />
-                    <span>You confirm that you have the right to list the space</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 text-orange-400 mt-0.5 flex-shrink-0" />
-                    <span>You control who you engage with and on what terms</span>
-                  </li>
-                </ul>
-              </div>
-
-              <div className="bg-white rounded-xl shadow-sm border border-mokogo-gray p-4 transform transition-all duration-300 hover:shadow-md hover:scale-[1.01] hover:border-orange-200">
-                <h3 className="text-sm font-semibold text-gray-900 mb-1.5">b. For Seekers</h3>
-                <ul className="space-y-2 text-gray-700">
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 text-orange-400 mt-0.5 flex-shrink-0" />
-                    <span>You are responsible for verifying listings independently</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 text-orange-400 mt-0.5 flex-shrink-0" />
-                    <span>You should visit properties and meet listers before making any payments</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 text-orange-400 mt-0.5 flex-shrink-0" />
-                    <span>Any agreements are solely between you and the lister</span>
-                  </li>
-                </ul>
-              </div>
-
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                <p className="text-red-800 text-sm">
-                  Mokogo is not responsible for disputes, losses, or damages arising from user interactions.
+        <section className="relative px-6 md:px-[10%] py-16 sm:py-20">
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-[#fef4f1] via-transparent to-transparent" />
+          
+          <div className="relative mx-auto max-w-6xl">
+            {/* Introduction */}
+            <div className="mb-12 relative overflow-hidden rounded-[2rem] border border-orange-200 bg-gradient-to-br from-orange-50 via-white to-orange-50/50 p-8 md:p-10 shadow-xl shadow-orange-100/40">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(249,115,22,0.12),transparent_55%)]" />
+              <div className="relative">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 rounded-xl bg-orange-400/10 flex items-center justify-center">
+                    <FileText className="w-6 h-6 text-orange-500" />
+                  </div>
+                  <h2 className="text-2xl font-semibold text-gray-900">Agreement to Terms</h2>
+                </div>
+                <p className="text-base sm:text-lg leading-relaxed text-gray-700 mb-4">
+                  By accessing or using Mokogo, you agree to be bound by these Terms.
                 </p>
+                <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+                  <p className="text-yellow-800 font-medium">
+                    If you do not agree to these Terms, please do not use the Platform.
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Section 7: Payments & Transactions */}
-          <div className="mb-6">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 rounded-lg bg-orange-400/10 flex items-center justify-center">
-                <DollarSign className="w-4 h-4 text-orange-400" />
-              </div>
-              <h2 className="text-xl font-bold text-gray-900">7. Payments & Transactions</h2>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm border border-mokogo-gray p-4 transform transition-all duration-300 hover:shadow-md hover:scale-[1.01] hover:border-orange-200">
-              <p className="text-gray-700 font-medium mb-3">Mokogo does not:</p>
-              <ul className="space-y-1.5 text-sm text-gray-700 mb-2">
-                <li className="flex items-start gap-2">
-                  <Ban className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
-                  <span>Collect rent, deposits, or booking fees</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Ban className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
-                  <span>Facilitate or guarantee payments</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Ban className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
-                  <span>Act as an escrow or intermediary</span>
-                </li>
-              </ul>
-              <p className="text-sm text-gray-700">
-                All financial arrangements are made directly between users, at their own discretion and risk.
-              </p>
-            </div>
-          </div>
-
-          {/* Section 8: Safety & Verification Disclaimer */}
-          <div className="mb-6">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 rounded-lg bg-orange-400/10 flex items-center justify-center">
-                <Shield className="w-4 h-4 text-orange-400" />
-              </div>
-              <h2 className="text-xl font-bold text-gray-900">8. Safety & Verification Disclaimer</h2>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm border border-mokogo-gray p-4 transform transition-all duration-300 hover:shadow-md hover:scale-[1.01] hover:border-orange-200">
-              <p className="text-sm text-gray-700 mb-2">
-                While Mokogo may implement basic verification measures (such as phone or email verification), we do not:
-              </p>
-              <ul className="space-y-1.5 text-sm text-gray-700 mb-2">
-                <li className="flex items-start gap-2">
-                  <Ban className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
-                  <span>Conduct background checks</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Ban className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
-                  <span>Verify property ownership</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Ban className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
-                  <span>Guarantee the identity, intent, or behavior of any user</span>
-                </li>
-              </ul>
-              <p className="text-sm text-gray-700">
-                Users are expected to exercise independent judgment and follow the Safety Tips provided on the Platform.
-              </p>
-            </div>
-          </div>
-
-          {/* Section 9: Content & Intellectual Property */}
-          <div className="mb-6">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 rounded-lg bg-orange-400/10 flex items-center justify-center">
-                <FileText className="w-4 h-4 text-orange-400" />
-              </div>
-              <h2 className="text-xl font-bold text-gray-900">9. Content & Intellectual Property</h2>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm border border-mokogo-gray p-4 transform transition-all duration-300 hover:shadow-md hover:scale-[1.01] hover:border-orange-200">
-              <p className="text-sm text-gray-700 mb-2">
-                All content on Mokogo, including text, logos, design, and software, is owned by Mokogo or its licensors.
-              </p>
-              <p className="text-gray-700 font-medium mb-3">You may not:</p>
-              <ul className="space-y-1.5 text-sm text-gray-700 mb-2">
-                <li className="flex items-start gap-2">
-                  <Ban className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
-                  <span>Copy, modify, or distribute Platform content without permission</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Ban className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
-                  <span>Use Mokogo branding without authorization</span>
-                </li>
-              </ul>
-              <p className="text-sm text-gray-700">
-                By posting content (such as listings or photos), you grant Mokogo a non-exclusive, royalty-free right to use, display, and distribute such content solely for operating and promoting the Platform.
-              </p>
-            </div>
-          </div>
-
-          {/* Section 10: Account Suspension or Termination */}
-          <div className="mb-6">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 rounded-lg bg-orange-400/10 flex items-center justify-center">
-                <Ban className="w-4 h-4 text-orange-400" />
-              </div>
-              <h2 className="text-xl font-bold text-gray-900">10. Account Suspension or Termination</h2>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm border border-mokogo-gray p-4 transform transition-all duration-300 hover:shadow-md hover:scale-[1.01] hover:border-orange-200">
-              <p className="text-sm text-gray-700 mb-2">Mokogo may suspend or terminate your account if:</p>
-              <ul className="space-y-1.5 text-sm text-gray-700 mb-2">
-                <li className="flex items-start gap-2">
-                  <span className="text-orange-400 font-bold">•</span>
-                  <span>These Terms are violated</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-orange-400 font-bold">•</span>
-                  <span>Fraudulent, abusive, or harmful activity is suspected</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-orange-400 font-bold">•</span>
-                  <span>Required by law or regulatory authorities</span>
-                </li>
-              </ul>
-              <p className="text-sm text-gray-700">
-                You may stop using the Platform at any time.
-              </p>
-            </div>
-          </div>
-
-          {/* Section 11: Limitation of Liability */}
-          <div className="mb-6">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 rounded-lg bg-orange-400/10 flex items-center justify-center">
-                <AlertCircle className="w-4 h-4 text-orange-400" />
-              </div>
-              <h2 className="text-xl font-bold text-gray-900">11. Limitation of Liability</h2>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm border border-mokogo-gray p-4 transform transition-all duration-300 hover:shadow-md hover:scale-[1.01] hover:border-orange-200">
-              <p className="text-gray-700 font-medium mb-3">To the maximum extent permitted by law:</p>
-              <ul className="space-y-2 text-gray-700">
-                <li className="flex items-start gap-2">
-                  <span className="text-orange-400 font-bold">•</span>
-                  <span>Mokogo is not liable for losses, damages, or disputes between users</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-orange-400 font-bold">•</span>
-                  <span>Mokogo does not guarantee availability, accuracy, or outcomes</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-orange-400 font-bold">•</span>
-                  <span>Use of the Platform is at your own risk</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-orange-400 font-bold">•</span>
-                  <span>Any liability, if applicable, shall be limited as required under law</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          {/* Section 12: Indemnification */}
-          <div className="mb-6">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 rounded-lg bg-orange-400/10 flex items-center justify-center">
-                <Shield className="w-4 h-4 text-orange-400" />
-              </div>
-              <h2 className="text-xl font-bold text-gray-900">12. Indemnification</h2>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm border border-mokogo-gray p-4 transform transition-all duration-300 hover:shadow-md hover:scale-[1.01] hover:border-orange-200">
-              <p className="text-sm text-gray-700 mb-2">You agree to indemnify and hold Mokogo harmless from any claims, damages, or expenses arising from:</p>
-              <ul className="space-y-2 text-gray-700">
-                <li className="flex items-start gap-2">
-                  <span className="text-orange-400 font-bold">•</span>
-                  <span>Your use of the Platform</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-orange-400 font-bold">•</span>
-                  <span>Your violation of these Terms</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-orange-400 font-bold">•</span>
-                  <span>Your interactions with other users</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          {/* Section 13: Privacy */}
-          <div className="mb-6">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 rounded-lg bg-orange-400/10 flex items-center justify-center">
-                <Eye className="w-4 h-4 text-orange-400" />
-              </div>
-              <h2 className="text-xl font-bold text-gray-900">13. Privacy</h2>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm border border-mokogo-gray p-4 transform transition-all duration-300 hover:shadow-md hover:scale-[1.01] hover:border-orange-200">
-              <p className="text-sm text-gray-700">
-                Your use of Mokogo is governed by our Privacy Policy, which explains how we collect, process, and protect personal data, including data related to authentication and login methods.
-              </p>
-            </div>
-          </div>
-
-          {/* Section 14: Changes to These Terms */}
-          <div className="mb-6">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 rounded-lg bg-orange-400/10 flex items-center justify-center">
-                <AlertCircle className="w-4 h-4 text-orange-400" />
-              </div>
-              <h2 className="text-xl font-bold text-gray-900">14. Changes to These Terms</h2>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm border border-mokogo-gray p-4 transform transition-all duration-300 hover:shadow-md hover:scale-[1.01] hover:border-orange-200">
-              <p className="text-sm text-gray-700">
-                We may update these Terms periodically. Updated versions will be posted on this page with a revised "Last updated" date. Continued use of Mokogo constitutes acceptance of the updated Terms.
-              </p>
-            </div>
-          </div>
-
-          {/* Section 15: Governing Law & Jurisdiction */}
-          <div className="mb-6">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 rounded-lg bg-orange-400/10 flex items-center justify-center">
-                <Scale className="w-5 h-5 text-orange-400" />
-              </div>
-              <h2 className="text-xl font-bold text-gray-900">15. Governing Law & Jurisdiction</h2>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm border border-mokogo-gray p-4 transform transition-all duration-300 hover:shadow-md hover:scale-[1.01] hover:border-orange-200">
-              <ul className="space-y-2 text-gray-700">
-                <li className="flex items-start gap-2">
-                  <CheckCircle className="w-4 h-4 text-orange-400 mt-0.5 flex-shrink-0" />
-                  <span>These Terms are governed by the laws of India.</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle className="w-4 h-4 text-orange-400 mt-0.5 flex-shrink-0" />
-                  <span>Any disputes shall be subject to the exclusive jurisdiction of courts located in India.</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          {/* Section 16: Contact Information */}
-          <div className="mb-6">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 rounded-lg bg-orange-400/10 flex items-center justify-center">
-                <Mail className="w-5 h-5 text-orange-400" />
-              </div>
-              <h2 className="text-xl font-bold text-gray-900">16. Contact Information</h2>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm border border-mokogo-gray p-4 transform transition-all duration-300 hover:shadow-md hover:scale-[1.01] hover:border-orange-200">
-              <p className="text-gray-700 mb-4">
-                For questions or concerns regarding these Terms, contact us at:
-              </p>
-              <div className="bg-gradient-to-br from-orange-400/10 to-orange-400/5 rounded-lg p-4 border border-orange-400/20">
-                <div className="flex items-center gap-3">
-                  <Mail className="w-5 h-5 text-orange-400" />
-                  <a 
-                    href="mailto:hello@mokogo.in" 
-                    className="text-lg font-semibold text-orange-400 hover:text-orange-500 transition-colors"
+            {/* Terms Sections - Interactive Expandable */}
+            <div className="space-y-6 mb-12">
+              {termSections.map((section) => {
+                const Icon = section.icon
+                const isExpanded = expandedSections[section.id]
+                
+                return (
+                  <div
+                    key={section.id}
+                    className={`relative overflow-hidden rounded-[2rem] border border-orange-200 ${
+                      section.number % 2 === 0
+                        ? 'bg-gradient-to-br from-[#fff4f1] via-white to-[#fffafa] shadow-xl shadow-[#f8d8cf]/45'
+                        : 'bg-gradient-to-br from-orange-50 via-white to-orange-50/50 shadow-xl shadow-orange-100/40'
+                    }`}
                   >
-                    hello@mokogo.in
-                  </a>
+                    <div className={`absolute inset-0 ${
+                      section.number % 2 === 0
+                        ? 'bg-[radial-gradient(circle_at_top_left,rgba(249,115,22,0.14),transparent_60%)]'
+                        : 'bg-[radial-gradient(circle_at_top_right,rgba(249,115,22,0.12),transparent_55%)]'
+                    }`} />
+                    <div className="relative">
+                      {/* Section Header - Clickable */}
+                      <button
+                        onClick={() => toggleSection(section.id)}
+                        className="w-full flex items-center justify-between p-6 md:p-8 hover:bg-orange-50/50 transition-colors text-left"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-xl bg-orange-400/10 flex items-center justify-center">
+                            <Icon className="w-6 h-6 text-orange-500" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-sm font-semibold text-orange-500">{section.number}.</span>
+                              <h3 className="text-xl md:text-2xl font-semibold text-gray-900">{section.title}</h3>
+                            </div>
+                          </div>
+                        </div>
+                        {isExpanded ? (
+                          <ChevronUp className="w-6 h-6 text-orange-500" />
+                        ) : (
+                          <ChevronDown className="w-6 h-6 text-orange-500" />
+                        )}
+                      </button>
+
+                      {/* Section Content - Expandable */}
+                      {isExpanded && (
+                        <div className="px-6 md:px-8 pb-6 md:pb-8 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                          {section.content.description && (
+                            <p className="text-sm sm:text-base text-gray-700 leading-relaxed">
+                              {section.content.description}
+                            </p>
+                          )}
+
+                          {section.content.points && (
+                            <>
+                              <p className="text-sm font-medium text-gray-800">Mokogo:</p>
+                              <ul className="space-y-2 text-sm text-gray-700">
+                                {section.content.points.map((point, index) => (
+                                  <li key={index} className="flex items-start gap-2">
+                                    <span className="text-orange-400 font-bold">•</span>
+                                    <span>{point}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </>
+                          )}
+
+                          {section.content.list && (
+                            <ul className="space-y-2 text-sm sm:text-base text-gray-700">
+                              {section.content.list.map((item, index) => (
+                                <li key={index} className="flex items-start gap-2">
+                                  <CheckCircle className="w-4 h-4 text-orange-400 mt-0.5 flex-shrink-0" />
+                                  <span>{item}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+
+                          {section.content.methods && (
+                            <>
+                              <ul className="space-y-2 text-sm text-gray-700 mb-4">
+                                {section.content.methods.map((method, index) => (
+                                  <li key={index} className="flex items-start gap-2">
+                                    <span className="text-orange-400 font-bold">•</span>
+                                    <span>{method}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                              <p className="text-sm font-medium text-gray-800 mb-2">You agree to:</p>
+                              <ul className="space-y-2 text-sm text-gray-700">
+                                {section.content.agreements?.map((agreement, index) => (
+                                  <li key={index} className="flex items-start gap-2">
+                                    <CheckCircle className="w-4 h-4 text-orange-400 mt-0.5 flex-shrink-0" />
+                                    <span>{agreement}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </>
+                          )}
+
+                          {section.content.mustDo && (
+                            <>
+                              <p className="text-sm font-medium text-gray-800 mb-3">By using Mokogo, you agree to:</p>
+                              <ul className="space-y-2 text-sm text-gray-700 mb-6">
+                                {section.content.mustDo.map((item, index) => (
+                                  <li key={index} className="flex items-start gap-2">
+                                    <CheckCircle className="w-4 h-4 text-orange-400 mt-0.5 flex-shrink-0" />
+                                    <span>{item}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                              <p className="text-sm font-medium text-gray-800 mb-3">You must not:</p>
+                              <ul className="space-y-2 text-sm text-gray-700">
+                                {section.content.mustNot?.map((item, index) => (
+                                  <li key={index} className="flex items-start gap-2">
+                                    <Ban className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
+                                    <span>{item}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </>
+                          )}
+
+                          {section.content.listers && (
+                            <div className="grid md:grid-cols-2 gap-4">
+                              <div className="bg-white rounded-xl p-4 border border-orange-200">
+                                <h4 className="text-sm font-semibold text-gray-900 mb-3">For Listers</h4>
+                                <ul className="space-y-2 text-sm text-gray-700">
+                                  {section.content.listers.map((item, index) => (
+                                    <li key={index} className="flex items-start gap-2">
+                                      <CheckCircle className="w-4 h-4 text-orange-400 mt-0.5 flex-shrink-0" />
+                                      <span>{item}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                              <div className="bg-white rounded-xl p-4 border border-orange-200">
+                                <h4 className="text-sm font-semibold text-gray-900 mb-3">For Seekers</h4>
+                                <ul className="space-y-2 text-sm text-gray-700">
+                                  {section.content.seekers?.map((item, index) => (
+                                    <li key={index} className="flex items-start gap-2">
+                                      <CheckCircle className="w-4 h-4 text-orange-400 mt-0.5 flex-shrink-0" />
+                                      <span>{item}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            </div>
+                          )}
+
+                          {section.content.warning && (
+                            <div className="bg-red-50 border border-red-200 rounded-xl p-4 mt-4">
+                              <p className="text-red-800 text-sm">{section.content.warning}</p>
+                            </div>
+                          )}
+
+
+                          {section.content.mustNot && !section.content.mustDo && (
+                            <ul className="space-y-2 text-sm text-gray-700">
+                              {section.content.mustNot.map((item, index) => (
+                                <li key={index} className="flex items-start gap-2">
+                                  <Ban className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
+                                  <span>{item}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+
+                          {section.content.note && (
+                            <div className="bg-orange-50 border border-orange-200 rounded-xl p-3 mt-4">
+                              <p className="text-sm text-orange-800">{section.content.note}</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Contact & Final Note */}
+            <div className="grid gap-8 lg:grid-cols-2">
+              {/* Contact */}
+              <div className="relative overflow-hidden rounded-[2rem] border border-orange-200 bg-gradient-to-br from-orange-50 via-white to-orange-50/50 p-8 md:p-10 shadow-xl shadow-orange-100/40">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(249,115,22,0.12),transparent_55%)]" />
+                <div className="relative">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-lg bg-orange-400/10 flex items-center justify-center">
+                      <Mail className="w-5 h-5 text-orange-500" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-gray-900">16. Contact Information</h3>
+                  </div>
+                  <p className="text-sm sm:text-base text-gray-700 mb-4">
+                    For questions or concerns regarding these Terms, contact us at:
+                  </p>
+                  <div className="bg-gradient-to-br from-orange-400/10 to-orange-400/5 rounded-xl p-4 border border-orange-400/20">
+                    <a 
+                      href="mailto:hello@mokogo.in" 
+                      className="text-lg font-bold text-orange-400 hover:text-orange-500 transition-colors flex items-center gap-2"
+                    >
+                      <Mail className="w-5 h-5" />
+                      hello@mokogo.in
+                    </a>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
 
-          {/* Final Note */}
-            <div className="bg-gradient-to-br from-orange-400/10 to-orange-400/5 rounded-xl p-4 border border-orange-400/20 transform transition-all duration-300 hover:shadow-md hover:scale-[1.01]">
-              <div className="flex items-start gap-2">
-                <div className="w-8 h-8 rounded-lg bg-orange-400/20 flex items-center justify-center flex-shrink-0">
-                  <Heart className="w-4 h-4 text-orange-400" />
+              {/* Final Note */}
+              <div className="relative overflow-hidden rounded-[2rem] border border-[#fde1da] bg-gradient-to-br from-[#fff4f1] via-white to-[#fff9f6] p-8 md:p-10 shadow-xl shadow-[#f8d8cf]/45">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(249,115,22,0.12),transparent_60%)]" />
+                <div className="relative flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-orange-400/20 flex items-center justify-center flex-shrink-0">
+                    <Heart className="w-6 h-6 text-orange-500" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">Final Note</h3>
+                    <p className="text-base leading-relaxed text-gray-700">
+                      Mokogo exists to help people connect transparently and responsibly. Please use the Platform thoughtfully and with respect for others.
+                    </p>
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-1.5">Final Note</h3>
-                  <p className="text-sm text-gray-700 leading-relaxed">
-                  Mokogo exists to help people connect transparently and responsibly. Please use the Platform thoughtfully and with respect for others.
-                </p>
               </div>
             </div>
           </div>
@@ -601,4 +549,3 @@ const TermsOfService = () => {
 }
 
 export default TermsOfService
-

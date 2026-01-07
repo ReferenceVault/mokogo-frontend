@@ -1,5 +1,5 @@
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Footer from '@/components/Footer'
 import Header from '@/components/Header'
 import Logo from '@/components/Logo'
@@ -7,7 +7,6 @@ import { useStore } from '@/store/useStore'
 import { authApi } from '@/services/api'
 import {
   MapPin,
-  Star,
   Shield,
   Share2,
   Heart,
@@ -41,7 +40,14 @@ import {
 const ListingDetail = () => {
   const { listingId } = useParams()
   const navigate = useNavigate()
-  const { allListings, user, setUser, setAllListings, setRequests } = useStore()
+  const { allListings, user, setUser , setAllListings, setRequests } = useStore()
+
+  // Redirect to dashboard if user is logged in
+  useEffect(() => {
+    if (user && listingId) {
+      navigate(`/dashboard?listing=${listingId}`, { replace: true })
+    }
+  }, [user, listingId, navigate])
   const [isSaved, setIsSaved] = useState(false)
   const [expandedFAQ, setExpandedFAQ] = useState<string | null>(null)
   const [moveInDate, setMoveInDate] = useState('')
@@ -294,12 +300,6 @@ const ListingDetail = () => {
                 <div className="flex items-center">
                   <MapPin className="w-4 h-4 text-orange-400 mr-2" />
                   <span>{listing.locality}, {listing.city}</span>
-                </div>
-                <div className="flex items-center">
-                  <Star className="w-4 h-4 text-yellow-500 mr-1 fill-yellow-500" />
-                  <span className="font-semibold">4.8</span>
-                  <span className="mx-1">·</span>
-                  <button className="text-orange-400 hover:text-orange-500 underline">12 reviews</button>
                 </div>
                 <div className="flex items-center">
                   <Shield className="w-4 h-4 text-green-500 mr-1" />
@@ -623,10 +623,6 @@ const ListingDetail = () => {
                     
                     <div className="flex items-center space-x-6 text-sm text-gray-600 mb-4">
                       <div className="flex items-center">
-                        <Star className="w-4 h-4 text-yellow-500 mr-1 fill-yellow-500" />
-                        <span>4.8 rating</span>
-                      </div>
-                      <div className="flex items-center">
                         <MessageCircle className="w-4 h-4 text-orange-400 mr-1" />
                         <span>12 reviews</span>
                       </div>
@@ -656,11 +652,6 @@ const ListingDetail = () => {
               <div className="bg-white/70 backdrop-blur-md rounded-2xl shadow-lg border border-white/35 p-8">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-2xl font-bold text-gray-900">Reviews (12)</h2>
-                  <div className="flex items-center space-x-2">
-                    <Star className="w-6 h-6 text-yellow-500 fill-yellow-500" />
-                    <span className="text-xl font-bold text-gray-900">4.8</span>
-                    <span className="text-gray-600">out of 5</span>
-                  </div>
                 </div>
                 
                 <div className="space-y-6">
@@ -673,14 +664,6 @@ const ListingDetail = () => {
                             <div>
                               <h4 className="font-semibold text-gray-900">{review.name}</h4>
                               <p className="text-sm text-gray-600">{review.role}</p>
-                            </div>
-                            <div className="flex items-center space-x-1">
-                              {[...Array(5)].map((_, i) => (
-                                <Star 
-                                  key={i} 
-                                  className={`w-5 h-5 ${i < review.rating ? 'text-yellow-500 fill-yellow-500' : 'text-gray-300'}`} 
-                                />
-                              ))}
                             </div>
                           </div>
                           <p className="text-gray-700 mb-2">{review.text}</p>
@@ -866,7 +849,7 @@ const ListingDetail = () => {
               {similarListings.map((similar) => (
                 <Link 
                   key={similar.id}
-                  to={`/listings/${similar.id}`}
+                  to={`/dashboard?listing=${similar.id}`}
                   className="bg-white/70 backdrop-blur-md rounded-2xl shadow-lg hover:shadow-xl transition-shadow border border-white/35"
                 >
                   <div className="relative">
@@ -904,11 +887,6 @@ const ListingDetail = () => {
                       <span className="text-sm">{similar.locality}, {similar.city}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <Star className="w-4 h-4 text-yellow-500 mr-1 fill-yellow-500" />
-                        <span className="text-sm font-semibold">4.6</span>
-                        <span className="text-sm text-gray-500 ml-1">(8 reviews)</span>
-                      </div>
                       <span className="bg-pink-100 text-pink-800 px-2 py-1 rounded text-xs font-medium">
                         {similar.preferredGender || 'Any'}
                       </span>
