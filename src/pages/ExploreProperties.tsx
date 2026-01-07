@@ -2,7 +2,9 @@ import { Link } from 'react-router-dom'
 import { useEffect } from 'react'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import SocialSidebar from '@/components/SocialSidebar'
 import { useStore } from '@/store/useStore'
+import { MapPin, TrendingUp, Users, Clock } from 'lucide-react'
 
 const ExploreProperties = () => {
   const { allListings } = useStore()
@@ -17,210 +19,198 @@ const ExploreProperties = () => {
     return allListings.filter(l => l.city === cityName && l.status === 'live').length
   }
 
-  // Extended list of cities with images and calculated listings
+  // Only 4 cities: Pune, Mumbai, Hyderabad, Bangalore
   const cities = [
     { 
+      name: 'Pune', 
+      image: '/pune-city.png', 
+      listings: getCityListingsCount('Pune') || 156,
+      description: 'Calm cultural & IT hub surrounded by hills'
+    },
+    { 
       name: 'Mumbai', 
-      image: 'https://images.unsplash.com/photo-1570168007204-dfb528c6958f?w=400', 
+      image: '/mumbai-city.png', 
       listings: getCityListingsCount('Mumbai') || 245,
       description: 'Financial capital of India'
     },
     { 
-      name: 'Bangalore', 
-      image: 'https://images.unsplash.com/photo-1596176530529-78163a4f7af2?w=400', 
-      listings: getCityListingsCount('Bangalore') || 189,
-      description: 'Silicon Valley of India'
-    },
-    { 
-      name: 'Pune', 
-      image: 'https://images.unsplash.com/photo-1595815771614-ade9d652a65d?w=400', 
-      listings: getCityListingsCount('Pune') || 156,
-      description: 'Oxford of the East'
-    },
-    { 
-      name: 'Delhi NCR', 
-      image: 'https://images.unsplash.com/photo-1587474260584-136574528ed5?w=400', 
-      listings: getCityListingsCount('Delhi NCR') || 134,
-      description: 'Capital city region'
-    },
-    { 
       name: 'Hyderabad', 
-      image: 'https://images.unsplash.com/photo-1564501049412-61c2a3083791?w=400', 
+      image: '/hyderabad-city.png', 
       listings: getCityListingsCount('Hyderabad') || 98,
       description: 'City of Pearls'
     },
     { 
-      name: 'Chennai', 
-      image: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=400', 
-      listings: getCityListingsCount('Chennai') || 87,
-      description: 'Detroit of India'
+      name: 'Bangalore', 
+      image: '/bangalore-city.png', 
+      listings: getCityListingsCount('Bangalore') || 189,
+      description: 'Silicon Valley of India'
+    }
+  ]
+
+  const stats = [
+    { 
+      value: allListings.filter(l => l.status === 'live').length, 
+      label: 'Active Listings', 
+      icon: TrendingUp 
     },
     { 
-      name: 'Kolkata', 
-      image: 'https://images.unsplash.com/photo-1583417319070-4a69db38a482?w=400', 
-      listings: getCityListingsCount('Kolkata') || 76,
-      description: 'City of Joy'
+      value: cities.length, 
+      label: 'Cities', 
+      icon: MapPin 
     },
     { 
-      name: 'Ahmedabad', 
-      image: 'https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?w=400', 
-      listings: getCityListingsCount('Ahmedabad') || 65,
-      description: 'Manchester of India'
+      value: '10,000+', 
+      label: 'Happy Users', 
+      icon: Users 
     },
     { 
-      name: 'Jaipur', 
-      image: 'https://images.unsplash.com/photo-1539650116574-75c0c6d73a6e?w=400', 
-      listings: getCityListingsCount('Jaipur') || 54,
-      description: 'Pink City'
-    },
-    { 
-      name: 'Lucknow', 
-      image: 'https://images.unsplash.com/photo-1590736969955-71cc94901144?w=400', 
-      listings: getCityListingsCount('Lucknow') || 43,
-      description: 'City of Nawabs'
-    },
-    { 
-      name: 'Chandigarh', 
-      image: 'https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?w=400', 
-      listings: getCityListingsCount('Chandigarh') || 38,
-      description: 'The Beautiful City'
-    },
-    { 
-      name: 'Indore', 
-      image: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=400', 
-      listings: getCityListingsCount('Indore') || 32,
-      description: 'Commercial Capital of MP'
-    },
-    { 
-      name: 'Nagpur', 
-      image: 'https://images.unsplash.com/photo-1564501049412-61c2a3083791?w=400', 
-      listings: getCityListingsCount('Nagpur') || 28,
-      description: 'Orange City'
-    },
-    { 
-      name: 'Coimbatore', 
-      image: 'https://images.unsplash.com/photo-1583417319070-4a69db38a482?w=400', 
-      listings: getCityListingsCount('Coimbatore') || 24,
-      description: 'Manchester of South India'
-    },
-    { 
-      name: 'Kochi', 
-      image: 'https://images.unsplash.com/photo-1539650116574-75c0c6d73a6e?w=400', 
-      listings: getCityListingsCount('Kochi') || 21,
-      description: 'Queen of Arabian Sea'
-    },
-    { 
-      name: 'Surat', 
-      image: 'https://images.unsplash.com/photo-1590736969955-71cc94901144?w=400', 
-      listings: getCityListingsCount('Surat') || 19,
-      description: 'Diamond City'
+      value: '24hrs', 
+      label: 'Avg Response', 
+      icon: Clock 
     }
   ]
 
   return (
-    <div className="min-h-screen bg-mokogo-off-white flex flex-col">
+    <div className="min-h-screen bg-white flex flex-col">
       <Header />
+      <SocialSidebar />
       
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="w-full bg-gradient-to-br from-mokogo-primary/30 to-mokogo-primary/20 py-12 md:py-16">
-          <div className="max-w-6xl mx-auto px-6 md:px-12">
-            <div className="text-center space-y-4">
-              <h1 className="text-4xl md:text-5xl font-bold text-gray-900">
-                Explore Properties Across <span className="text-mokogo-primary">India</span>
-              </h1>
-              <p className="text-gray-700 text-lg max-w-2xl mx-auto">
-                Discover verified listings in your favorite cities. Find your perfect room and roommate across 100+ cities.
-              </p>
-            </div>
+        <section className="relative overflow-hidden bg-gradient-to-br from-orange-50 via-orange-100/50 to-orange-50 px-6 md:px-[10%] pt-16 pb-16 sm:pt-20 sm:pb-20">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(249,115,22,0.15),transparent_60%),radial-gradient(circle_at_bottom_right,rgba(251,146,60,0.12),transparent_60%),radial-gradient(circle_at_center,rgba(254,215,170,0.10),transparent_65%),radial-gradient(circle_at_top_right,rgba(255,237,213,0.08),transparent_70%)]" />
+          
+          <div className="relative mx-auto max-w-4xl text-center">
+            <span className="inline-flex items-center gap-2 rounded-full border border-orange-300/50 bg-orange-200/30 px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-orange-800/80">
+              Discover • Top Cities
+            </span>
+            <h1 className="mt-6 text-3xl sm:text-4xl lg:text-[2.9rem] font-bold leading-tight text-gray-900">
+              Explore Properties Across{' '}
+              <span className="relative inline-block">
+                <span className="relative z-10 bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent">
+                  India
+                </span>
+                <span className="absolute bottom-2 left-0 right-0 h-3 bg-orange-200/40 -z-0 transform -skew-x-12" />
+              </span>
+            </h1>
+            <p className="mt-5 text-lg sm:text-xl leading-relaxed text-gray-800">
+              Discover verified listings in your favorite cities. Find your perfect room and roommate.
+            </p>
           </div>
         </section>
 
-        <div className="py-12 px-6 md:px-12">
-          {/* Explore Properties Section */}
-          <section className="max-w-7xl mx-auto space-y-8">
-            <div className="text-center space-y-2">
-              <h2 className="text-3xl font-bold text-gray-900">Explore Properties by City</h2>
-              <p className="text-gray-600">
-                Browse through thousands of verified listings across India's most popular cities
-              </p>
-            </div>
+        {/* Main Content */}
+        <section className="relative px-6 md:px-[10%] py-16 sm:py-20">
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-[#fef4f1] via-transparent to-transparent" />
+          
+          <div className="relative mx-auto max-w-7xl">
+            {/* Cities Grid */}
+            <div className="mb-16">
+              <div className="text-center space-y-3 mb-10">
+                <span className="inline-flex items-center gap-2 rounded-full border border-orange-300/50 bg-orange-200/30 px-3 py-0.5 text-[10px] font-semibold uppercase tracking-[0.35em] text-orange-800/80">
+                  Browse by City
+                </span>
+                <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900">
+                  Explore Properties by{' '}
+                  <span className="relative inline-block">
+                    <span className="relative z-10 bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent">
+                      City
+                    </span>
+                    <span className="absolute bottom-1.5 left-0 right-0 h-2.5 bg-orange-200/40 -z-0 transform -skew-x-12" />
+                  </span>
+                </h2>
+                <p className="text-gray-700 text-base max-w-2xl mx-auto">
+                  Browse through thousands of verified listings across India's most popular cities
+                </p>
+              </div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {cities.map((city) => (
-                <Link
-                  key={city.name}
-                  to={`/city/${encodeURIComponent(city.name)}`}
-                  className="relative h-64 rounded-2xl overflow-hidden group cursor-pointer shadow-lg hover:shadow-xl transition-all border border-white/40"
-                >
-                  <img
-                    src={city.image}
-                    alt={city.name}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-                  <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-                    <h3 className="text-2xl font-bold mb-1">{city.name}</h3>
-                    <p className="text-sm text-white/90 mb-2">{city.description}</p>
-                    <p className="text-sm text-white/80 font-medium">
-                      {city.listings}+ Properties Available
-                    </p>
-                  </div>
-                  <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <div className="bg-white/90 backdrop-blur-sm rounded-full p-2">
-                      <svg className="w-5 h-5 text-mokogo-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5 lg:gap-6">
+                {cities.map((city, index) => (
+                  <Link
+                    key={city.name}
+                    to={`/city/${encodeURIComponent(city.name)}`}
+                    className="group relative h-52 md:h-56 rounded-xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl hover:shadow-orange-500/20 transition-all duration-300 border border-orange-200/30 hover:border-orange-400 block transform hover:scale-105"
+                    style={{
+                      animation: `fadeInUp 0.6s ease-out ${index * 0.1}s both`
+                    }}
+                  >
+                    {/* Image */}
+                    <img
+                      src={city.image}
+                      alt={city.name}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                    />
+                    
+                    {/* Gradient Overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent group-hover:from-black/90 group-hover:via-black/40 transition-all duration-300" />
+                    
+                    {/* Content */}
+                    <div className="absolute bottom-0 left-0 right-0 p-5 md:p-6 text-white">
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="text-xl md:text-2xl font-bold group-hover:text-orange-300 transition-colors duration-300">
+                          {city.name}
+                        </h3>
+                        <div className="opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-2 group-hover:translate-x-0">
+                          <div className="bg-white/95 backdrop-blur-sm rounded-full p-2 shadow-lg">
+                            <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+                      <p className="text-xs text-white/80 mb-2">{city.description}</p>
+                      <div className="flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-orange-400 group-hover:bg-orange-300 transition-colors duration-300" />
+                        <p className="text-sm text-white/90 font-medium">
+                          {city.listings}+ Properties
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
 
-            {/* Stats Section */}
-            <div className="mt-12 bg-white/40 backdrop-blur-xl border border-white/60 shadow-lg rounded-3xl p-8">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-                <div className="space-y-2">
-                  <div className="text-3xl md:text-4xl font-bold text-mokogo-primary">
-                    {allListings.filter(l => l.status === 'live').length}+
-                  </div>
-                  <p className="text-gray-700 font-medium">Active Listings</p>
-                </div>
-                <div className="space-y-2">
-                  <div className="text-3xl md:text-4xl font-bold text-mokogo-primary">
-                    {cities.length}+
-                  </div>
-                  <p className="text-gray-700 font-medium">Cities</p>
-                </div>
-                <div className="space-y-2">
-                  <div className="text-3xl md:text-4xl font-bold text-mokogo-primary">
-                    10,000+
-                  </div>
-                  <p className="text-gray-700 font-medium">Happy Users</p>
-                </div>
-                <div className="space-y-2">
-                  <div className="text-3xl md:text-4xl font-bold text-mokogo-primary">
-                    24hrs
-                  </div>
-                  <p className="text-gray-700 font-medium">Avg Response</p>
-                </div>
+                    {/* Top Badge */}
+                    <div className="absolute top-4 left-4 opacity-0 group-hover:opacity-100 transition-all duration-300 transform -translate-y-2 group-hover:translate-y-0">
+                      <div className="bg-orange-500/90 backdrop-blur-sm rounded-full px-3 py-1.5 text-xs font-semibold text-white shadow-lg">
+                        Explore
+                      </div>
+                    </div>
+
+                    {/* Shine Effect */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                  </Link>
+                ))}
               </div>
             </div>
 
-            {/* Call to Action */}
-            <div className="text-center space-y-4 pt-8">
-              <h3 className="text-2xl font-bold text-gray-900">Can't find your city?</h3>
-              <p className="text-gray-600">
-                We're expanding to more cities every day. Stay tuned for updates!
-              </p>
-              <Link to="/" className="inline-block">
-                <button className="btn-primary">
-                  Back to Home
-                </button>
-              </Link>
+            {/* Stats Section */}
+            <div className="relative overflow-hidden rounded-[2rem] border border-orange-200 bg-gradient-to-br from-orange-50 via-white to-orange-50/50 p-8 md:p-10 shadow-xl shadow-orange-100/40">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(249,115,22,0.10),transparent_60%)]" />
+              <div className="relative">
+                <div className="text-center mb-8">
+                  <span className="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-100/50 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.35em] text-orange-700">
+                    Platform Statistics
+                  </span>
+                  <h3 className="mt-4 text-2xl font-semibold text-gray-900">Our Growing Community</h3>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                  {stats.map((stat, index) => (
+                    <div 
+                      key={index}
+                      className="text-center group"
+                    >
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center mx-auto mb-3 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                        <stat.icon className="w-6 h-6 text-white" />
+                      </div>
+                      <p className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent">
+                        {stat.value}
+                      </p>
+                      <p className="text-sm font-medium text-gray-700 mt-1">{stat.label}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
-          </section>
-        </div>
+          </div>
+        </section>
       </main>
 
       <Footer />
@@ -229,4 +219,3 @@ const ExploreProperties = () => {
 }
 
 export default ExploreProperties
-

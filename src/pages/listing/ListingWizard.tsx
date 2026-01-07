@@ -5,14 +5,15 @@ import Toast from '@/components/Toast'
 import Logo from '@/components/Logo'
 import { useStore } from '@/store/useStore'
 import { Listing } from '@/types'
+
 import { authApi } from '@/services/api'
-import { Search, Bell, Heart as HeartIcon, LayoutGrid, Home, MessageSquare, Bookmark, Calendar, MapPin, DollarSign, Star, Clock, Plus, MoreHorizontal } from 'lucide-react'
+import { Search, Bell, Heart as HeartIcon, LayoutGrid, Home, MessageSquare, Bookmark, Calendar, Plus, MoreHorizontal, MapPin, DollarSign, Star, Clock } from 'lucide-react'
+
 import Step1Photos from './steps/Step1Photos'
 import Step2Location from './steps/Step2Location'
 import Step3Details from './steps/Step3Details'
 import Step4Pricing from './steps/Step4Pricing'
 import Step5Preferences from './steps/Step5Preferences'
-import Step6Contact from './steps/Step6Contact'
 
 const STEPS = [
   { 
@@ -58,15 +59,6 @@ const STEPS = [
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-      </svg>
-    )
-  },
-  { 
-    id: 'contact', 
-    title: 'Contact', 
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
       </svg>
     )
   },
@@ -124,8 +116,6 @@ const ListingWizard = () => {
           preferredGender: '',
           description: '',
           photos: [],
-          contactPreference: '',
-          contactNumber: '',
           status: 'draft',
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
@@ -211,10 +201,6 @@ const ListingWizard = () => {
       case 'preferences':
         if (!listingData.preferredGender) newErrors.preferredGender = 'Gender preference is required'
         break
-      case 'contact':
-        if (!listingData.contactPreference) newErrors.contactPreference = 'Contact preference is required'
-        if (!listingData.contactNumber) newErrors.contactNumber = 'Contact number is required'
-        break
     }
 
     setErrors(prev => ({ ...prev, ...newErrors }))
@@ -274,8 +260,6 @@ const ListingWizard = () => {
         return !!(listingData.rent && listingData.deposit && listingData.moveInDate)
       case 'preferences':
         return !!listingData.preferredGender
-      case 'contact':
-        return !!(listingData.contactPreference && listingData.contactNumber)
       default:
         return false
     }
@@ -347,8 +331,6 @@ const ListingWizard = () => {
         return <Step4Pricing data={listingData} onChange={handleDataChange} error={stepError} />
       case 'preferences':
         return <Step5Preferences data={listingData} onChange={handleDataChange} error={stepError} />
-      case 'contact':
-        return <Step6Contact data={listingData} onChange={handleDataChange} error={stepError} />
       default:
         return null
     }
@@ -471,28 +453,6 @@ const ListingWizard = () => {
                 <button className="w-full flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 text-gray-500 hover:text-gray-900 hover:bg-white/50">
                   <Calendar className="w-4 h-4 mr-3" />
                   <span>Viewings</span>
-                </button>
-              </div>
-            </div>
-            
-            <div className="mb-8">
-              <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-4">Quick Filters</h3>
-              <div className="space-y-2">
-                <button className="w-full flex items-center px-4 py-2 rounded-lg text-sm text-gray-500 hover:text-gray-900 hover:bg-white/50 transition-all duration-200">
-                  <MapPin className="w-3 h-3 mr-3" />
-                  <span>Near Me</span>
-                </button>
-                <button className="w-full flex items-center px-4 py-2 rounded-lg text-sm text-gray-500 hover:text-gray-900 hover:bg-white/50 transition-all duration-200">
-                  <DollarSign className="w-3 h-3 mr-3" />
-                  <span>Budget Friendly</span>
-                </button>
-                <button className="w-full flex items-center px-4 py-2 rounded-lg text-sm text-gray-500 hover:text-gray-900 hover:bg-white/50 transition-all duration-200">
-                  <Star className="w-3 h-3 mr-3" />
-                  <span>Top Rated</span>
-                </button>
-                <button className="w-full flex items-center px-4 py-2 rounded-lg text-sm text-gray-500 hover:text-gray-900 hover:bg-white/50 transition-all duration-200">
-                  <Clock className="w-3 h-3 mr-3" />
-                  <span>Recently Added</span>
                 </button>
               </div>
             </div>
