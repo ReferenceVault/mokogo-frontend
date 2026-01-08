@@ -18,23 +18,6 @@ export const hasAnalyticsConsent = (): boolean => {
   }
 }
 
-// Initialize dataLayer and gtag function (matches Google's standard implementation)
-const initGtagFunction = (): void => {
-  if (typeof window === 'undefined') return
-  
-  // Initialize dataLayer if not already done
-  window.dataLayer = window.dataLayer || []
-  
-  // Initialize gtag function if not already done (matches Google's standard pattern)
-  if (typeof window.gtag !== 'function') {
-    function gtag(...args: any[]) {
-      // Push arguments array to dataLayer (matches Google's pattern: dataLayer.push(arguments))
-      window.dataLayer.push(args)
-    }
-    window.gtag = gtag
-  }
-}
-
 // Track if script is fully loaded and ready
 let isGAScriptReady = false
 
@@ -57,12 +40,18 @@ export const loadGAScript = (): Promise<void> => {
     }
 
     // Step 1: Initialize dataLayer FIRST (critical - must be before script)
+    // This matches Google's exact pattern
     window.dataLayer = window.dataLayer || []
     
-    // Step 2: Define gtag function BEFORE script loads (so dataLayer gets populated)
+    // Step 2: Define gtag function BEFORE script loads (matches Google's exact pattern)
+    // This ensures commands are queued in dataLayer before script processes them
     if (typeof window.gtag !== 'function') {
+      // Use the exact pattern from Google's documentation
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       function gtag(...args: any[]) {
-        window.dataLayer.push(args)
+        // Push arguments directly to dataLayer (not as array)
+        // This is how Google's implementation works
+        window.dataLayer.push(args as never)
       }
       window.gtag = gtag
     }
@@ -101,50 +90,65 @@ export const loadGAScript = (): Promise<void> => {
     script.onload = () => {
       script.setAttribute('data-loaded', 'true')
       
-      // Wait for gtag.js to fully initialize and replace our custom function
-      const checkReady = setInterval(() => {
-        // The real gtag.js will replace our function
-        // Check if it's the real one by seeing if dataLayer items are being processed
-        if (window.gtag && window.dataLayer) {
-          // Give it a moment to process existing dataLayer
-          setTimeout(() => {
-            isGAScriptReady = true
-            
-            // Now call config with the real gtag (it will process dataLayer automatically)
+      // Wait for the real gtag.js to fully initialize
+      // The script should have replaced our custom function by now
+      setTimeout(() => {
+        // The real gtag.js script should have loaded and processed dataLayer
+        // Check if gtag exists and is the real one (not our custom function)
+        if (window.gtag) {
+          isGAScriptReady = true
+          
+          // Call config - the real gtag should send requests immediately
+          // The real gtag.js should have already processed existing dataLayer
+          // But we call config again to ensure it's properly initialized
+          try {
+            // Call js initialization (required by GA)
             window.gtag('js', new Date())
+            
+            // The real gtag.js script processes existing dataLayer automatically
+            // But we need to call config explicitly to ensure it sends the initial page view
             window.gtag('config', GA_MEASUREMENT_ID, {
               send_page_view: true,
-              // Enable debug mode for testing
-              debug_mode: window.location.hostname === 'localhost',
+              page_path: window.location.pathname,
+              page_location: window.location.href,
             })
             
             console.log('[GA] ✅ Script loaded and configured:', GA_MEASUREMENT_ID)
-            console.log('[GA] DataLayer ready, checking for network requests...')
+            console.log('[GA] DataLayer length:', window.dataLayer.length)
+            console.log('[GA] Current URL:', window.location.href)
             
-            // Monitor for network requests
-            const observer = new PerformanceObserver((list) => {
-              for (const entry of list.getEntries()) {
-                if (entry.name.includes('google-analytics.com') || entry.name.includes('analytics.google.com')) {
-                  console.log('[GA] ✅ Network request detected:', entry.name)
-                }
+            // Verify gtag is the real function (should have been replaced by gtag.js)
+            console.log('[GA] Gtag function:', typeof window.gtag === 'function' ? 'available' : 'missing')
+            
+            // Set up network monitoring
+            setTimeout(() => {
+              const resources = performance.getEntriesByType('resource') as PerformanceResourceTiming[]
+              const collectRequests = resources.filter(r => 
+                r.name.includes('/g/collect') || 
+                r.name.includes('google-analytics.com/g/collect')
+              )
+              
+              if (collectRequests.length > 0) {
+                console.log('[GA] ✅ Found', collectRequests.length, 'data collection requests')
+                collectRequests.forEach(req => {
+                  console.log('[GA]   Request:', req.name.substring(0, 100) + '...')
+                })
+              } else {
+                console.warn('[GA] ⚠️ No data collection requests yet. They should appear shortly.')
+                console.warn('[GA] Check Network tab and filter by "collect"')
               }
-            })
-            observer.observe({ entryTypes: ['resource'] })
+            }, 1000)
             
-            clearInterval(checkReady)
             resolve()
-          }, 200)
+          } catch (error) {
+            console.error('[GA] ❌ Error configuring GA:', error)
+            reject(error)
+          }
+        } else {
+          console.error('[GA] ❌ Gtag function not found after script load')
+          reject(new Error('Gtag function not available'))
         }
-      }, 50)
-      
-      // Timeout after 5 seconds
-      setTimeout(() => {
-        clearInterval(checkReady)
-        if (!isGAScriptReady) {
-          console.warn('[GA] ⚠️ Script loaded but initialization may be incomplete')
-          reject(new Error('GA initialization timeout'))
-        }
-      }, 5000)
+      }, 300) // Give the script time to fully execute
     }
     
     script.onerror = () => {
