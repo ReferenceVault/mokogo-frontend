@@ -6,7 +6,7 @@ import Logo from '@/components/Logo'
 import { useStore } from '@/store/useStore'
 import { Listing } from '@/types'
 
-import { authApi } from '@/services/api'
+import { authApi, listingsApi, CreateListingRequest } from '@/services/api'
 import { Search, Bell, Heart as HeartIcon, LayoutGrid, Home, MessageSquare, Bookmark, Calendar, Plus, MoreHorizontal } from 'lucide-react'
 
 import Step1Photos from './steps/Step1Photos'
@@ -73,7 +73,9 @@ const ListingWizard = () => {
   const [showToast, setShowToast] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [showUserMenu, setShowUserMenu] = useState(false)
-  const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [isSaving, setIsSaving] = useState(false)
+  const [isCreating, setIsCreating] = useState(false)
+  const [validatedSteps, setValidatedSteps] = useState<Set<number>>(new Set())
 
   const userInitial = user?.name?.[0]?.toUpperCase() || 'U'
 
@@ -97,8 +99,11 @@ const ListingWizard = () => {
     }
   }
   
+  // Check if we're editing an existing listing (has real ID and not a draft)
+  const isEditing = currentListing?.id && !currentListing.id.startsWith('listing-') && currentListing.status !== 'draft'
+  
   const listingDataRef = useRef<Partial<Listing>>(
-    currentListing && currentListing.status === 'draft'
+    currentListing && (currentListing.status === 'draft' || isEditing)
       ? currentListing
       : {
           id: `listing-${Date.now()}`,
@@ -123,9 +128,19 @@ const ListingWizard = () => {
   )
   const [listingData, setListingData] = useState<Partial<Listing>>(listingDataRef.current)
 
-  // Determine starting step based on draft data
+  // Load listing data when editing or determine starting step based on draft data
   useEffect(() => {
-    if (currentListing && currentListing.status === 'draft') {
+    if (isEditing && currentListing) {
+      // Editing mode: load all data and mark all steps as validated
+      listingDataRef.current = currentListing
+      setListingData(currentListing)
+      // Mark all steps as validated since we're editing a complete listing
+      setValidatedSteps(new Set([0, 1, 2, 3, 4]))
+      // Start at first step
+      setCurrentStep(0)
+      setExpandedSections(new Set([0]))
+    } else if (currentListing && currentListing.status === 'draft') {
+      // Draft mode: determine starting step based on what's filled
       let step = 0
       if (currentListing.photos && currentListing.photos.length >= 3) step = 1
       if (currentListing.city && currentListing.locality) step = 2
@@ -134,76 +149,331 @@ const ListingWizard = () => {
       if (currentListing.preferredGender) step = 5
       setCurrentStep(step)
       setExpandedSections(new Set([step]))
+    } else if (!currentListing) {
+      // New listing mode: reset everything to start fresh
+      const newListingData: Partial<Listing> = {
+        id: `listing-${Date.now()}`,
+        title: '',
+        city: '',
+        locality: '',
+        bhkType: '',
+        roomType: '',
+        rent: 0,
+        deposit: 0,
+        moveInDate: '',
+        furnishingLevel: '',
+        flatAmenities: [],
+        societyAmenities: [],
+        preferredGender: '',
+        description: '',
+        photos: [],
+        status: 'draft' as const,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }
+      listingDataRef.current = newListingData
+      setListingData(newListingData)
+      setValidatedSteps(new Set())
+      setCurrentStep(0)
+      setExpandedSections(new Set([0]))
+      setErrors({})
     }
-  }, [])
+  }, [isEditing, currentListing])
 
-  // Autosave functionality
-  const saveDraft = (showNotification = false) => {
+  /**
+   * Saves listing as DRAFT
+   * ONLY includes fields from validated steps
+   * Excludes defaults like rent:0, deposit:0
+   * Called ONLY when Continue button is clicked
+   */
+  const saveDraft = async (showNotification = false) => {
     const dataToSave = listingDataRef.current
-    const updatedListing: Partial<Listing> = {
-      ...dataToSave,
-      status: 'draft',
-      updatedAt: new Date().toISOString(),
+    
+    // When editing, allow saving without strict validation (user is updating existing listing)
+    if (!isEditing) {
+      // Only save if at least the photos step has been validated
+      if (validatedSteps.size === 0) {
+        return
+      }
+      
+      // Don't save if photos step isn't validated or doesn't have enough photos
+      if (!validatedSteps.has(0) || !dataToSave.photos || dataToSave.photos.length < 3) {
+        return
+      }
     }
-    listingDataRef.current = updatedListing
-    setListingData(updatedListing)
-    setCurrentListing(updatedListing as Listing)
-    setLastSaved(new Date())
-    if (showNotification) {
-      setShowToast(true)
+
+    setIsSaving(true)
+    try {
+      // Build draft data
+      // When editing, include all fields that have values
+      // When creating, ONLY include fields from validated steps
+      const draftData: Partial<CreateListingRequest> = {
+        title: dataToSave.title || generateTitle(),
+      }
+
+      // When editing, preserve the original status, otherwise use 'draft'
+      if (isEditing && currentListing?.status) {
+        draftData.status = currentListing.status
+      } else {
+        draftData.status = 'draft'
+      }
+
+      // When editing, include all fields that have values
+      if (isEditing) {
+        if (dataToSave.photos && dataToSave.photos.length > 0) {
+          draftData.photos = dataToSave.photos
+        }
+        if (dataToSave.city && dataToSave.city.trim()) {
+          draftData.city = dataToSave.city
+        }
+        if (dataToSave.locality && dataToSave.locality.trim()) {
+          draftData.locality = dataToSave.locality
+        }
+        if (dataToSave.societyName && dataToSave.societyName.trim()) {
+          draftData.societyName = dataToSave.societyName
+        }
+        if (dataToSave.bhkType && dataToSave.bhkType.trim()) {
+          draftData.bhkType = dataToSave.bhkType
+        }
+        if (dataToSave.roomType && dataToSave.roomType.trim()) {
+          draftData.roomType = dataToSave.roomType
+        }
+        if (dataToSave.furnishingLevel && dataToSave.furnishingLevel.trim()) {
+          draftData.furnishingLevel = dataToSave.furnishingLevel
+        }
+        if (dataToSave.bathroomType && dataToSave.bathroomType.trim()) {
+          draftData.bathroomType = dataToSave.bathroomType
+        }
+        if (dataToSave.flatAmenities && dataToSave.flatAmenities.length > 0) {
+          draftData.flatAmenities = dataToSave.flatAmenities
+        }
+        if (dataToSave.societyAmenities && dataToSave.societyAmenities.length > 0) {
+          draftData.societyAmenities = dataToSave.societyAmenities
+        }
+        if (dataToSave.rent && dataToSave.rent > 0) {
+          draftData.rent = dataToSave.rent
+        }
+        if (dataToSave.deposit && dataToSave.deposit > 0) {
+          draftData.deposit = dataToSave.deposit
+        }
+        if (dataToSave.moveInDate && dataToSave.moveInDate.trim()) {
+          draftData.moveInDate = dataToSave.moveInDate
+        }
+        if (dataToSave.preferredGender && dataToSave.preferredGender.trim()) {
+          draftData.preferredGender = dataToSave.preferredGender
+        }
+        if (dataToSave.description && dataToSave.description.trim()) {
+          draftData.description = dataToSave.description
+        }
+      } else {
+        // When creating, ONLY include fields from validated steps
+        // Only include photos if photos step is validated
+        if (validatedSteps.has(0) && dataToSave.photos && dataToSave.photos.length >= 3) {
+          draftData.photos = dataToSave.photos
+        }
+
+        // Only include location fields if location step (step 1) is validated
+        if (validatedSteps.has(1)) {
+          if (dataToSave.city && dataToSave.city.trim()) {
+            draftData.city = dataToSave.city
+          }
+          if (dataToSave.locality && dataToSave.locality.trim()) {
+            draftData.locality = dataToSave.locality
+          }
+          if (dataToSave.societyName && dataToSave.societyName.trim()) {
+            draftData.societyName = dataToSave.societyName
+          }
+        }
+
+        // Only include details fields if details step (step 2) is validated
+        if (validatedSteps.has(2)) {
+          if (dataToSave.bhkType && dataToSave.bhkType.trim()) {
+            draftData.bhkType = dataToSave.bhkType
+          }
+          if (dataToSave.roomType && dataToSave.roomType.trim()) {
+            draftData.roomType = dataToSave.roomType
+          }
+          if (dataToSave.furnishingLevel && dataToSave.furnishingLevel.trim()) {
+            draftData.furnishingLevel = dataToSave.furnishingLevel
+          }
+          if (dataToSave.bathroomType && dataToSave.bathroomType.trim()) {
+            draftData.bathroomType = dataToSave.bathroomType
+          }
+          if (dataToSave.flatAmenities && dataToSave.flatAmenities.length > 0) {
+            draftData.flatAmenities = dataToSave.flatAmenities
+          }
+          if (dataToSave.societyAmenities && dataToSave.societyAmenities.length > 0) {
+            draftData.societyAmenities = dataToSave.societyAmenities
+          }
+        }
+
+        // Only include pricing fields if pricing step (step 3) is validated
+        // Do NOT send defaults like rent:0 or deposit:0
+        if (validatedSteps.has(3)) {
+          if (dataToSave.rent && dataToSave.rent > 0) {
+            draftData.rent = dataToSave.rent
+          }
+          if (dataToSave.deposit && dataToSave.deposit > 0) {
+            draftData.deposit = dataToSave.deposit
+          }
+          if (dataToSave.moveInDate && dataToSave.moveInDate.trim()) {
+            draftData.moveInDate = dataToSave.moveInDate
+          }
+        }
+
+        // Only include preferences fields if preferences step (step 4) is validated
+        if (validatedSteps.has(4)) {
+          if (dataToSave.preferredGender && dataToSave.preferredGender.trim()) {
+            draftData.preferredGender = dataToSave.preferredGender
+          }
+        }
+
+        // Description can be included if provided (not step-specific)
+        if (dataToSave.description && dataToSave.description.trim()) {
+          draftData.description = dataToSave.description
+        }
+      }
+
+      let savedListing
+      // Check if we're editing an existing listing (has real ID from backend)
+      if (isEditing && currentListing?.id) {
+        // Update existing listing (draft or live)
+        savedListing = await listingsApi.update(currentListing.id, draftData)
+      } else if (currentListing?.id && !currentListing.id.startsWith('listing-')) {
+        // Update existing draft from backend
+        savedListing = await listingsApi.update(currentListing.id, draftData)
+      } else {
+        // Create new draft
+        savedListing = await listingsApi.create(draftData)
+      }
+
+      // Map API response to frontend format
+      const mappedListing: Listing = {
+        id: savedListing._id || savedListing.id,
+        title: savedListing.title,
+        city: savedListing.city,
+        locality: savedListing.locality,
+        societyName: savedListing.societyName,
+        bhkType: savedListing.bhkType,
+        roomType: savedListing.roomType,
+        rent: savedListing.rent,
+        deposit: savedListing.deposit,
+        moveInDate: savedListing.moveInDate,
+        furnishingLevel: savedListing.furnishingLevel,
+        bathroomType: savedListing.bathroomType,
+        flatAmenities: savedListing.flatAmenities,
+        societyAmenities: savedListing.societyAmenities,
+        preferredGender: savedListing.preferredGender,
+        description: savedListing.description,
+        photos: savedListing.photos,
+        status: savedListing.status,
+        createdAt: savedListing.createdAt,
+        updatedAt: savedListing.updatedAt,
+      }
+
+      listingDataRef.current = mappedListing
+      setListingData(mappedListing)
+      setCurrentListing(mappedListing)
+      setLastSaved(new Date())
+      
+      if (showNotification) {
+        setShowToast(true)
+      }
+    } catch (error: any) {
+      console.error('Error saving draft:', error)
+      // Don't show error to user for autosave, just log it
+    } finally {
+      setIsSaving(false)
     }
   }
 
-  // Autosave on data change (debounced)
+  // Update ref when listingData changes (local state only, NO API calls)
   useEffect(() => {
     listingDataRef.current = listingData
-    
-    if (autosaveTimerRef.current) {
-      clearTimeout(autosaveTimerRef.current)
-    }
+    // NO API calls here - only update local ref
+    // API calls happen ONLY when Continue button is clicked
+  }, [listingData])
 
-    autosaveTimerRef.current = setTimeout(() => {
-      if (listingData.city || listingData.locality || listingData.rent || listingData.photos?.length) {
-        saveDraft(true)
-      }
-    }, 1000) // Debounce autosave
-
-    return () => {
-      if (autosaveTimerRef.current) {
-        clearTimeout(autosaveTimerRef.current)
-      }
-    }
-  }, [listingData.city, listingData.locality, listingData.bhkType, listingData.roomType, listingData.rent, listingData.moveInDate, listingData.furnishingLevel, listingData.preferredGender, listingData.photos?.length])
-
+  /**
+   * Validates ONLY the specified step's fields
+   * Does NOT validate other steps
+   * Returns true if step is valid, false otherwise
+   */
   const validateStep = (stepIndex: number): boolean => {
     const newErrors: Record<string, string> = {}
+    const stepId = STEPS[stepIndex].id
     
-    switch (STEPS[stepIndex].id) {
+    // Use the latest data from ref to ensure we validate current state
+    const dataToValidate = listingDataRef.current
+    
+    // Clear previous errors for this step only
+    const stepErrors: Record<string, string> = {}
+    
+    // Validate ONLY this step's fields
+    switch (stepId) {
       case 'photos':
-        if (!listingData.photos || listingData.photos.length < 3) {
-          newErrors.photos = 'Please add at least 3 photos'
+        if (!dataToValidate.photos || dataToValidate.photos.length < 3) {
+          stepErrors.photos = 'Please add at least 3 photos'
+          newErrors[stepId] = 'Please add at least 3 photos to continue'
         }
         break
       case 'location':
-        if (!listingData.city) newErrors.city = 'City is required'
-        if (!listingData.locality) newErrors.locality = 'Locality is required'
+        // Both city AND locality must be filled
+        if (!dataToValidate.city || dataToValidate.city.trim() === '') {
+          stepErrors.city = 'City is required'
+          newErrors[stepId] = 'City is required'
+        }
+        if (!dataToValidate.locality || dataToValidate.locality.trim() === '') {
+          stepErrors.locality = 'Locality is required'
+          newErrors[stepId] = newErrors[stepId] || 'Locality is required'
+        }
         break
       case 'details':
-        if (!listingData.bhkType) newErrors.bhkType = 'BHK type is required'
-        if (!listingData.roomType) newErrors.roomType = 'Room type is required'
-        if (!listingData.furnishingLevel) newErrors.furnishingLevel = 'Furnishing status is required'
+        if (!dataToValidate.bhkType || dataToValidate.bhkType.trim() === '') {
+          stepErrors.bhkType = 'BHK type is required'
+          newErrors[stepId] = 'BHK type is required'
+        }
+        if (!dataToValidate.roomType || dataToValidate.roomType.trim() === '') {
+          stepErrors.roomType = 'Room type is required'
+          newErrors[stepId] = newErrors[stepId] || 'Room type is required'
+        }
+        if (!dataToValidate.furnishingLevel || dataToValidate.furnishingLevel.trim() === '') {
+          stepErrors.furnishingLevel = 'Furnishing status is required'
+          newErrors[stepId] = newErrors[stepId] || 'Furnishing status is required'
+        }
         break
       case 'pricing':
-        if (!listingData.rent) newErrors.rent = 'Rent is required'
-        if (!listingData.deposit) newErrors.deposit = 'Deposit is required'
-        if (!listingData.moveInDate) newErrors.moveInDate = 'Available date is required'
+        if (!dataToValidate.rent || dataToValidate.rent <= 0) {
+          stepErrors.rent = 'Rent is required'
+          newErrors[stepId] = 'Rent is required'
+        }
+        if (!dataToValidate.deposit || dataToValidate.deposit <= 0) {
+          stepErrors.deposit = 'Deposit is required'
+          newErrors[stepId] = newErrors[stepId] || 'Deposit is required'
+        }
+        if (!dataToValidate.moveInDate || dataToValidate.moveInDate.trim() === '') {
+          stepErrors.moveInDate = 'Available date is required'
+          newErrors[stepId] = newErrors[stepId] || 'Available date is required'
+        }
         break
       case 'preferences':
-        if (!listingData.preferredGender) newErrors.preferredGender = 'Gender preference is required'
+        if (!dataToValidate.preferredGender || dataToValidate.preferredGender.trim() === '') {
+          stepErrors.preferredGender = 'Gender preference is required'
+          newErrors[stepId] = 'Gender preference is required'
+        }
         break
     }
 
-    setErrors(prev => ({ ...prev, ...newErrors }))
+    // Update errors: clear this step's errors, then add new ones
+    setErrors(prev => {
+      const updated = { ...prev }
+      // Remove all errors for this step
+      delete updated[stepId]
+      Object.keys(stepErrors).forEach(key => delete updated[key])
+      // Add new errors
+      return { ...updated, ...newErrors, ...stepErrors }
+    })
+    
     return Object.keys(newErrors).length === 0
   }
 
@@ -219,8 +489,24 @@ const ListingWizard = () => {
     })
   }
 
+  /**
+   * Handles Continue button click for a specific step
+   * 1. Validates ONLY that step's fields
+   * 2. If valid: saves as DRAFT via API and moves to next step
+   * 3. If invalid: shows errors scoped to that step only
+   * 
+   * This is the ONLY place where API is called for saving drafts
+   */
   const handleSectionContinue = (stepIndex: number) => {
+    // Validate ONLY this step (not future steps)
     if (validateStep(stepIndex)) {
+      // Mark this step as validated
+      setValidatedSteps(prev => new Set(prev).add(stepIndex))
+      
+      // Save current step's data as DRAFT via API
+      // This is the ONLY API call for saving drafts
+      saveDraft(true)
+      
       // Collapse current section
       setExpandedSections(prev => {
         const newSet = new Set(prev)
@@ -229,7 +515,7 @@ const ListingWizard = () => {
       })
       
       if (stepIndex < STEPS.length - 1) {
-        // Expand next section
+        // Move to next step
         const nextStep = stepIndex + 1
         setCurrentStep(nextStep)
         setExpandedSections(prev => {
@@ -242,10 +528,11 @@ const ListingWizard = () => {
           document.getElementById(`section-${nextStep}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
         }, 100)
       } else {
-        // Last section - create listing
+        // Last section - validate ALL steps and create listing
         handleCreateListing()
       }
     }
+    // If validation fails, errors are already set by validateStep (scoped to this step only)
   }
 
   const isSectionComplete = (stepIndex: number): boolean => {
@@ -275,37 +562,193 @@ const ListingWizard = () => {
     return `${roomType} in ${bhk} · ${locality} · ${rent} · ${furnishing}`
   }
 
-  const handleCreateListing = () => {
-    // Generate title
-    const title = generateTitle()
+  /**
+   * Handles final "Create Listing" button click
+   * 1. Validates ALL steps (not just current step)
+   * 2. Shows all errors from all invalid steps
+   * 3. If all valid: submits full data and publishes listing
+   */
+  const handleCreateListing = async () => {
+    // Validate ALL steps before creating (collect all errors, don't stop at first)
+    const invalidSteps: number[] = []
     
-    const publishedListing: Listing = {
-      ...listingData,
-      title,
-      status: 'live',
-      updatedAt: new Date().toISOString(),
-    } as Listing
+    for (let i = 0; i < STEPS.length; i++) {
+      if (!validateStep(i)) {
+        invalidSteps.push(i)
+      }
+    }
 
-    setCurrentListing(publishedListing)
-    
-    // Add to all listings if not already present
-    const existingIndex = allListings.findIndex(l => l.id === publishedListing.id)
-    if (existingIndex >= 0) {
-      const updatedListings = [...allListings]
-      updatedListings[existingIndex] = publishedListing
-      setAllListings(updatedListings)
-    } else {
-      addListing(publishedListing)
+    if (invalidSteps.length > 0) {
+      // Expand all invalid steps so user can see all errors at once
+      setExpandedSections(prev => {
+        const newSet = new Set(prev)
+        invalidSteps.forEach(stepIndex => newSet.add(stepIndex))
+        return newSet
+      })
+      
+      // Scroll to first invalid step
+      setTimeout(() => {
+        document.getElementById(`section-${invalidSteps[0]}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }, 100)
+      
+      return
     }
     
-    navigate('/dashboard')
+    // All steps are valid - proceed to create listing
+
+    setIsCreating(true)
+    try {
+      // Generate title
+      const title = generateTitle()
+      
+      const listingDataToSave: CreateListingRequest = {
+        title,
+        city: listingData.city || '',
+        locality: listingData.locality || '',
+        societyName: listingData.societyName,
+        bhkType: listingData.bhkType || '',
+        roomType: listingData.roomType || '',
+        rent: listingData.rent || 0,
+        deposit: listingData.deposit || 0,
+        moveInDate: listingData.moveInDate || '',
+        furnishingLevel: listingData.furnishingLevel || '',
+        bathroomType: listingData.bathroomType,
+        flatAmenities: listingData.flatAmenities || [],
+        societyAmenities: listingData.societyAmenities || [],
+        preferredGender: listingData.preferredGender || '',
+        description: listingData.description,
+        photos: listingData.photos || [],
+        status: 'live',
+      }
+
+      let savedListing
+      // Check if we're editing an existing listing
+      if (isEditing && currentListing?.id) {
+        // Update existing listing (keep same ID, update all fields)
+        savedListing = await listingsApi.update(currentListing.id, listingDataToSave)
+      } else if (currentListing?.id && !currentListing.id.startsWith('listing-')) {
+        // Update existing draft listing
+        savedListing = await listingsApi.update(currentListing.id, listingDataToSave)
+      } else {
+        // Create new listing
+        savedListing = await listingsApi.create(listingDataToSave)
+      }
+
+      // Map API response to frontend format
+      const publishedListing: Listing = {
+        id: savedListing._id || savedListing.id,
+        title: savedListing.title,
+        city: savedListing.city,
+        locality: savedListing.locality,
+        societyName: savedListing.societyName,
+        bhkType: savedListing.bhkType,
+        roomType: savedListing.roomType,
+        rent: savedListing.rent,
+        deposit: savedListing.deposit,
+        moveInDate: savedListing.moveInDate,
+        furnishingLevel: savedListing.furnishingLevel,
+        bathroomType: savedListing.bathroomType,
+        flatAmenities: savedListing.flatAmenities,
+        societyAmenities: savedListing.societyAmenities,
+        preferredGender: savedListing.preferredGender,
+        description: savedListing.description,
+        photos: savedListing.photos,
+        status: savedListing.status,
+        createdAt: savedListing.createdAt,
+        updatedAt: savedListing.updatedAt,
+      }
+
+      setCurrentListing(publishedListing)
+      
+      // Add to all listings if not already present
+      const existingIndex = allListings.findIndex(l => l.id === publishedListing.id)
+      if (existingIndex >= 0) {
+        const updatedListings = [...allListings]
+        updatedListings[existingIndex] = publishedListing
+        setAllListings(updatedListings)
+      } else {
+        addListing(publishedListing)
+      }
+      
+      navigate('/dashboard')
+    } catch (error: any) {
+      console.error('Error creating listing:', error)
+      
+      // Parse backend validation errors
+      const backendErrors = error.response?.data?.message || []
+      const newErrors: Record<string, string> = {}
+      
+      if (Array.isArray(backendErrors)) {
+        backendErrors.forEach((errMsg: string) => {
+          // Map backend errors to step IDs
+          if (errMsg.includes('photos') || errMsg.includes('At least 3 photos')) {
+            newErrors.photos = 'Please add at least 3 photos'
+          } else if (errMsg.includes('city')) {
+            newErrors.location = 'City is required'
+            newErrors.city = 'City is required'
+          } else if (errMsg.includes('locality')) {
+            newErrors.location = newErrors.location || 'Locality is required'
+            newErrors.locality = 'Locality is required'
+          } else if (errMsg.includes('bhkType')) {
+            newErrors.details = 'BHK type is required'
+            newErrors.bhkType = 'BHK type is required'
+          } else if (errMsg.includes('roomType')) {
+            newErrors.details = newErrors.details || 'Room type is required'
+            newErrors.roomType = 'Room type is required'
+          } else if (errMsg.includes('furnishingLevel')) {
+            newErrors.details = newErrors.details || 'Furnishing level is required'
+            newErrors.furnishingLevel = 'Furnishing level is required'
+          } else if (errMsg.includes('rent')) {
+            newErrors.pricing = 'Rent is required'
+            newErrors.rent = 'Rent is required'
+          } else if (errMsg.includes('deposit')) {
+            newErrors.pricing = newErrors.pricing || 'Deposit is required'
+            newErrors.deposit = 'Deposit is required'
+          } else if (errMsg.includes('moveInDate')) {
+            newErrors.pricing = newErrors.pricing || 'Move-in date is required'
+            newErrors.moveInDate = 'Move-in date is required'
+          } else if (errMsg.includes('preferredGender')) {
+            newErrors.preferences = 'Gender preference is required'
+            newErrors.preferredGender = 'Gender preference is required'
+          }
+        })
+      } else {
+        newErrors.general = typeof backendErrors === 'string' ? backendErrors : 'Failed to create listing. Please try again.'
+      }
+      
+      setErrors(newErrors)
+      setShowToast(true)
+      
+      // Expand the first section with errors
+      const errorStep = STEPS.findIndex(step => newErrors[step.id])
+      if (errorStep >= 0) {
+        setExpandedSections(prev => {
+          const newSet = new Set(prev)
+          newSet.add(errorStep)
+          return newSet
+        })
+        setTimeout(() => {
+          document.getElementById(`section-${errorStep}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }, 100)
+      }
+    } finally {
+      setIsCreating(false)
+    }
   }
 
+  /**
+   * Handles data changes from form inputs
+   * ONLY updates local state - NO API calls
+   * API calls happen ONLY when Continue button is clicked
+   */
   const handleDataChange = (updates: Partial<Listing>) => {
     setListingData((prev) => {
       const updated = { ...prev, ...updates }
+      listingDataRef.current = updated
       return updated
     })
+    // NO API calls here - only local state update
+    // Typing in inputs will NEVER trigger backend API calls
   }
 
   const formatLastSaved = () => {
@@ -356,7 +799,7 @@ const ListingWizard = () => {
                 <button 
                   className="px-4 py-2 text-sm font-medium transition-colors duration-200 rounded-lg text-gray-900"
                 >
-                  Create Listing
+                  {isEditing ? 'Update Listing' : 'Create Listing'}
                 </button>
               </nav>
             </div>
@@ -482,12 +925,30 @@ const ListingWizard = () => {
           <div className="max-w-[900px] mx-auto px-8 py-4">
           {/* Page Header */}
           <div className="mb-3">
-            <h1 className="text-[1.375rem] font-bold text-gray-900 mb-0.5">List Your Space</h1>
-            <p className="text-[0.825rem] text-gray-600">Find your perfect flatmate in under 5 minutes</p>
+            <h1 className="text-[1.375rem] font-bold text-gray-900 mb-0.5">
+              {isEditing ? 'Edit Your Listing' : 'List Your Space'}
+            </h1>
+            <p className="text-[0.825rem] text-gray-600">
+              {isEditing ? 'Update your listing details below' : 'Find your perfect flatmate in under 5 minutes'}
+            </p>
           </div>
 
+          {/* Edit Mode Banner */}
+          {isEditing && currentListing && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-2 mb-3">
+              <div className="flex items-start gap-2">
+                <svg className="w-3 h-3 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                <p className="text-[0.825rem] text-blue-800">
+                  You're editing an existing listing. Changes will update the current listing without creating a duplicate.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Resume Banner */}
-          {currentListing && currentListing.status === 'draft' && (
+          {currentListing && currentListing.status === 'draft' && !isEditing && (
             <div className="bg-mokogo-info-bg border border-mokogo-info-border rounded-lg p-2 mb-3">
               <div className="flex items-start gap-2">
                 <svg className="w-3 h-3 text-mokogo-info-text mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -564,11 +1025,12 @@ const ListingWizard = () => {
                       <div className="flex justify-end mt-4 pt-3 border-t border-gray-100">
                         <button
                           onClick={() => handleSectionContinue(index)}
-                          className="btn-primary text-sm px-4 py-2"
+                          disabled={isCreating || isSaving}
+                          className="btn-primary text-sm px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <div className="flex items-center gap-1.5">
-                            {index === STEPS.length - 1 ? 'Create Listing' : 'Continue'}
-                            {index < STEPS.length - 1 && (
+                            {isCreating ? (isEditing ? 'Updating...' : 'Creating...') : isSaving ? 'Saving...' : index === STEPS.length - 1 ? (isEditing ? 'Update Listing' : 'Create Listing') : 'Continue'}
+                            {!isCreating && !isSaving && index < STEPS.length - 1 && (
                               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                               </svg>

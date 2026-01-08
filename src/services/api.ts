@@ -15,6 +15,10 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
+    // Remove Content-Type for FormData - browser will set it with boundary
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type']
+    }
     return config
   },
   (error) => {
@@ -139,6 +143,113 @@ export const authApi = {
       code,
     })
     return response.data
+  },
+}
+
+// Listing API interfaces
+export interface CreateListingRequest {
+  title?: string
+  city?: string
+  locality?: string
+  societyName?: string
+  bhkType?: string
+  roomType?: string
+  rent?: number
+  deposit?: number
+  moveInDate?: string
+  furnishingLevel?: string
+  bathroomType?: string
+  flatAmenities?: string[]
+  societyAmenities?: string[]
+  preferredGender?: string
+  description?: string
+  photos?: string[]
+  status?: 'draft' | 'live' | 'archived' | 'fulfilled'
+}
+
+export interface UpdateListingRequest extends Partial<CreateListingRequest> {}
+
+export interface ListingResponse {
+  _id: string
+  id: string
+  title: string
+  ownerId: string
+  city: string
+  locality: string
+  societyName?: string
+  bhkType: string
+  roomType: string
+  rent: number
+  deposit: number
+  moveInDate: string
+  furnishingLevel: string
+  bathroomType?: string
+  flatAmenities: string[]
+  societyAmenities: string[]
+  preferredGender: string
+  description?: string
+  photos: string[]
+  status: 'draft' | 'live' | 'archived' | 'fulfilled'
+  createdAt: string
+  updatedAt: string
+}
+
+export const listingsApi = {
+  create: async (data: CreateListingRequest): Promise<ListingResponse> => {
+    const response = await api.post<ListingResponse>('/listings', data)
+    return response.data
+  },
+
+  getAll: async (status?: string): Promise<ListingResponse[]> => {
+    const params = status ? { status } : {}
+    try {
+      const response = await api.get<ListingResponse[]>('/listings', { 
+        params,
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+        },
+      })
+      console.log('API response status:', response.status)
+      console.log('API response data:', response.data)
+      console.log('API response data type:', Array.isArray(response.data) ? 'array' : typeof response.data)
+      return response.data || []
+    } catch (error: any) {
+      console.error('Error in getAll API call:', error)
+      console.error('Error response:', error.response?.data)
+      throw error
+    }
+  },
+
+  getById: async (id: string): Promise<ListingResponse> => {
+    const response = await api.get<ListingResponse>(`/listings/${id}`)
+    return response.data
+  },
+
+  update: async (id: string, data: UpdateListingRequest): Promise<ListingResponse> => {
+    const response = await api.patch<ListingResponse>(`/listings/${id}`, data)
+    return response.data
+  },
+
+  delete: async (id: string): Promise<void> => {
+    await api.delete(`/listings/${id}`)
+  },
+}
+
+export const uploadApi = {
+  uploadPhotos: async (files: File[]): Promise<string[]> => {
+    const formData = new FormData()
+    files.forEach((file) => {
+      formData.append('files', file)
+    })
+
+    // Use api instance to get automatic token handling and refresh
+    // The interceptor will automatically remove Content-Type for FormData
+    const response = await api.post<{ urls: string[] }>(
+      '/upload/photos',
+      formData
+    )
+    return response.data.urls
   },
 }
 

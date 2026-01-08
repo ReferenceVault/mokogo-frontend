@@ -28,8 +28,8 @@ const Step6Contact = ({ data, onChange, error }: Step6ContactProps) => {
         <div className="w-full">
           <CustomSelect
             label="How should seekers contact you?"
-            value={data.contactPreference || ''}
-            onValueChange={(value) => handleChange('contactPreference', value)}
+            value={(data as any).contactPreference || ''}
+            onValueChange={(value) => handleChange('contactPreference' as any, value)}
             placeholder="Select contact preference"
             options={[
               { value: 'chat', label: 'Chat Only (WhatsApp)' },
@@ -53,10 +53,10 @@ const Step6Contact = ({ data, onChange, error }: Step6ContactProps) => {
             </div>
             <input
               type="tel"
-              value={data.contactNumber || ''}
+              value={(data as any).contactNumber || ''}
               onChange={(e) => {
                 const value = e.target.value.replace(/\D/g, '').slice(0, 10)
-                handleChange('contactNumber', value)
+                handleChange('contactNumber' as any, value)
               }}
               className="w-full px-4 py-3 bg-gradient-to-br from-white via-white to-orange-50/30 border-2 border-orange-200/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-mokogo-primary/50 focus:border-mokogo-primary transition-all duration-200 shadow-sm hover:shadow-md hover:border-orange-300/70 text-gray-700 font-medium pl-12"
               placeholder="Your phone number"

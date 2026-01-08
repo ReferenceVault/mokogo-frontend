@@ -136,9 +136,6 @@ const ListingDetailContent = ({ listingId, onBack }: ListingDetailContentProps) 
             <div className="flex-1">
               <div className="flex items-center mb-4 flex-wrap gap-3">
                 <h1 className="text-xl md:text-2xl font-bold text-gray-900">{listing.title}</h1>
-                {listing.boostEnabled && (
-                  <span className="bg-orange-400 text-white px-3 py-1 rounded-full text-sm font-semibold">Premium</span>
-                )}
               </div>
               <div className="flex flex-wrap items-center gap-4 text-gray-600 mb-4">
                 <div className="flex items-center">
@@ -283,9 +280,6 @@ const ListingDetailContent = ({ listingId, onBack }: ListingDetailContentProps) 
                   <p className="text-sm text-gray-700 leading-relaxed mb-3">
                     {listing.description || 'Welcome to this beautiful, spacious room in a premium apartment. Perfect for working professionals, this fully furnished room offers a comfortable living experience with modern amenities and excellent connectivity.'}
                   </p>
-                  {listing.notes && (
-                    <p className="text-sm text-gray-700 leading-relaxed">{listing.notes}</p>
-                  )}
                 </div>
               </div>
               

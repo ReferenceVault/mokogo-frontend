@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Footer from '@/components/Footer'
 import SocialSidebar from '@/components/SocialSidebar'
 import DashboardHeader from '@/components/DashboardHeader'
@@ -9,7 +9,8 @@ import ListingDetailContent from '@/components/ListingDetailContent'
 import MessagesContent from '@/components/MessagesContent'
 import ProfileContent from '@/components/ProfileContent'
 import { useStore } from '@/store/useStore'
-import { authApi } from '@/services/api'
+import { authApi, listingsApi, ListingResponse } from '@/services/api'
+import { Listing } from '@/types'
 import { 
   LayoutGrid, 
   Home, 
@@ -40,6 +41,82 @@ const Dashboard = () => {
   const [viewingListingId, setViewingListingId] = useState<string | null>(null)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
+  // Track if fetch is in progress to prevent duplicate calls
+  const fetchInProgressRef = useRef(false)
+
+  // Fetch listings from API on mount
+  useEffect(() => {
+    const fetchListings = async () => {
+      if (!user) return
+      
+      // Prevent duplicate calls
+      if (fetchInProgressRef.current) {
+        return
+      }
+      
+      fetchInProgressRef.current = true
+      
+      try {
+        const listings = await listingsApi.getAll()
+        console.log('Fetched listings from API:', listings)
+        console.log('Listings count:', listings?.length || 0)
+        
+        // Check if listings is an array
+        if (!Array.isArray(listings)) {
+          console.error('Listings is not an array:', listings)
+          setAllListings([])
+          return
+        }
+        
+        // Map API response to frontend format
+        const mappedListings: Listing[] = listings.map((listing: ListingResponse) => ({
+          id: listing._id || listing.id,
+          title: listing.title,
+          city: listing.city,
+          locality: listing.locality,
+          societyName: listing.societyName,
+          bhkType: listing.bhkType,
+          roomType: listing.roomType,
+          rent: listing.rent,
+          deposit: listing.deposit,
+          moveInDate: listing.moveInDate,
+          furnishingLevel: listing.furnishingLevel,
+          bathroomType: listing.bathroomType,
+          flatAmenities: listing.flatAmenities || [],
+          societyAmenities: listing.societyAmenities || [],
+          preferredGender: listing.preferredGender,
+          description: listing.description,
+          photos: listing.photos || [],
+          status: listing.status,
+          createdAt: listing.createdAt,
+          updatedAt: listing.updatedAt,
+        }))
+        
+        console.log('Mapped listings:', mappedListings)
+        console.log('Mapped listings count:', mappedListings.length)
+        
+        setAllListings(mappedListings)
+        
+        // If there's a current listing in state, try to find it in the fetched listings
+        if (currentListing) {
+          const foundListing = mappedListings.find(l => l.id === currentListing.id)
+          if (foundListing) {
+            setCurrentListing(foundListing)
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching listings:', error)
+        console.error('Error details:', error instanceof Error ? error.message : String(error))
+        // Keep existing listings from localStorage if API fails
+        setAllListings([])
+      } finally {
+        fetchInProgressRef.current = false
+      }
+    }
+    
+    fetchListings()
+  }, [user])
+
   // Check if we're viewing a listing from URL query params
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search)
@@ -60,14 +137,9 @@ const Dashboard = () => {
   }, [activeView, viewingListingId])
 
   const handleCreateListing = () => {
-    if (currentListing && currentListing.status === 'live') {
-      return
-    }
-    // Clear any draft listing to start fresh
-    if (currentListing && currentListing.status === 'draft') {
-      setCurrentListing(null)
-      localStorage.removeItem('mokogo-listing')
-    }
+    // Clear any existing listing (draft or live) to start fresh for new listing
+    setCurrentListing(null)
+    localStorage.removeItem('mokogo-listing')
     // Navigate directly - user is already authenticated (they're on dashboard)
     navigate('/listing/wizard')
   }
@@ -76,30 +148,56 @@ const Dashboard = () => {
     navigate('/listing/wizard')
   }
 
-  const handleEditListing = () => {
+  const handleEditListing = (listing?: Listing) => {
+    // If a listing is provided, set it as current listing
+    if (listing) {
+      setCurrentListing(listing)
+    }
+    // Navigate to wizard - it will load currentListing if set
     navigate('/listing/wizard')
   }
 
-  const handleArchive = () => {
+  const handleArchive = async () => {
     if (currentListing) {
-      const updated = { ...currentListing, status: 'archived' as const }
-      setCurrentListing(updated)
-      setShowArchiveModal(false)
+      try {
+        await listingsApi.update(currentListing.id, { status: 'archived' })
+        const updated = { ...currentListing, status: 'archived' as const }
+        setCurrentListing(updated)
+        // Update in all listings
+        const updatedListings = allListings.map(l => 
+          l.id === currentListing.id ? updated : l
+        )
+        setAllListings(updatedListings)
+        setShowArchiveModal(false)
+      } catch (error) {
+        console.error('Error archiving listing:', error)
+      }
     }
   }
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (currentListing) {
-      setCurrentListing(null)
-      localStorage.removeItem('mokogo-listing')
-      setShowDeleteModal(false)
+      try {
+        await listingsApi.delete(currentListing.id)
+        setCurrentListing(null)
+        localStorage.removeItem('mokogo-listing')
+        // Remove from all listings
+        const updatedListings = allListings.filter(l => l.id !== currentListing.id)
+        setAllListings(updatedListings)
+        setShowDeleteModal(false)
+        // Navigate away from listing detail view
+        if (activeView === 'listing-detail') {
+          setActiveView('listings')
+        }
+      } catch (error) {
+        console.error('Error deleting listing:', error)
+      }
     }
   }
 
   const handleBoost = () => {
     if (currentListing) {
-      const updated = { ...currentListing, boostEnabled: true }
-      setCurrentListing(updated)
+      // Boost functionality removed - field no longer in schema
       setShowBoostModal(false)
     }
   }
@@ -361,7 +459,7 @@ const Dashboard = () => {
                                   onClick={(e) => {
                                     e.preventDefault()
                                     e.stopPropagation()
-                                    handleEditListing()
+                                    handleEditListing(listing)
                                   }}
                                   className="w-9 h-9 rounded-lg border border-orange-200 bg-white text-gray-600 hover:text-orange-600 hover:border-orange-400 hover:bg-orange-50 transition-all duration-300 flex items-center justify-center shadow-sm hover:shadow-md"
                                 >
@@ -449,15 +547,24 @@ const Dashboard = () => {
               </section>
             </>
           ) : (
-            /* My Listings View - Current listings management */
+            /* My Listings View - Show all listings */
             <section className="px-8 py-8">
               <div className="max-w-4xl mx-auto">
-                <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-6">
-                  Your listings
-                </h1>
+                <div className="flex items-center justify-between mb-6">
+                  <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+                    Your listings
+                  </h1>
+                  <button 
+                    onClick={handleCreateListing}
+                    className="px-6 py-3 bg-gradient-to-r from-orange-400 to-orange-500 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-orange-500/30 hover:scale-105 active:scale-95 transition-all duration-300 flex items-center gap-2"
+                  >
+                    <Plus className="w-4 h-4" />
+                    New Listing
+                  </button>
+                </div>
 
                 {/* One Active Listing Rule Banner */}
-                {currentListing && currentListing.status === 'live' && (
+                {activeListings.length > 0 && (
                   <div className="relative overflow-hidden bg-gradient-to-br from-orange-400 via-orange-500 to-orange-600 rounded-2xl p-6 mb-6 shadow-2xl shadow-orange-500/30 transform hover:scale-[1.01] transition-all duration-300">
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.15),transparent_60%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.1),transparent_60%)]" />
                     <div className="relative flex items-start gap-4">
@@ -476,7 +583,7 @@ const Dashboard = () => {
                   </div>
                 )}
 
-                {!currentListing ? (
+                {allListings.length === 0 ? (
                   /* State A - No listing yet */
                   <div className="relative overflow-hidden bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-orange-200/50 text-center py-12">
                     <div className="absolute inset-0 bg-gradient-to-br from-orange-50/50 via-transparent to-transparent" />
@@ -496,181 +603,181 @@ const Dashboard = () => {
                       </button>
                     </div>
                   </div>
-                ) : currentListing.status === 'draft' ? (
-                  /* State B - Draft listing */
-                  <div className="relative overflow-hidden bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-orange-200/50 p-6">
-                    <div className="absolute inset-0 bg-gradient-to-br from-orange-50/30 via-transparent to-transparent" />
-                    <div className="relative">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex-1">
-                        <h2 className="text-xl font-semibold text-gray-900 mb-1">
-                          {currentListing.title || 'Draft listing'}
-                        </h2>
-                        <div className="flex items-center gap-3 text-sm text-gray-600">
-                          {currentListing.city && currentListing.locality && (
-                            <span>{currentListing.city} · {currentListing.locality}</span>
-                          )}
-                          <span className="px-3 py-1 bg-gradient-to-r from-gray-100 to-gray-50 text-gray-700 rounded-full text-xs font-semibold border border-gray-200">
-                            Draft
-                          </span>
-                          {currentListing.updatedAt && (
-                            <span>Last updated {formatLastUpdated(currentListing.updatedAt)}</span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    <p className="text-sm text-gray-600 mb-4">
-                      We saved your progress. You can finish your listing anytime.
-                    </p>
-                    <div className="flex gap-3">
-                      <button 
-                        onClick={handleContinueDraft} 
-                        className="px-6 py-3 bg-gradient-to-r from-orange-400 to-orange-500 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-orange-500/30 hover:scale-105 active:scale-95 transition-all duration-300"
-                      >
-                        Continue draft
-                      </button>
-                      <button
-                        onClick={() => setShowDeleteModal(true)}
-                        className="px-6 py-3 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-xl font-semibold transition-all duration-300"
-                      >
-                        Delete draft
-                      </button>
-                    </div>
-                    </div>
-                  </div>
                 ) : (
-                  /* State C/D - Live/Archived listing */
-                  <div className="relative overflow-hidden bg-gradient-to-br from-white via-orange-50/30 to-white rounded-2xl shadow-xl border-2 border-orange-200/60 p-6 hover:shadow-2xl hover:border-orange-300 transition-all duration-300">
-                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(249,115,22,0.08),transparent_60%),radial-gradient(circle_at_bottom_right,rgba(249,115,22,0.05),transparent_60%)]" />
-                    <div className="relative flex items-start gap-5">
-                      {currentListing.photos && currentListing.photos.length > 0 && (
-                        <div className="w-36 h-36 rounded-xl bg-gray-100 flex-shrink-0 overflow-hidden shadow-lg border-2 border-orange-200/50 group">
-                          <img
-                            src={currentListing.photos[0]}
-                            alt="Listing"
-                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                          />
-                        </div>
-                      )}
-                      <div className="flex-1">
-                        <div className="flex items-start justify-between mb-3">
+                  /* Show all listings */
+                  <div className="space-y-4">
+                    {allListings.map((listing) => (
+                      <div
+                        key={listing.id}
+                        className={`relative overflow-hidden rounded-2xl shadow-lg border-2 p-6 hover:shadow-xl transition-all duration-300 ${
+                          listing.status === 'draft'
+                            ? 'bg-white/80 backdrop-blur-sm border-orange-200/50'
+                            : listing.status === 'live'
+                            ? 'bg-gradient-to-br from-white via-orange-50/30 to-white border-orange-200/60'
+                            : 'bg-white/80 backdrop-blur-sm border-gray-200/50'
+                        }`}
+                      >
+                        <div className="relative flex items-start gap-5">
+                          {listing.photos && listing.photos.length > 0 && (
+                            <div className="w-36 h-36 rounded-xl bg-gray-100 flex-shrink-0 overflow-hidden shadow-lg border-2 border-orange-200/50 group">
+                              <img
+                                src={listing.photos[0]}
+                                alt="Listing"
+                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                              />
+                            </div>
+                          )}
                           <div className="flex-1">
-                            <Link 
-                              to={`/dashboard?listing=${currentListing.id}`}
-                              className="block hover:text-orange-600 transition-colors group"
-                            >
-                              <h2 className="text-2xl font-bold text-gray-900 mb-2 group-hover:text-orange-600 transition-colors">
-                                {currentListing.title}
-                              </h2>
-                            </Link>
-                            <div className="flex items-center gap-3 flex-wrap">
-                              <p className="text-gray-700 font-medium flex items-center gap-1.5">
-                                <MapPin className="w-4 h-4 text-orange-500" />
-                                {currentListing.city} · {currentListing.locality}
+                            <div className="flex items-start justify-between mb-3">
+                              <div className="flex-1">
+                                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                                  {listing.title || 'Untitled Listing'}
+                                </h2>
+                                <div className="flex items-center gap-3 flex-wrap">
+                                  {listing.city && listing.locality && (
+                                    <p className="text-gray-700 font-medium flex items-center gap-1.5">
+                                      <MapPin className="w-4 h-4 text-orange-500" />
+                                      {listing.city} · {listing.locality}
+                                    </p>
+                                  )}
+                                  {listing.rent && (
+                                    <span className="text-lg font-bold bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent">
+                                      ₹{listing.rent.toLocaleString()}/month
+                                    </span>
+                                  )}
+                                  {listing.furnishingLevel && (
+                                    <span className="text-sm text-gray-600">
+                                      {listing.furnishingLevel}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span
+                                  className={`px-4 py-1.5 rounded-full text-xs font-bold shadow-md ${
+                                    listing.status === 'live'
+                                      ? 'bg-gradient-to-r from-green-500 to-green-600 text-white border border-green-400'
+                                      : listing.status === 'draft'
+                                      ? 'bg-gray-200 text-gray-800'
+                                      : 'bg-gray-200 text-gray-800'
+                                  }`}
+                                >
+                                  {listing.status.charAt(0).toUpperCase() + listing.status.slice(1)}
+                                </span>
+                              </div>
+                            </div>
+                            {listing.status === 'draft' && (
+                              <p className="text-sm text-gray-600 mb-4">
+                                We saved your progress. You can finish your listing anytime.
                               </p>
-                              <span className="text-lg font-bold bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent">
-                                ₹{currentListing.rent?.toLocaleString()}/month
-                              </span>
-                              <span className="text-sm text-gray-600">
-                                {currentListing.furnishingLevel}
-                              </span>
+                            )}
+                            {listing.status === 'archived' && (
+                              <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                <p className="text-sm text-yellow-800 font-medium">
+                                  ⚠️ This listing is not visible to seekers.
+                                </p>
+                              </div>
+                            )}
+                            <div className="flex flex-wrap gap-2.5 mt-5">
+                              {listing.status === 'live' ? (
+                                <>
+                                  <button
+                                    onClick={() => {
+                                      setViewingListingId(listing.id)
+                                      setActiveView('listing-detail')
+                                    }}
+                                    className="px-5 py-2.5 bg-gradient-to-r from-orange-400 to-orange-500 text-white rounded-lg font-bold hover:shadow-lg hover:shadow-orange-500/40 hover:scale-105 active:scale-95 transition-all duration-300 flex items-center gap-2"
+                                  >
+                                    <Eye className="w-4 h-4" />
+                                    View listing
+                                  </button>
+                                  <button 
+                                    onClick={() => {
+                                      setCurrentListing(listing)
+                                      handleEditListing()
+                                    }} 
+                                    className="px-5 py-2.5 bg-white border-2 border-orange-300 text-orange-600 rounded-lg font-bold hover:bg-orange-50 hover:border-orange-400 hover:scale-105 transition-all duration-300 flex items-center gap-2 shadow-md"
+                                  >
+                                    <Pen className="w-4 h-4" />
+                                    Edit listing
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setCurrentListing(listing)
+                                      setActiveView('requests')
+                                    }}
+                                    className="px-5 py-2.5 bg-white border-2 border-orange-300 text-orange-600 rounded-lg font-bold hover:bg-orange-50 hover:border-orange-400 hover:scale-105 transition-all duration-300 flex items-center gap-2 shadow-md"
+                                  >
+                                    <MessageCircle className="w-4 h-4" />
+                                    View requests
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setCurrentListing(listing)
+                                      setShowArchiveModal(true)
+                                    }}
+                                    className="px-5 py-2.5 bg-white border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 hover:border-gray-400 transition-all duration-300"
+                                  >
+                                    Archive listing
+                                  </button>
+                                </>
+                              ) : listing.status === 'draft' ? (
+                                <>
+                                  <button 
+                                    onClick={() => {
+                                      setCurrentListing(listing)
+                                      handleContinueDraft()
+                                    }} 
+                                    className="px-6 py-3 bg-gradient-to-r from-orange-400 to-orange-500 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-orange-500/30 hover:scale-105 active:scale-95 transition-all duration-300"
+                                  >
+                                    Continue draft
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setCurrentListing(listing)
+                                      setShowDeleteModal(true)
+                                    }}
+                                    className="px-6 py-3 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-xl font-semibold transition-all duration-300"
+                                  >
+                                    Delete draft
+                                  </button>
+                                </>
+                              ) : (
+                                <>
+                                  <button
+                                    onClick={() => {
+                                      setViewingListingId(listing.id)
+                                      setActiveView('listing-detail')
+                                    }}
+                                    className="px-5 py-2.5 bg-white border-2 border-orange-300 text-orange-600 rounded-lg font-bold hover:bg-orange-50 hover:border-orange-400 transition-all duration-300"
+                                  >
+                                    View listing
+                                  </button>
+                                  <button
+                                    onClick={async () => {
+                                      try {
+                                        await listingsApi.update(listing.id, { status: 'live' })
+                                        const updated = { ...listing, status: 'live' as const }
+                                        setCurrentListing(updated)
+                                        const updatedListings = allListings.map(l => 
+                                          l.id === listing.id ? updated : l
+                                        )
+                                        setAllListings(updatedListings)
+                                      } catch (error) {
+                                        console.error('Error reactivating listing:', error)
+                                      }
+                                    }}
+                                    className="px-5 py-2.5 bg-gradient-to-r from-orange-400 to-orange-500 text-white rounded-lg font-bold hover:shadow-lg hover:shadow-orange-500/40 transition-all duration-300"
+                                  >
+                                    Reactivate
+                                  </button>
+                                </>
+                              )}
                             </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            {currentListing.boostEnabled && (
-                              <span className="px-3 py-1.5 bg-gradient-to-r from-yellow-400 to-yellow-500 text-white rounded-full text-xs font-bold border border-yellow-300 shadow-lg">
-                                ⚡ Boosted
-                              </span>
-                            )}
-                            <span
-                              className={`px-4 py-1.5 rounded-full text-xs font-bold shadow-md ${
-                                currentListing.status === 'live'
-                                  ? 'bg-gradient-to-r from-green-500 to-green-600 text-white border border-green-400'
-                                  : 'bg-gray-200 text-gray-800'
-                              }`}
-                            >
-                              {currentListing.status.charAt(0).toUpperCase() + currentListing.status.slice(1)}
-                            </span>
-                          </div>
-                        </div>
-                        {currentListing.status === 'archived' && (
-                          <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                            <p className="text-sm text-yellow-800 font-medium">
-                              ⚠️ This listing is not visible to seekers.
-                            </p>
-                          </div>
-                        )}
-                        <div className="flex flex-wrap gap-2.5 mt-5">
-                          {currentListing.status === 'live' ? (
-                            <>
-                              <button
-                                onClick={() => {
-                                  setViewingListingId(currentListing.id)
-                                  setActiveView('listing-detail')
-                                }}
-                                className="px-5 py-2.5 bg-gradient-to-r from-orange-400 to-orange-500 text-white rounded-lg font-bold hover:shadow-lg hover:shadow-orange-500/40 hover:scale-105 active:scale-95 transition-all duration-300 flex items-center gap-2"
-                              >
-                                <Eye className="w-4 h-4" />
-                                View listing
-                              </button>
-                              <button 
-                                onClick={handleEditListing} 
-                                className="px-5 py-2.5 bg-white border-2 border-orange-300 text-orange-600 rounded-lg font-bold hover:bg-orange-50 hover:border-orange-400 hover:scale-105 transition-all duration-300 flex items-center gap-2 shadow-md"
-                              >
-                                <Pen className="w-4 h-4" />
-                                Edit listing
-                              </button>
-                              <button
-                                onClick={() => setActiveView('requests')}
-                                className="px-5 py-2.5 bg-white border-2 border-orange-300 text-orange-600 rounded-lg font-bold hover:bg-orange-50 hover:border-orange-400 hover:scale-105 transition-all duration-300 flex items-center gap-2 shadow-md"
-                              >
-                                <MessageCircle className="w-4 h-4" />
-                                View requests
-                              </button>
-                              <button
-                                onClick={() => setShowBoostModal(true)}
-                                className="px-5 py-2.5 bg-gradient-to-r from-yellow-400 to-yellow-500 text-white rounded-lg font-bold hover:shadow-lg hover:shadow-yellow-500/40 hover:scale-105 transition-all duration-300 flex items-center gap-2"
-                              >
-                                ⚡ Boost visibility
-                              </button>
-                              <button
-                                onClick={() => setShowArchiveModal(true)}
-                                className="px-5 py-2.5 bg-white border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 hover:border-gray-400 transition-all duration-300"
-                              >
-                                Archive listing
-                              </button>
-                            </>
-                          ) : (
-                            <>
-                              <button
-                                onClick={() => {
-                                  setViewingListingId(currentListing.id)
-                                  setActiveView('listing-detail')
-                                }}
-                                className="px-5 py-2.5 bg-white border-2 border-orange-300 text-orange-600 rounded-lg font-bold hover:bg-orange-50 hover:border-orange-400 transition-all duration-300"
-                              >
-                                View listing
-                              </button>
-                              <button
-                                onClick={() => {
-                                  const updated = { ...currentListing, status: 'live' as const }
-                                  setCurrentListing(updated)
-                                }}
-                                className="px-5 py-2.5 bg-gradient-to-r from-orange-400 to-orange-500 text-white rounded-lg font-bold hover:shadow-lg hover:shadow-orange-500/30 hover:scale-105 active:scale-95 transition-all duration-300"
-                              >
-                                Re-publish
-                              </button>
-                            </>
-                          )}
-                          <button
-                            onClick={() => setShowDeleteModal(true)}
-                            className="px-5 py-2.5 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg font-semibold transition-all duration-300 border border-red-200 hover:border-red-300"
-                          >
-                            Delete listing
-                          </button>
                         </div>
                       </div>
-                    </div>
+                    ))}
                   </div>
                 )}
               </div>

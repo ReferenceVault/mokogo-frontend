@@ -291,9 +291,6 @@ const ListingDetail = () => {
                 <h1 className="text-3xl lg:text-4xl font-bold text-gray-900">{listing.title}</h1>
                 <div className="flex items-center space-x-2">
                   <span className="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-semibold">Verified</span>
-                  {listing.boostEnabled && (
-                    <span className="bg-orange-400 text-white px-3 py-1 rounded-full text-sm font-semibold">Premium</span>
-                  )}
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-4 text-gray-600 mb-4">
@@ -429,9 +426,6 @@ const ListingDetail = () => {
                   <p className="text-gray-700 leading-relaxed mb-4">
                     {listing.description || 'Welcome to this beautiful, spacious room in a premium apartment. Perfect for working professionals, this fully furnished room offers a comfortable living experience with modern amenities and excellent connectivity.'}
                   </p>
-                  {listing.notes && (
-                    <p className="text-gray-700 leading-relaxed">{listing.notes}</p>
-                  )}
                 </div>
               </div>
               
@@ -545,12 +539,6 @@ const ListingDetail = () => {
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-4">Allowed</h3>
                     <div className="space-y-3">
-                      {listing.guestsAllowed && listing.guestsAllowed !== 'No' && (
-                        <div className="flex items-center">
-                          <CheckCircle className="w-5 h-5 text-green-500 mr-3" />
-                          <span className="text-gray-700">Guests ({listing.guestsAllowed})</span>
-                        </div>
-                      )}
                       <div className="flex items-center">
                         <CheckCircle className="w-5 h-5 text-green-500 mr-3" />
                         <span className="text-gray-700">Cooking in Kitchen</span>
@@ -565,12 +553,6 @@ const ListingDetail = () => {
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-4">Not Allowed</h3>
                     <div className="space-y-3">
-                      {listing.smokingAllowed === 'No' && (
-                        <div className="flex items-center">
-                          <XCircle className="w-5 h-5 text-red-500 mr-3" />
-                          <span className="text-gray-700">Smoking</span>
-                        </div>
-                      )}
                       <div className="flex items-center">
                         <XCircle className="w-5 h-5 text-red-500 mr-3" />
                         <span className="text-gray-700">Pets</span>

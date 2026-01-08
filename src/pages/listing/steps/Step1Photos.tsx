@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
 import { Listing } from '@/types'
+import { uploadApi } from '@/services/api'
 
 interface Step1PhotosProps {
   data: Partial<Listing>
@@ -9,10 +10,11 @@ interface Step1PhotosProps {
 const Step1Photos = ({ data, onChange }: Step1PhotosProps) => {
   const [dragActive, setDragActive] = useState(false)
   const [error, setError] = useState('')
+  const [uploading, setUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const photos = data.photos || []
 
-  const handleFiles = (files: FileList | null) => {
+  const handleFiles = async (files: FileList | null) => {
     if (!files) return
 
     const maxSize = 5 * 1024 * 1024 // 5MB
@@ -40,63 +42,21 @@ const Step1Photos = ({ data, onChange }: Step1PhotosProps) => {
 
     if (validFiles.length === 0) return
 
-    // Compress and read all valid files
-    const compressImage = (file: File): Promise<string> => {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader()
-        reader.onload = (e) => {
-          const img = new Image()
-          img.onload = () => {
-            const canvas = document.createElement('canvas')
-            const maxWidth = 1200
-            const maxHeight = 1200
-            let width = img.width
-            let height = img.height
+    // Upload files to S3
+    setUploading(true)
+    setError('')
 
-            if (width > height) {
-              if (width > maxWidth) {
-                height = (height * maxWidth) / width
-                width = maxWidth
-              }
-            } else {
-              if (height > maxHeight) {
-                width = (width * maxHeight) / height
-                height = maxHeight
-              }
-            }
-
-            canvas.width = width
-            canvas.height = height
-            const ctx = canvas.getContext('2d')
-            if (!ctx) {
-              reject(new Error('Could not get canvas context'))
-              return
-            }
-            ctx.drawImage(img, 0, 0, width, height)
-            const compressed = canvas.toDataURL('image/jpeg', 0.8)
-            resolve(compressed)
-          }
-          img.onerror = () => reject(new Error('Failed to load image'))
-          img.src = e.target?.result as string
-        }
-        reader.onerror = () => reject(new Error('Failed to read file'))
-        reader.readAsDataURL(file)
-      })
+    try {
+      const urls = await uploadApi.uploadPhotos(validFiles)
+      const currentPhotos = data.photos || []
+      const updatedPhotos = [...currentPhotos, ...urls]
+      onChange({ photos: updatedPhotos })
+      setError('')
+    } catch (error: any) {
+      setError(error.response?.data?.message || error.message || 'Failed to upload photos')
+    } finally {
+      setUploading(false)
     }
-
-    const readers = validFiles.map((file) => compressImage(file))
-
-    // Wait for all files to be read, then update state once
-    Promise.all(readers)
-      .then((newPhotoUrls) => {
-        const currentPhotos = data.photos || []
-        const updatedPhotos = [...currentPhotos, ...newPhotoUrls]
-        onChange({ photos: updatedPhotos })
-        setError('')
-      })
-      .catch((error) => {
-        setError(error.message || 'Failed to load some images')
-      })
   }
 
   const handleDrag = (e: React.DragEvent) => {
@@ -188,9 +148,10 @@ const Step1Photos = ({ data, onChange }: Step1PhotosProps) => {
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="btn-primary text-sm px-4 py-2"
+            disabled={uploading}
+            className="btn-primary text-sm px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Choose Photos
+            {uploading ? 'Uploading...' : 'Choose Photos'}
           </button>
         </div>
       </div>
