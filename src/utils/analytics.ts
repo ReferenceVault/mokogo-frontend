@@ -18,23 +18,6 @@ export const hasAnalyticsConsent = (): boolean => {
   }
 }
 
-// Initialize dataLayer and gtag function (matches Google's standard implementation)
-const initGtagFunction = (): void => {
-  if (typeof window === 'undefined') return
-  
-  // Initialize dataLayer if not already done
-  window.dataLayer = window.dataLayer || []
-  
-  // Initialize gtag function if not already done (matches Google's standard pattern)
-  if (typeof window.gtag !== 'function') {
-    function gtag(...args: any[]) {
-      // Push arguments array to dataLayer (matches Google's pattern: dataLayer.push(arguments))
-      window.dataLayer.push(args)
-    }
-    window.gtag = gtag
-  }
-}
-
 // Track if script is fully loaded and ready
 let isGAScriptReady = false
 
@@ -113,9 +96,6 @@ export const loadGAScript = (): Promise<void> => {
         // The real gtag.js script should have loaded and processed dataLayer
         // Check if gtag exists and is the real one (not our custom function)
         if (window.gtag) {
-          // Store initial dataLayer length to detect processing
-          const initialDataLayerLength = window.dataLayer.length
-          
           isGAScriptReady = true
           
           // Call config - the real gtag should send requests immediately
