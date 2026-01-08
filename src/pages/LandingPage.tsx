@@ -388,9 +388,8 @@ const LandingPage = () => {
                         label="Gender Preference"
                         value={searchFilters.genderPreference}
                         onValueChange={(value) => setSearchFilters({ ...searchFilters, genderPreference: value })}
-                        placeholder="Any"
+                        placeholder="Select"
                         options={[
-                          { value: '', label: 'Any' },
                           { value: 'Male', label: 'Male' },
                           { value: 'Female', label: 'Female' },
                           { value: 'Other', label: 'Other' }
