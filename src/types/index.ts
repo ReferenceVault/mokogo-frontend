@@ -15,25 +15,15 @@ export interface Listing {
   roomType: string
   rent: number
   deposit: number
-  setupCost?: number
   moveInDate: string
-  minimumStay?: number
   furnishingLevel: string
   bathroomType?: string
   flatAmenities: string[]
   societyAmenities: string[]
   preferredGender: string
-  foodPreference: string
-  smokingAllowed: string
-  drinkingAllowed: string
-  guestsAllowed: string
-  notes?: string
   description?: string
   photos: string[]
-  contactPreference?: string
-  contactNumber?: string
   status: 'draft' | 'live' | 'archived' | 'fulfilled'
-  boostEnabled?: boolean
   createdAt: string
   updatedAt: string
 }

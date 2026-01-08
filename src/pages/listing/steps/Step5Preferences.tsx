@@ -55,10 +55,9 @@ const Step5Preferences = ({ data, onChange, error }: Step5PreferencesProps) => {
             Description (Optional)
           </label>
           <textarea
-            value={data.description || data.notes || ''}
+            value={data.description || ''}
             onChange={(e) => {
               handleChange('description', e.target.value)
-              handleChange('notes', e.target.value)
             }}
             className="w-full px-4 py-3 bg-gradient-to-br from-white via-white to-orange-50/30 border-2 border-orange-200/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-mokogo-primary/50 focus:border-mokogo-primary transition-all duration-200 shadow-sm hover:shadow-md hover:border-orange-300/70 text-gray-700 font-medium min-h-[120px] resize-none"
             placeholder="Tell potential flatmates about the room, house rules, current occupants, etc."
