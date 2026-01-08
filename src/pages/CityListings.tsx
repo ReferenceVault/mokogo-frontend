@@ -184,9 +184,8 @@ const CityListings = () => {
                   label="Gender Preference"
                   value={filters.genderPreference}
                   onValueChange={(value) => handleFilterChange('genderPreference', value)}
-                  placeholder="Any"
+                  placeholder="Select"
                   options={[
-                    { value: '', label: 'Any' },
                     { value: 'Male', label: 'Male' },
                     { value: 'Female', label: 'Female' },
                     { value: 'Other', label: 'Other' }
