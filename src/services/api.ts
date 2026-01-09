@@ -221,6 +221,21 @@ export const listingsApi = {
     }
   },
 
+  getAllPublic: async (status?: string): Promise<ListingResponse[]> => {
+    const params = status ? { status } : {}
+    try {
+      // Use axios directly for public endpoint (no auth token needed)
+      const response = await axios.get<ListingResponse[]>(`${API_BASE_URL}/listings/public`, { 
+        params,
+      })
+      return response.data || []
+    } catch (error: any) {
+      console.error('Error in getAllPublic API call:', error)
+      console.error('Error response:', error.response?.data)
+      throw error
+    }
+  },
+
   getById: async (id: string): Promise<ListingResponse> => {
     const response = await api.get<ListingResponse>(`/listings/${id}`)
     return response.data

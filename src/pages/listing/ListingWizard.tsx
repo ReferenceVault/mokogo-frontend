@@ -79,6 +79,25 @@ const ListingWizard = () => {
 
   const userInitial = user?.name?.[0]?.toUpperCase() || 'U'
 
+  // Helper function to format date for HTML date input (YYYY-MM-DD)
+  const formatDateForInput = (date: string | Date | undefined): string => {
+    if (!date) return ''
+    if (typeof date === 'string') {
+      // If it's already in YYYY-MM-DD format, return as is
+      if (/^\d{4}-\d{2}-\d{2}$/.test(date)) return date
+      // If it's an ISO string, extract the date part
+      const dateObj = new Date(date)
+      if (!isNaN(dateObj.getTime())) {
+        return dateObj.toISOString().split('T')[0]
+      }
+      return date
+    }
+    if (date instanceof Date) {
+      return date.toISOString().split('T')[0]
+    }
+    return ''
+  }
+
   const handleLogout = async () => {
     try {
       await authApi.logout()
@@ -132,14 +151,26 @@ const ListingWizard = () => {
   useEffect(() => {
     if (isEditing && currentListing) {
       // Editing mode: load all data and mark all steps as validated
-      listingDataRef.current = currentListing
-      setListingData(currentListing)
+      // Format date for HTML input
+      const formattedListing = {
+        ...currentListing,
+        moveInDate: formatDateForInput(currentListing.moveInDate),
+      }
+      listingDataRef.current = formattedListing
+      setListingData(formattedListing)
       // Mark all steps as validated since we're editing a complete listing
       setValidatedSteps(new Set([0, 1, 2, 3, 4]))
       // Start at first step
       setCurrentStep(0)
       setExpandedSections(new Set([0]))
     } else if (currentListing && currentListing.status === 'draft') {
+      // Format date for HTML input
+      const formattedListing = {
+        ...currentListing,
+        moveInDate: formatDateForInput(currentListing.moveInDate),
+      }
+      listingDataRef.current = formattedListing
+      setListingData(formattedListing)
       // Draft mode: determine starting step based on what's filled
       let step = 0
       if (currentListing.photos && currentListing.photos.length >= 3) step = 1
@@ -368,7 +399,7 @@ const ListingWizard = () => {
           roomType: savedListing.roomType || dataToSave.roomType || '',
           rent: savedListing.rent ?? dataToSave.rent ?? 0,
           deposit: savedListing.deposit ?? dataToSave.deposit ?? 0,
-          moveInDate: savedListing.moveInDate || dataToSave.moveInDate || '',
+          moveInDate: formatDateForInput(savedListing.moveInDate) || dataToSave.moveInDate || '',
           furnishingLevel: savedListing.furnishingLevel || dataToSave.furnishingLevel || '',
           bathroomType: savedListing.bathroomType || dataToSave.bathroomType,
           flatAmenities: savedListing.flatAmenities || dataToSave.flatAmenities || [],
@@ -386,6 +417,9 @@ const ListingWizard = () => {
         setListingData(mappedListing)
         setCurrentListing(mappedListing)
         setLastSaved(new Date())
+        
+        // Show toast notification after successful update
+        setShowToast(true)
       } catch (error) {
         console.error('Error updating listing:', error)
       } finally {
@@ -527,7 +561,7 @@ const ListingWizard = () => {
         roomType: savedListing.roomType,
         rent: savedListing.rent,
         deposit: savedListing.deposit,
-        moveInDate: savedListing.moveInDate,
+        moveInDate: formatDateForInput(savedListing.moveInDate),
         furnishingLevel: savedListing.furnishingLevel,
         bathroomType: savedListing.bathroomType,
         flatAmenities: savedListing.flatAmenities,
@@ -652,7 +686,7 @@ const ListingWizard = () => {
           roomType: savedListing.roomType || '',
           rent: savedListing.rent || 0,
           deposit: savedListing.deposit || 0,
-          moveInDate: savedListing.moveInDate || '',
+          moveInDate: formatDateForInput(savedListing.moveInDate) || '',
           furnishingLevel: savedListing.furnishingLevel || '',
           bathroomType: savedListing.bathroomType,
           flatAmenities: savedListing.flatAmenities || [],

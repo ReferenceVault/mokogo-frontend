@@ -42,12 +42,7 @@ const ListingDetail = () => {
   const navigate = useNavigate()
   const { allListings, user, setUser , setAllListings, setRequests } = useStore()
 
-  // Redirect to dashboard if user is logged in
-  useEffect(() => {
-    if (user && listingId) {
-      navigate(`/dashboard?listing=${listingId}`, { replace: true })
-    }
-  }, [user, listingId, navigate])
+  // No need to redirect - this is now a protected route, user must be logged in
   const [isSaved, setIsSaved] = useState(false)
   const [expandedFAQ, setExpandedFAQ] = useState<string | null>(null)
   const [moveInDate, setMoveInDate] = useState('')
