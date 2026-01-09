@@ -417,6 +417,9 @@ const ListingWizard = () => {
         setListingData(mappedListing)
         setCurrentListing(mappedListing)
         setLastSaved(new Date())
+        
+        // Show toast notification after successful update
+        setShowToast(true)
       } catch (error) {
         console.error('Error updating listing:', error)
       } finally {
