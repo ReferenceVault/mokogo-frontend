@@ -40,6 +40,7 @@ const Dashboard = () => {
   const [activeView, setActiveView] = useState<ViewType>('overview')
   const [viewingListingId, setViewingListingId] = useState<string | null>(null)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null)
 
   // Track if fetch is in progress to prevent duplicate calls
   const fetchInProgressRef = useRef(false)
@@ -331,11 +332,18 @@ const Dashboard = () => {
               }}
             />
           ) : activeView === 'messages' ? (
-            <MessagesContent />
+            <MessagesContent initialConversationId={selectedConversationId || undefined} />
           ) : activeView === 'profile' ? (
             <ProfileContent />
           ) : activeView === 'requests' ? (
-            <RequestsContent />
+            <RequestsContent 
+              onApprove={async (requestId) => {
+                // When a request is approved, navigate to messages
+                // The backend creates the conversation automatically
+                setActiveView('messages')
+                // MessagesContent will fetch conversations and show the new one
+              }}
+            />
           ) : activeView === 'overview' ? (
             <>
               {/* Hero Stats Section */}

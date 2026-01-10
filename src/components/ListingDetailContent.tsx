@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useStore } from '@/store/useStore'
 import { Listing } from '@/types'
+import { requestsApi } from '@/services/api'
 import {
   MapPin,
   Shield,
@@ -71,13 +72,32 @@ const ListingDetailContent = ({ listingId, onBack }: ListingDetailContentProps) 
   }
 
   const handleContactHost = async () => {
+    if (!user || !listing) return
+    
     setIsSubmitting(true)
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    setIsSubmitting(false)
-    // Navigate to requests in dashboard
-    if (onBack) {
-      onBack()
-      // Could trigger a view change to requests here
+    try {
+      await requestsApi.create({
+        listingId: listing.id,
+        message: message || undefined,
+        moveInDate: moveInDate || undefined,
+      })
+      
+      // Show success message
+      alert('Request sent successfully!')
+      
+      // Clear form
+      setMessage('')
+      setMoveInDate('')
+      
+      // Navigate to requests in dashboard
+      if (onBack) {
+        onBack()
+      }
+    } catch (error: any) {
+      console.error('Error sending request:', error)
+      alert(error.response?.data?.message || 'Failed to send request. Please try again.')
+    } finally {
+      setIsSubmitting(false)
     }
   }
 

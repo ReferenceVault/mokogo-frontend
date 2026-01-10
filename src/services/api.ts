@@ -268,5 +268,121 @@ export const uploadApi = {
   },
 }
 
+// Request API interfaces
+export interface CreateRequestRequest {
+  listingId: string
+  message?: string
+  moveInDate?: string
+}
+
+export interface RequestResponse {
+  _id: string
+  id: string
+  listingId: string | { _id: string; title: string; city: string; locality: string; photos?: string[] }
+  ownerId: string | { _id: string; name: string; email: string }
+  requesterId: string | { _id: string; name: string; email: string }
+  message?: string
+  moveInDate?: string
+  status: 'pending' | 'approved' | 'rejected'
+  createdAt: string
+  updatedAt: string
+}
+
+export interface UpdateRequestRequest {
+  status: 'pending' | 'approved' | 'rejected'
+}
+
+export const requestsApi = {
+  create: async (data: CreateRequestRequest): Promise<RequestResponse> => {
+    const response = await api.post<RequestResponse>('/requests', data)
+    return response.data
+  },
+
+  getAllForOwner: async (status?: string): Promise<RequestResponse[]> => {
+    const params = status ? { status } : {}
+    const response = await api.get<RequestResponse[]>('/requests/owner', { params })
+    return response.data || []
+  },
+
+  getAllForRequester: async (status?: string): Promise<RequestResponse[]> => {
+    const params = status ? { status } : {}
+    const response = await api.get<RequestResponse[]>('/requests/requester', { params })
+    return response.data || []
+  },
+
+  getById: async (id: string): Promise<RequestResponse> => {
+    const response = await api.get<RequestResponse>(`/requests/${id}`)
+    return response.data
+  },
+
+  update: async (id: string, data: UpdateRequestRequest): Promise<RequestResponse> => {
+    const response = await api.patch<RequestResponse>(`/requests/${id}`, data)
+    return response.data
+  },
+
+  delete: async (id: string): Promise<void> => {
+    await api.delete(`/requests/${id}`)
+  },
+}
+
+// Message API interfaces
+export interface ConversationResponse {
+  _id: string
+  id: string
+  user1Id: string | { _id: string; name: string; email: string }
+  user2Id: string | { _id: string; name: string; email: string }
+  listingId: string | { _id: string; title: string; city: string; locality: string; photos?: string[] }
+  lastMessageId?: string | MessageResponse
+  lastMessageAt: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface MessageResponse {
+  _id: string
+  id: string
+  conversationId: string
+  senderId: string | { _id: string; name: string; email: string }
+  text: string
+  isRead: boolean
+  isSystem: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreateMessageRequest {
+  conversationId: string
+  text: string
+}
+
+export const messagesApi = {
+  getAllConversations: async (): Promise<ConversationResponse[]> => {
+    const response = await api.get<ConversationResponse[]>('/messages/conversations')
+    return response.data || []
+  },
+
+  getConversationById: async (id: string): Promise<ConversationResponse> => {
+    const response = await api.get<ConversationResponse>(`/messages/conversations/${id}`)
+    return response.data
+  },
+
+  getMessages: async (conversationId: string): Promise<MessageResponse[]> => {
+    const response = await api.get<MessageResponse[]>(`/messages/conversations/${conversationId}/messages`)
+    return response.data || []
+  },
+
+  sendMessage: async (conversationId: string, text: string): Promise<MessageResponse> => {
+    const response = await api.post<MessageResponse>(`/messages/conversations/${conversationId}/messages`, {
+      conversationId,
+      text,
+    })
+    return response.data
+  },
+
+  markAsRead: async (conversationId: string): Promise<void> => {
+    await api.post(`/messages/conversations/${conversationId}/read`)
+  },
+}
+
 export default api
 
