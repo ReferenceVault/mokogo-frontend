@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import Logo from './Logo'
+import UserAvatar from './UserAvatar'
 import { Search, Bell, Heart as HeartIcon } from 'lucide-react'
 
 interface DashboardHeaderProps {
@@ -91,18 +92,13 @@ const DashboardHeader = ({
                 className="flex items-center gap-3 cursor-pointer group"
                 onClick={() => setShowUserMenu(!showUserMenu)}
               >
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300 overflow-hidden">
-                  {userImageUrl ? (
-                    <img
-                      src={userImageUrl}
-                      alt={userName}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-white font-semibold text-sm">
-                      {userInitial}
-                    </span>
-                  )}
+                <div className="group-hover:scale-110 transition-transform duration-300">
+                  <UserAvatar 
+                    user={{ name: userName, profileImageUrl: userImageUrl }}
+                    size="md"
+                    showBorder={false}
+                    className="shadow-lg bg-gradient-to-br from-orange-400 to-orange-500"
+                  />
                 </div>
               </div>
 

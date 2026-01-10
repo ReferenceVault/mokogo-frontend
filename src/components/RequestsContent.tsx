@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useStore } from '@/store/useStore'
 import { requestsApi, RequestResponse } from '@/services/api'
 import { websocketService } from '@/services/websocket'
+import UserAvatar from './UserAvatar'
 import { 
   CheckCircle, 
   Clock, 
@@ -177,8 +178,10 @@ const RequestsContent = ({ onApprove }: RequestsContentProps) => {
       id: requester?._id || (typeof request.requesterId === 'string' ? request.requesterId : ''),
       name: requester?.name || 'Unknown',
       email: requester?.email || '',
+      profileImageUrl: requester ? (requester as any).profileImageUrl : undefined,
     }
   }
+
 
   const getListingInfo = (request: RequestResponse) => {
     const listing = typeof request.listingId === 'object' ? request.listingId : null
@@ -299,11 +302,7 @@ const RequestsContent = ({ onApprove }: RequestsContentProps) => {
                     <div className="absolute inset-0 bg-gradient-to-br from-orange-50/30 via-transparent to-transparent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     <div className="relative flex items-start gap-3">
                       <div className="relative flex-shrink-0">
-                        <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-orange-200 bg-orange-100 flex items-center justify-center">
-                          <span className="text-orange-600 font-semibold text-lg">
-                            {requester.name[0]?.toUpperCase() || 'U'}
-                          </span>
-                        </div>
+                        <UserAvatar user={requester} size="lg" />
                       </div>
                       <div className="flex-1">
                         <div className="flex items-start justify-between mb-2">

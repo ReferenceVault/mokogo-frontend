@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useStore } from '@/store/useStore'
 import { messagesApi, ConversationResponse, MessageResponse } from '@/services/api'
 import { websocketService } from '@/services/websocket'
+import UserAvatar from './UserAvatar'
 import { 
   MoreVertical, 
   Shield,
@@ -370,10 +371,28 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
     const user1Id = typeof conversation.user1Id === 'object' ? conversation.user1Id._id : conversation.user1Id
     
     if (user1Id === userId) {
-      return typeof conversation.user2Id === 'object' ? conversation.user2Id : { _id: conversation.user2Id, name: 'Unknown', email: '' }
+      if (typeof conversation.user2Id === 'object') {
+        return {
+          _id: conversation.user2Id._id,
+          name: conversation.user2Id.name,
+          email: conversation.user2Id.email,
+          profileImageUrl: conversation.user2Id.profileImageUrl
+        }
+      }
+      return { _id: conversation.user2Id, name: 'Unknown', email: '', profileImageUrl: undefined }
     }
-    return typeof conversation.user1Id === 'object' ? conversation.user1Id : { _id: conversation.user1Id, name: 'Unknown', email: '' }
+    
+    if (typeof conversation.user1Id === 'object') {
+      return {
+        _id: conversation.user1Id._id,
+        name: conversation.user1Id.name,
+        email: conversation.user1Id.email,
+        profileImageUrl: conversation.user1Id.profileImageUrl
+      }
+    }
+    return { _id: conversation.user1Id, name: 'Unknown', email: '', profileImageUrl: undefined }
   }
+
 
   const getLastMessage = (conversation: ConversationResponse) => {
     if (conversation.lastMessageId && typeof conversation.lastMessageId === 'object') {
@@ -384,6 +403,14 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
 
   const selectedConversation = conversations.find(c => (c._id || c.id) === selectedConversationId)
   const otherUser = selectedConversation ? getOtherUser(selectedConversation) : null
+  
+  // Debug: Log to see what data we're getting
+  if (import.meta.env.DEV && selectedConversation) {
+    console.log('Selected conversation:', selectedConversation)
+    console.log('Other user:', otherUser)
+    console.log('User1Id:', selectedConversation.user1Id)
+    console.log('User2Id:', selectedConversation.user2Id)
+  }
 
   return (
     <div className="h-[calc(100vh-120px)] flex bg-gray-50">
@@ -423,11 +450,10 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
                 >
                   <div className="flex items-start gap-3">
                     <div className="relative flex-shrink-0">
-                      <div className="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center border-2 border-orange-200">
-                        <span className="text-orange-600 font-semibold text-lg">
-                          {other.name?.[0]?.toUpperCase() || 'U'}
-                        </span>
-                      </div>
+                      <UserAvatar 
+                        user={other}
+                        size="lg" 
+                      />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
@@ -489,11 +515,10 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
             <div className="p-4 border-b border-gray-200 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="relative">
-                  <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center border-2 border-orange-200">
-                    <span className="text-orange-600 font-semibold">
-                      {otherUser.name?.[0]?.toUpperCase() || 'U'}
-                    </span>
-                  </div>
+                  <UserAvatar 
+                    user={otherUser}
+                    size="md" 
+                  />
                 </div>
                 <div>
                   <span className="text-sm font-semibold text-gray-900">{otherUser.name || 'Unknown'}</span>
@@ -554,11 +579,14 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
                     <div key={msgId} className={`flex ${isYou ? 'justify-end' : 'justify-start'}`}>
                       <div className={`flex gap-2 max-w-[70%] ${isYou ? 'flex-row-reverse' : 'flex-row'}`}>
                         {!isYou && (
-                          <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0 border-2 border-orange-200">
-                            <span className="text-orange-600 font-semibold text-xs">
-                              {typeof msg.senderId === 'object' ? msg.senderId.name?.[0]?.toUpperCase() : 'U'}
-                            </span>
-                          </div>
+                          <UserAvatar 
+                            user={{
+                              name: typeof msg.senderId === 'object' ? msg.senderId.name : undefined,
+                              profileImageUrl: typeof msg.senderId === 'object' ? (msg.senderId as any).profileImageUrl : undefined
+                            }} 
+                            size="sm" 
+                            className="flex-shrink-0"
+                          />
                         )}
                         <div className={`rounded-lg px-4 py-2 ${isYou ? 'bg-orange-400 text-white' : 'bg-gray-100 text-gray-900'}`}>
                           <p className="text-sm whitespace-pre-line">{msg.text}</p>
@@ -628,11 +656,10 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 <div className="relative">
-                  <div className="w-16 h-16 rounded-full bg-orange-100 flex items-center justify-center border-2 border-orange-200">
-                    <span className="text-orange-600 font-semibold text-xl">
-                      {otherUser.name?.[0]?.toUpperCase() || 'U'}
-                    </span>
-                  </div>
+                  <UserAvatar 
+                    user={otherUser}
+                    size="xl" 
+                  />
                 </div>
                 <div>
                   <span className="text-sm font-semibold text-gray-900">{otherUser.name || 'Unknown'}</span>

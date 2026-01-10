@@ -336,8 +336,8 @@ export interface RequestResponse {
   _id: string
   id: string
   listingId: string | { _id: string; title: string; city: string; locality: string; photos?: string[] }
-  ownerId: string | { _id: string; name: string; email: string }
-  requesterId: string | { _id: string; name: string; email: string }
+  ownerId: string | { _id: string; name: string; email: string; profileImageUrl?: string }
+  requesterId: string | { _id: string; name: string; email: string; profileImageUrl?: string }
   message?: string
   moveInDate?: string
   status: 'pending' | 'approved' | 'rejected'
@@ -386,8 +386,8 @@ export const requestsApi = {
 export interface ConversationResponse {
   _id: string
   id: string
-  user1Id: string | { _id: string; name: string; email: string }
-  user2Id: string | { _id: string; name: string; email: string }
+  user1Id: string | { _id: string; name: string; email: string; profileImageUrl?: string }
+  user2Id: string | { _id: string; name: string; email: string; profileImageUrl?: string }
   listingId: string | { _id: string; title: string; city: string; locality: string; photos?: string[] }
   lastMessageId?: string | MessageResponse
   lastMessageAt: string
@@ -400,7 +400,7 @@ export interface MessageResponse {
   _id: string
   id: string
   conversationId: string
-  senderId: string | { _id: string; name: string; email: string }
+  senderId: string | { _id: string; name: string; email: string; profileImageUrl?: string }
   text: string
   isRead: boolean
   isSystem: boolean
