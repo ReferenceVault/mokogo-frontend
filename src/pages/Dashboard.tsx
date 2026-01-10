@@ -226,6 +226,7 @@ const Dashboard = () => {
   const activeListings = allListings.filter(l => l.status === 'live')
   const userName = user?.name || 'User'
   const userInitial = user?.name?.[0]?.toUpperCase() || 'U'
+  const userImageUrl = (user as any)?.profileImageUrl
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50/30 via-white to-orange-50/20 flex flex-col">
@@ -247,6 +248,7 @@ const Dashboard = () => {
         userName={userName}
         userEmail={user?.email || ''}
         userInitial={userInitial}
+        userImageUrl={userImageUrl}
         onProfile={() => setActiveView('profile')}
         onLogout={handleLogout}
       />
