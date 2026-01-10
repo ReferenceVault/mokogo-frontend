@@ -266,6 +266,63 @@ export const uploadApi = {
     )
     return response.data.urls
   },
+
+  uploadProfileImage: async (file: File): Promise<string> => {
+    const formData = new FormData()
+    formData.append('file', file)
+
+    const response = await api.post<{ url: string }>(
+      '/upload/profile-image',
+      formData
+    )
+    return response.data.url
+  },
+}
+
+export interface UserProfile {
+  _id: string
+  name: string
+  email: string
+  phoneNumber?: string
+  profileImageUrl?: string
+  dateOfBirth?: string
+  gender?: string
+  occupation?: string
+  companyName?: string
+  currentCity?: string
+  area?: string
+  about?: string
+  smoking?: string
+  drinking?: string
+  foodPreference?: string
+}
+
+export interface UpdateProfileRequest {
+  name?: string
+  phoneNumber?: string
+  profileImageUrl?: string
+  dateOfBirth?: string
+  gender?: string
+  occupation?: string
+  companyName?: string
+  currentCity?: string
+  area?: string
+  about?: string
+  smoking?: string
+  drinking?: string
+  foodPreference?: string
+}
+
+export const usersApi = {
+  getMyProfile: async (): Promise<UserProfile> => {
+    const response = await api.get<UserProfile>('/users/profile/me')
+    return response.data
+  },
+
+  updateMyProfile: async (data: UpdateProfileRequest): Promise<UserProfile> => {
+    const response = await api.patch<UserProfile>('/users/profile/me', data)
+    return response.data
+  },
 }
 
 // Request API interfaces
@@ -336,6 +393,7 @@ export interface ConversationResponse {
   lastMessageAt: string
   createdAt: string
   updatedAt: string
+  unreadCount?: number
 }
 
 export interface MessageResponse {
@@ -381,6 +439,14 @@ export const messagesApi = {
 
   markAsRead: async (conversationId: string): Promise<void> => {
     await api.post(`/messages/conversations/${conversationId}/read`)
+  },
+
+  clearMessages: async (conversationId: string): Promise<void> => {
+    await api.delete(`/messages/conversations/${conversationId}/messages`)
+  },
+
+  deleteConversation: async (conversationId: string): Promise<void> => {
+    await api.delete(`/messages/conversations/${conversationId}`)
   },
 }
 

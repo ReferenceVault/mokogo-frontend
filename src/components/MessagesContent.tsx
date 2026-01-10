@@ -26,8 +26,12 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
   const [showProfile, setShowProfile] = useState(true)
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
+  const [showMenu, setShowMenu] = useState(false)
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const conversationsLoadedRef = useRef(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+  const conversationMenuRefs = useRef<Map<string, HTMLDivElement>>(new Map())
 
   useEffect(() => {
     if (user && !conversationsLoadedRef.current) {
@@ -41,6 +45,30 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
 
     // WebSocket listeners
     const handleNewMessage = (newMessage: MessageResponse) => {
+      // Update conversations list to refresh unread count and last message
+      setConversations(prev => {
+        return prev.map(conv => {
+          const convId = conv._id || conv.id
+          if (convId === newMessage.conversationId) {
+            // Update last message and increment unread count if not from current user
+            const senderId = typeof newMessage.senderId === 'object' ? newMessage.senderId._id : newMessage.senderId
+            const userId = typeof user === 'object' && user?.id ? user.id : ''
+            const isFromCurrentUser = senderId === userId
+            const isCurrentConversation = selectedConversationId === convId
+            
+            return {
+              ...conv,
+              lastMessageId: newMessage,
+              lastMessageAt: newMessage.createdAt,
+              unreadCount: isFromCurrentUser || isCurrentConversation 
+                ? (conv.unreadCount || 0) 
+                : (conv.unreadCount || 0) + 1
+            }
+          }
+          return conv
+        })
+      })
+
       // Only process messages for the current conversation
       if (selectedConversationId && newMessage.conversationId !== selectedConversationId) {
         return
@@ -89,22 +117,55 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
         const index = prev.findIndex(c => (c._id || c.id) === (updatedConversation._id || updatedConversation.id))
         if (index >= 0) {
           const updated = [...prev]
-          updated[index] = updatedConversation
+          // Preserve unreadCount if not provided in update
+          const existingConv = updated[index]
+          const updatedConv = {
+            ...updatedConversation,
+            unreadCount: updatedConversation.unreadCount !== undefined 
+              ? updatedConversation.unreadCount 
+              : existingConv.unreadCount
+          }
           // Move to top
           updated.splice(index, 1)
-          updated.unshift(updatedConversation)
+          updated.unshift(updatedConv)
           return updated
         }
         return prev
       })
     }
 
+    const handleMessagesRead = (data: { conversationId: string; lastReadMessageId: string }) => {
+      // Only update if it's the current conversation
+      if (selectedConversationId && data.conversationId === selectedConversationId) {
+        setMessages(prev => {
+          const userId = typeof user === 'object' && user?.id ? user.id : ''
+          const lastReadMsgId = data.lastReadMessageId
+          
+          // Find the index of the last read message
+          const lastReadIndex = prev.findIndex(m => (m._id || m.id) === lastReadMsgId)
+          if (lastReadIndex === -1) return prev
+          
+          // Mark all messages from current user up to and including the lastReadMessageId as read
+          return prev.map((msg, index) => {
+            const senderId = typeof msg.senderId === 'object' ? msg.senderId._id : msg.senderId
+            // Only mark messages from current user that are at or before the last read message
+            if (senderId === userId && index <= lastReadIndex) {
+              return { ...msg, isRead: true }
+            }
+            return msg
+          })
+        })
+      }
+    }
+
     websocketService.on('new_message', handleNewMessage)
     websocketService.on('conversation_updated', handleConversationUpdate)
+    websocketService.on('messages_read', handleMessagesRead)
 
     return () => {
       websocketService.off('new_message', handleNewMessage)
       websocketService.off('conversation_updated', handleConversationUpdate)
+      websocketService.off('messages_read', handleMessagesRead)
     }
   }, [user, selectedConversationId])
 
@@ -147,6 +208,15 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
       const data = await messagesApi.getMessages(conversationId)
       setMessages(data)
       await messagesApi.markAsRead(conversationId)
+      
+      // Reset unread count for this conversation
+      setConversations(prev => 
+        prev.map(conv => 
+          (conv._id || conv.id) === conversationId 
+            ? { ...conv, unreadCount: 0 }
+            : conv
+        )
+      )
     } catch (error) {
       console.error('Error fetching messages:', error)
     }
@@ -200,6 +270,84 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
     }
   }
 
+  const handleClearChat = async () => {
+    if (!selectedConversationId) return
+    
+    if (!confirm('Are you sure you want to clear all messages in this chat? This action cannot be undone.')) {
+      return
+    }
+
+    try {
+      await messagesApi.clearMessages(selectedConversationId)
+      setMessages([])
+      setShowMenu(false)
+      
+      // Update conversation to remove last message
+      setConversations(prev => 
+        prev.map(conv => 
+          (conv._id || conv.id) === selectedConversationId
+            ? { ...conv, lastMessageId: undefined, lastMessageAt: new Date().toISOString() }
+            : conv
+        )
+      )
+    } catch (error) {
+      console.error('Error clearing messages:', error)
+      alert('Failed to clear messages. Please try again.')
+    }
+  }
+
+  const handleDeleteConversation = async (conversationId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    
+    if (!confirm('Are you sure you want to delete this conversation? This action cannot be undone.')) {
+      return
+    }
+
+    try {
+      await messagesApi.deleteConversation(conversationId)
+      setConversations(prev => prev.filter(conv => (conv._id || conv.id) !== conversationId))
+      setOpenMenuId(null)
+      
+      // If deleted conversation was selected, clear selection
+      if (selectedConversationId === conversationId) {
+        setSelectedConversationId(null)
+        setMessages([])
+      }
+    } catch (error) {
+      console.error('Error deleting conversation:', error)
+      alert('Failed to delete conversation. Please try again.')
+    }
+  }
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowMenu(false)
+      }
+      
+      // Close conversation menus
+      let clickedOutside = true
+      conversationMenuRefs.current.forEach((ref) => {
+        if (ref && ref.contains(event.target as Node)) {
+          clickedOutside = false
+        }
+      })
+      
+      if (clickedOutside) {
+        setOpenMenuId(null)
+      }
+    }
+
+    if (showMenu || openMenuId) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showMenu, openMenuId])
+
   const formatTime = (dateString: string) => {
     const date = new Date(dateString)
     const now = new Date()
@@ -220,7 +368,6 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
   const getOtherUser = (conversation: ConversationResponse) => {
     const userId = typeof user === 'object' && user?.id ? user.id : ''
     const user1Id = typeof conversation.user1Id === 'object' ? conversation.user1Id._id : conversation.user1Id
-    const user2Id = typeof conversation.user2Id === 'object' ? conversation.user2Id._id : conversation.user2Id
     
     if (user1Id === userId) {
       return typeof conversation.user2Id === 'object' ? conversation.user2Id : { _id: conversation.user2Id, name: 'Unknown', email: '' }
@@ -261,12 +408,16 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
             conversations.map((conv) => {
               const other = getOtherUser(conv)
               const isSelected = (conv._id || conv.id) === selectedConversationId
+              const unreadCount = conv.unreadCount || 0
+              
+              const convId = conv._id || conv.id
+              const isMenuOpen = openMenuId === convId
               
               return (
                 <div
-                  key={conv._id || conv.id}
-                  onClick={() => setSelectedConversationId(conv._id || conv.id)}
-                  className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors ${
+                  key={convId}
+                  onClick={() => setSelectedConversationId(convId)}
+                  className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors relative ${
                     isSelected ? 'bg-orange-50 border-l-4 border-l-orange-400' : ''
                   }`}
                 >
@@ -281,11 +432,46 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-sm font-semibold text-gray-900 truncate">{other.name || 'Unknown'}</span>
-                        <span className="text-xs text-gray-500 flex-shrink-0">
-                          {formatTime(conv.lastMessageAt)}
-                        </span>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <span className="text-xs text-gray-500">
+                            {formatTime(conv.lastMessageAt)}
+                          </span>
+                          {unreadCount > 0 && (
+                            <span className="bg-orange-400 text-white text-xs font-semibold rounded-full min-w-[20px] h-5 px-1.5 flex items-center justify-center">
+                              {unreadCount > 99 ? '99+' : unreadCount}
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <p className="text-xs text-gray-600 truncate mb-1">{getLastMessage(conv)}</p>
+                    </div>
+                    <div 
+                      ref={(el) => {
+                        if (el) conversationMenuRefs.current.set(convId, el)
+                        else conversationMenuRefs.current.delete(convId)
+                      }}
+                      className="relative flex-shrink-0"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setOpenMenuId(isMenuOpen ? null : convId)
+                        }}
+                        className="p-1 hover:bg-gray-200 rounded transition-colors"
+                      >
+                        <MoreVertical className="w-4 h-4 text-gray-600" />
+                      </button>
+                      {isMenuOpen && (
+                        <div className="absolute right-0 top-8 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-20 min-w-[140px]">
+                          <button
+                            onClick={(e) => handleDeleteConversation(convId, e)}
+                            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                          >
+                            Delete Chat
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -316,50 +502,80 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+              <div className="flex items-center gap-2 relative" ref={menuRef}>
+                <button 
+                  onClick={() => setShowMenu(!showMenu)}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
                   <MoreVertical className="w-5 h-5 text-gray-600" />
                 </button>
+                {showMenu && (
+                  <div className="absolute right-0 top-12 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-10 min-w-[160px]">
+                    <button
+                      onClick={handleClearChat}
+                      className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                    >
+                      Clear Chat
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {messages.map((msg) => {
-                if (msg.isSystem) {
+              {(() => {
+                const userId = typeof user === 'object' && user?.id ? user.id : ''
+                // Find the last message sent by current user
+                const userMessages = messages.filter(m => {
+                  const mSenderId = typeof m.senderId === 'object' ? m.senderId._id : m.senderId
+                  return mSenderId === userId && !m.isSystem
+                })
+                const lastUserMessage = userMessages[userMessages.length - 1]
+                const lastUserMessageId = lastUserMessage ? (lastUserMessage._id || lastUserMessage.id) : null
+                
+                return messages.map((msg) => {
+                  if (msg.isSystem) {
+                    return (
+                      <div key={msg._id || msg.id} className="flex justify-center">
+                        <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-2 max-w-md">
+                          <p className="text-xs text-green-800 text-center">{msg.text}</p>
+                        </div>
+                      </div>
+                    )
+                  }
+
+                  const senderId = typeof msg.senderId === 'object' ? msg.senderId._id : msg.senderId
+                  const isYou = senderId === userId
+                  const msgId = msg._id || msg.id
+                  const isLastUserMessage = msgId === lastUserMessageId
+
                   return (
-                    <div key={msg._id || msg.id} className="flex justify-center">
-                      <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-2 max-w-md">
-                        <p className="text-xs text-green-800 text-center">{msg.text}</p>
+                    <div key={msgId} className={`flex ${isYou ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`flex gap-2 max-w-[70%] ${isYou ? 'flex-row-reverse' : 'flex-row'}`}>
+                        {!isYou && (
+                          <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0 border-2 border-orange-200">
+                            <span className="text-orange-600 font-semibold text-xs">
+                              {typeof msg.senderId === 'object' ? msg.senderId.name?.[0]?.toUpperCase() : 'U'}
+                            </span>
+                          </div>
+                        )}
+                        <div className={`rounded-lg px-4 py-2 ${isYou ? 'bg-orange-400 text-white' : 'bg-gray-100 text-gray-900'}`}>
+                          <p className="text-sm whitespace-pre-line">{msg.text}</p>
+                          <div className={`flex items-center gap-1 mt-1 ${isYou ? 'justify-end' : 'justify-start'}`}>
+                            <span className={`text-xs ${isYou ? 'text-orange-100' : 'text-gray-500'}`}>
+                              {formatTimestamp(msg.createdAt)}
+                            </span>
+                            {isYou && isLastUserMessage && msg.isRead && (
+                              <span className="text-xs text-orange-100 italic">Seen</span>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </div>
                   )
-                }
-
-                const senderId = typeof msg.senderId === 'object' ? msg.senderId._id : msg.senderId
-                const userId = typeof user === 'object' && user?.id ? user.id : ''
-                const isYou = senderId === userId
-
-                return (
-                  <div key={msg._id || msg.id} className={`flex ${isYou ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`flex gap-2 max-w-[70%] ${isYou ? 'flex-row-reverse' : 'flex-row'}`}>
-                      {!isYou && (
-                        <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0 border-2 border-orange-200">
-                          <span className="text-orange-600 font-semibold text-xs">
-                            {typeof msg.senderId === 'object' ? msg.senderId.name?.[0]?.toUpperCase() : 'U'}
-                          </span>
-                        </div>
-                      )}
-                      <div className={`rounded-lg px-4 py-2 ${isYou ? 'bg-orange-400 text-white' : 'bg-gray-100 text-gray-900'}`}>
-                        <p className="text-sm whitespace-pre-line">{msg.text}</p>
-                        <span className={`text-xs mt-1 block ${isYou ? 'text-orange-100' : 'text-gray-500'}`}>
-                          {formatTimestamp(msg.createdAt)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
+                })
+              })()}
               <div ref={messagesEndRef} />
             </div>
 
