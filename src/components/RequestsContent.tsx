@@ -1,3 +1,8 @@
+import { useState, useEffect } from 'react'
+import { useStore } from '@/store/useStore'
+import { requestsApi, RequestResponse } from '@/services/api'
+import { websocketService } from '@/services/websocket'
+import UserAvatar from './UserAvatar'
 import { 
   CheckCircle, 
   Clock, 
@@ -13,98 +18,182 @@ import {
 } from 'lucide-react'
 
 interface RequestsContentProps {
+  onApprove?: (requestId: string, conversationId?: string) => void
 }
 
-const RequestsContent = ({}: RequestsContentProps) => {
-  // Combine all requests into one array
-  const allRequests = [
-    {
-      id: '1',
-      name: 'Rahul Gupta',
-      profileImage: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop',
-      verified: true,
-      badges: ['Premium Member', '95% Match'],
-      occupation: 'Software Engineer at TCS',
-      age: 28,
-      location: 'Currently in Mumbai',
-      moveInDate: 'Dec 15',
-      message: "Hi Priya! I'm relocating to Pune for a new job at TCS and your room in Baner looks perfect. I'm a clean, responsible tenant with excellent references. I don't smoke, rarely have guests, and prefer a quiet environment for work. My budget aligns perfectly with your asking price. Would love to schedule a virtual tour this weekend if possible. Looking forward to hearing from you!",
-      receivedTime: '2 hours ago',
-      profileViews: 15,
-      positiveReviews: 5,
-      interestedIn: 'Spacious Room in Baner',
-      status: 'pending'
-    },
-    {
-      id: '2',
-      name: 'Sneha Joshi',
-      profileImage: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop',
-      verified: true,
-      badges: ['Female', '92% Match'],
-      occupation: 'Marketing Manager at Wipro',
-      age: 26,
-      location: 'Currently in Bangalore',
-      moveInDate: 'Jan 1',
-      message: "Hello! I'm Sneha, moving to Pune for work. I'm particularly interested in your room as I value cleanliness and a peaceful environment. I work in marketing, have flexible hours, and am very respectful of shared spaces. I've been looking for a place with a female roommate preference. Can we arrange a video call to discuss further?",
-      receivedTime: '4 hours ago',
-      profileViews: 8,
-      positiveReviews: 4,
-      interestedIn: 'Spacious Room in Baner',
-      status: 'pending'
-    },
-    {
-      id: '3',
-      name: 'Amit Patel',
-      profileImage: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop',
-      verified: false,
-      badges: ['Male', '78% Match'],
-      occupation: 'Product Manager',
-      age: 30,
-      location: 'Currently in Pune',
-      moveInDate: 'ASAP',
-      message: "Hi! I'm looking for a room in Baner area. I work in tech and maintain a clean, quiet lifestyle. Your listing caught my attention due to the great location and amenities. Would love to know more about the house rules and schedule a visit.",
-      receivedTime: '6 hours ago',
-      profileViews: 3,
-      positiveReviews: 0,
-      interestedIn: 'Modern Room in Hinjawadi',
-      status: 'pending'
-    },
-    {
-      id: '4',
-      name: 'Kavya Singh',
-      profileImage: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop',
-      verified: false,
-      badges: ['Female', '85% Match'],
-      occupation: 'UI/UX Designer',
-      age: 24,
-      location: 'Currently in Delhi',
-      moveInDate: 'Dec 20',
-      message: "Hello Priya! I'm a designer moving to Pune for a new opportunity. I love your room setup and the location seems perfect for my commute. I'm tidy, respectful, and enjoy cooking. Looking for a friendly environment. Can we connect?",
-      receivedTime: '8 hours ago',
-      profileViews: 5,
-      positiveReviews: 0,
-      interestedIn: 'Spacious Room in Baner',
-      status: 'pending'
-    },
-    {
-      id: '5',
-      name: 'Vikram Reddy',
-      profileImage: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop',
-      verified: false,
-      badges: ['Male', 'Quick Move'],
-      occupation: 'Business Analyst',
-      age: 27,
-      location: 'Currently in Hyderabad',
-      moveInDate: 'This Week',
-      message: "Hi! I need to move to Pune urgently for work. Your room seems ideal and I'm ready to move in immediately. I'm a working professional with steady income and can provide all necessary documents. Please let me know if we can fast-track this.",
-      receivedTime: '12 hours ago',
-      profileViews: 0,
-      positiveReviews: 0,
-      interestedIn: 'Modern Room in Hinjawadi',
-      status: 'urgent',
-      urgent: true
+const RequestsContent = ({ onApprove }: RequestsContentProps) => {
+  const { user } = useStore()
+  const [allRequests, setAllRequests] = useState<RequestResponse[]>([])
+  const [loading, setLoading] = useState(true)
+  const [processingId, setProcessingId] = useState<string | null>(null)
+
+  useEffect(() => {
+    fetchRequests()
+    
+    // Connect WebSocket if not already connected
+    const token = localStorage.getItem('mokogo-access-token')
+    if (token && user) {
+      websocketService.connect(token)
     }
-  ]
+
+    // WebSocket listeners for real-time updates
+    const handleNewRequest = (newRequest: RequestResponse) => {
+      setAllRequests(prev => {
+        // Check if request already exists
+        const exists = prev.some(r => (r._id || r.id) === (newRequest._id || newRequest.id))
+        if (exists) {
+          return prev
+        }
+        // Add new request at the beginning (pending requests first)
+        const updated = [newRequest, ...prev]
+        // Sort: pending first, then by date
+        return updated.sort((a, b) => {
+          if (a.status === 'pending' && b.status !== 'pending') return -1
+          if (a.status !== 'pending' && b.status === 'pending') return 1
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        })
+      })
+    }
+
+    const handleRequestUpdate = (updatedRequest: RequestResponse) => {
+      setAllRequests(prev => {
+        const index = prev.findIndex(r => (r._id || r.id) === (updatedRequest._id || updatedRequest.id))
+        if (index >= 0) {
+          const updated = [...prev]
+          updated[index] = updatedRequest
+          // Re-sort after update
+          return updated.sort((a, b) => {
+            if (a.status === 'pending' && b.status !== 'pending') return -1
+            if (a.status !== 'pending' && b.status === 'pending') return 1
+            return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          })
+        }
+        return prev
+      })
+    }
+
+    websocketService.on('new_request', handleNewRequest)
+    websocketService.on('request_updated', handleRequestUpdate)
+
+    return () => {
+      websocketService.off('new_request', handleNewRequest)
+      websocketService.off('request_updated', handleRequestUpdate)
+    }
+  }, [user])
+
+  const fetchRequests = async () => {
+    if (!user) return
+    
+    setLoading(true)
+    try {
+      // Fetch all requests (pending, approved, rejected)
+      const requests = await requestsApi.getAllForOwner()
+      // Sort: pending first, then by date
+      const sorted = requests.sort((a, b) => {
+        if (a.status === 'pending' && b.status !== 'pending') return -1
+        if (a.status !== 'pending' && b.status === 'pending') return 1
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      })
+      setAllRequests(sorted)
+    } catch (error) {
+      console.error('Error fetching requests:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleApprove = async (request: RequestResponse) => {
+    if (!user) return
+    
+    setProcessingId(request._id || request.id)
+    try {
+      const updated = await requestsApi.update(request._id || request.id, { status: 'approved' })
+      
+      // Update the request in the list with new status
+      setAllRequests(prev => prev.map(r => 
+        (r._id || r.id) === (request._id || request.id) ? updated : r
+      ))
+      
+      // If onApprove callback is provided, call it with conversation info
+      if (onApprove) {
+        // We need to get the conversation - it should be created by the backend
+        // For now, we'll just navigate to messages
+        onApprove(request._id || request.id)
+      }
+    } catch (error: any) {
+      console.error('Error approving request:', error)
+      alert(error.response?.data?.message || 'Failed to approve request. Please try again.')
+    } finally {
+      setProcessingId(null)
+    }
+  }
+
+  const handleReject = async (request: RequestResponse) => {
+    if (!user) return
+    
+    if (!confirm('Are you sure you want to reject this request?')) {
+      return
+    }
+    
+    setProcessingId(request._id || request.id)
+    try {
+      const updated = await requestsApi.update(request._id || request.id, { status: 'rejected' })
+      
+      // Update the request in the list with new status
+      setAllRequests(prev => prev.map(r => 
+        (r._id || r.id) === (request._id || request.id) ? updated : r
+      ))
+    } catch (error: any) {
+      console.error('Error rejecting request:', error)
+      alert(error.response?.data?.message || 'Failed to reject request. Please try again.')
+    } finally {
+      setProcessingId(null)
+    }
+  }
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return 'Not specified'
+    return new Date(dateString).toLocaleDateString('en-IN', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
+    })
+  }
+
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+    
+    if (diffInSeconds < 60) return 'Just now'
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} days ago`
+    return formatDate(dateString)
+  }
+
+  const getRequesterInfo = (request: RequestResponse) => {
+    const requester = typeof request.requesterId === 'object' ? request.requesterId : null
+    return {
+      id: requester?._id || (typeof request.requesterId === 'string' ? request.requesterId : ''),
+      name: requester?.name || 'Unknown',
+      email: requester?.email || '',
+      profileImageUrl: requester ? (requester as any).profileImageUrl : undefined,
+    }
+  }
+
+
+  const getListingInfo = (request: RequestResponse) => {
+    const listing = typeof request.listingId === 'object' ? request.listingId : null
+    return {
+      id: listing?._id || (typeof request.listingId === 'string' ? request.listingId : ''),
+      title: listing?.title || 'Unknown Listing',
+      city: listing?.city || '',
+      locality: listing?.locality || '',
+      photos: listing?.photos || [],
+    }
+  }
+
 
   const responseTemplates = [
     {
@@ -188,73 +277,130 @@ const RequestsContent = ({}: RequestsContentProps) => {
         <div className="max-w-7xl mx-auto">
           <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-4">Requests</h2>
 
-          <div className="space-y-4">
-            {allRequests.map((request, index) => (
-              <div
-                key={request.id}
-                className="relative bg-white/80 backdrop-blur-sm rounded-lg border border-orange-200/50 p-4 shadow-md hover:shadow-lg transition-all duration-300 group"
-                style={{ animation: `fadeInUp 0.6s ease-out ${index * 0.1}s both` }}
-              >
-                <div className="absolute inset-0 bg-gradient-to-br from-orange-50/30 via-transparent to-transparent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                <div className="relative flex items-start gap-3">
-                  <div className="relative flex-shrink-0">
-                    <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-orange-200">
-                      <img src={request.profileImage} alt={request.name} className="w-full h-full object-cover" />
-                    </div>
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <h4 className="text-base font-semibold text-gray-900">{request.name}</h4>
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="w-8 h-8 border-2 border-orange-400 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          ) : allRequests.length === 0 ? (
+            <div className="text-center py-12">
+              <MessageSquare className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-600">No requests yet</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {allRequests.map((request, index) => {
+                const requester = getRequesterInfo(request)
+                const listing = getListingInfo(request)
+                const isProcessing = processingId === (request._id || request.id)
+                
+                return (
+                  <div
+                    key={request._id || request.id}
+                    className="relative bg-white/80 backdrop-blur-sm rounded-lg border border-orange-200/50 p-4 shadow-md hover:shadow-lg transition-all duration-300 group"
+                    style={{ animation: `fadeInUp 0.6s ease-out ${index * 0.1}s both` }}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-br from-orange-50/30 via-transparent to-transparent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    <div className="relative flex items-start gap-3">
+                      <div className="relative flex-shrink-0">
+                        <UserAvatar user={requester} size="lg" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <div className="flex items-center gap-2 mb-1.5">
+                              <h4 className="text-base font-semibold text-gray-900">{requester.name}</h4>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-3 text-xs text-gray-600 mb-2">
+                              <span className="flex items-center gap-1">
+                                <MapPin className="w-3.5 h-3.5 text-orange-500" />
+                                {listing.locality}, {listing.city}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Calendar className="w-3.5 h-3.5 text-orange-500" />
+                                Move-in: {request.moveInDate ? formatDate(request.moveInDate) : 'Not specified'}
+                              </span>
+                            </div>
+                            <div className="text-xs text-gray-500 mb-2">
+                              Interested in: <span className="font-semibold">{listing.title}</span>
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex flex-wrap items-center gap-3 text-xs text-gray-600 mb-2">
+                        {request.message && (
+                          <p className="text-sm text-gray-700 leading-relaxed mb-3 italic">"{request.message}"</p>
+                        )}
+                        <div className="flex flex-wrap items-center gap-3 text-xs text-gray-600 mb-3">
                           <span className="flex items-center gap-1">
-                            <Briefcase className="w-3.5 h-3.5 text-orange-500" />
-                            {request.occupation}
+                            <Clock className="w-3.5 h-3.5 text-orange-500" />
+                            Received {formatTimeAgo(request.createdAt)}
                           </span>
-                          <span className="flex items-center gap-1">
-                            <Cake className="w-3.5 h-3.5 text-orange-500" />
-                            {request.age} years old
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <MapPin className="w-3.5 h-3.5 text-orange-500" />
-                            {request.location}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Calendar className="w-3.5 h-3.5 text-orange-500" />
-                            Move-in: {request.moveInDate}
-                          </span>
+                          {/* Status Badge */}
+                          {request.status === 'approved' && (
+                            <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold flex items-center gap-1">
+                              <CheckCircle className="w-3 h-3" />
+                              Approved
+                            </span>
+                          )}
+                          {request.status === 'rejected' && (
+                            <span className="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-semibold flex items-center gap-1">
+                              <XCircle className="w-3 h-3" />
+                              Rejected
+                            </span>
+                          )}
+                          {request.status === 'pending' && (
+                            <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-semibold flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              Pending
+                            </span>
+                          )}
                         </div>
+                        {/* Only show action buttons for pending requests */}
+                        {request.status === 'pending' && (
+                          <div className="flex flex-wrap gap-2 justify-end">
+                            <button 
+                              onClick={() => handleReject(request)}
+                              disabled={isProcessing || processingId === (request._id || request.id)}
+                              className="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-sm font-semibold hover:bg-red-100 transition-all duration-300 flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              <XCircle className="w-3.5 h-3.5" />
+                              Reject
+                            </button>
+                            <button 
+                              onClick={() => handleApprove(request)}
+                              disabled={isProcessing || processingId === (request._id || request.id)}
+                              className="px-3 py-1.5 bg-gradient-to-r from-green-400 to-green-500 text-white rounded-lg text-sm font-semibold hover:shadow-lg hover:shadow-green-500/30 hover:scale-105 transition-all duration-300 flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {isProcessing && processingId === (request._id || request.id) ? (
+                                <>
+                                  <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                  Processing...
+                                </>
+                              ) : (
+                                <>
+                                  <CheckCircle className="w-3.5 h-3.5" />
+                                  Accept
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        )}
+                        {/* Show message for approved/rejected requests */}
+                        {request.status === 'approved' && (
+                          <div className="text-sm text-green-700 font-medium text-right">
+                            ✓ Request approved - Conversation started
+                          </div>
+                        )}
+                        {request.status === 'rejected' && (
+                          <div className="text-sm text-red-700 font-medium text-right">
+                            ✗ Request rejected
+                          </div>
+                        )}
                       </div>
                     </div>
-                    <p className="text-sm text-gray-700 leading-relaxed mb-3 italic">"{request.message}"</p>
-                    <div className="flex flex-wrap items-center gap-3 text-xs text-gray-600 mb-3">
-                      <span className="flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5 text-orange-500" />
-                        Received {request.receivedTime}
-                      </span>
-                      {request.urgent && (
-                        <span className="px-2 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-semibold">
-                          Urgent request
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex flex-wrap gap-2 justify-end">
-                      <button className="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-sm font-semibold hover:bg-red-100 transition-all duration-300 flex items-center gap-1.5">
-                        <XCircle className="w-3.5 h-3.5" />
-                        Reject
-                      </button>
-                      <button className="px-3 py-1.5 bg-gradient-to-r from-green-400 to-green-500 text-white rounded-lg text-sm font-semibold hover:shadow-lg hover:shadow-green-500/30 hover:scale-105 transition-all duration-300 flex items-center gap-1.5">
-                        <CheckCircle className="w-3.5 h-3.5" />
-                        Accept
-                      </button>
-                    </div>
                   </div>
-                </div>
-              </div>
-            ))}
-          </div>
+                )
+              })}
+            </div>
+          )}
         </div>
       </section>
 

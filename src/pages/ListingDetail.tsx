@@ -4,7 +4,7 @@ import Footer from '@/components/Footer'
 import Header from '@/components/Header'
 import Logo from '@/components/Logo'
 import { useStore } from '@/store/useStore'
-import { authApi } from '@/services/api'
+import { authApi, requestsApi } from '@/services/api'
 import {
   MapPin,
   Shield,
@@ -96,12 +96,31 @@ const ListingDetail = () => {
   }
 
   const handleContactHost = async () => {
+    if (!user || !listing) return
+    
     setIsSubmitting(true)
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    setIsSubmitting(false)
-    // In real app, this would create a request
-    navigate('/requests')
+    try {
+      await requestsApi.create({
+        listingId: listing.id,
+        message: message || undefined,
+        moveInDate: moveInDate || undefined,
+      })
+      
+      // Show success message
+      alert('Request sent successfully!')
+      
+      // Clear form
+      setMessage('')
+      setMoveInDate('')
+      
+      // Navigate to dashboard
+      navigate('/dashboard')
+    } catch (error: any) {
+      console.error('Error sending request:', error)
+      alert(error.response?.data?.message || 'Failed to send request. Please try again.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const toggleFAQ = (faqId: string) => {
