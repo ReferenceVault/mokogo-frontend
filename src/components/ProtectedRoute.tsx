@@ -35,6 +35,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const user = useStore((state) => state.user)
   const setUser = useStore((state) => state.setUser)
   const [isChecking, setIsChecking] = useState(true)
+  const [shouldRedirect, setShouldRedirect] = useState(false)
 
   useEffect(() => {
     const checkAuthAndFetchProfile = async () => {
@@ -48,7 +49,9 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
         localStorage.removeItem('mokogo-user')
         localStorage.removeItem('mokogo-access-token')
         localStorage.removeItem('mokogo-refresh-token')
+        setUser(null)
         setIsChecking(false)
+        setShouldRedirect(true)
         return
       }
 
@@ -58,8 +61,9 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
         localStorage.removeItem('mokogo-user')
         localStorage.removeItem('mokogo-access-token')
         localStorage.removeItem('mokogo-refresh-token')
-        useStore.getState().setUser(null)
+        setUser(null)
         setIsChecking(false)
+        setShouldRedirect(true)
         return
       }
 
@@ -68,15 +72,16 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
       if (!currentUser && savedUser) {
         try {
           const parsedUser = JSON.parse(savedUser)
-          useStore.getState().setUser(parsedUser)
+          setUser(parsedUser)
           currentUser = parsedUser
         } catch (error) {
           console.error('Error parsing saved user:', error)
           localStorage.removeItem('mokogo-user')
           localStorage.removeItem('mokogo-access-token')
           localStorage.removeItem('mokogo-refresh-token')
-          useStore.getState().setUser(null)
+          setUser(null)
           setIsChecking(false)
+          setShouldRedirect(true)
           return
         }
       }
@@ -98,7 +103,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     }
 
     checkAuthAndFetchProfile()
-  }, [user, setUser])
+  }, [setUser]) // Removed 'user' from dependencies to prevent infinite loops
 
   // Show loading state while checking
   if (isChecking) {
@@ -112,17 +117,27 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     )
   }
 
+  // Handle redirect after checking is complete
+  if (shouldRedirect) {
+    return <Navigate to="/auth" replace />
+  }
+
   // Final check if user is authenticated
   const accessToken = localStorage.getItem('mokogo-access-token')
   const savedUser = localStorage.getItem('mokogo-user')
-  const currentUser = user || (savedUser ? JSON.parse(savedUser) : null)
+  
+  let currentUser = user
+  if (!currentUser && savedUser) {
+    try {
+      currentUser = JSON.parse(savedUser)
+    } catch (error) {
+      console.error('Error parsing saved user in render:', error)
+      currentUser = null
+    }
+  }
 
   if (!accessToken || !currentUser || !isValidTokenFormat(accessToken)) {
-    // Clear any stale data
-    localStorage.removeItem('mokogo-user')
-    localStorage.removeItem('mokogo-access-token')
-    localStorage.removeItem('mokogo-refresh-token')
-    useStore.getState().setUser(null)
+    // Don't call setState here - use shouldRedirect state instead
     return <Navigate to="/auth" replace />
   }
 

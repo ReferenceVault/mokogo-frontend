@@ -461,6 +461,11 @@ export const messagesApi = {
   deleteConversation: async (conversationId: string): Promise<void> => {
     await api.delete(`/messages/conversations/${conversationId}`)
   },
+
+  getOnlineUsers: async (): Promise<string[]> => {
+    const response = await api.get<{ onlineUsers: string[] }>('/messages/online-users')
+    return response.data.onlineUsers || []
+  },
 }
 
 export default api
