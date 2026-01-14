@@ -594,15 +594,14 @@ const ProfileContent = () => {
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <div>
-            <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1.5">
+            <label className="flex items-center justify-between text-sm font-medium text-gray-700 mb-1.5">
               <span>About You <span className="text-red-500">*</span></span>
               <button
                 type="button"
                 onClick={() => setShowTemplateModal(true)}
-                className="flex items-center justify-center w-5 h-5 text-orange-500 hover:text-orange-600 hover:bg-orange-50 rounded-full transition-colors"
-                title="View templates"
+                className="text-xs text-orange-500 hover:text-orange-600 hover:underline transition-colors font-normal"
               >
-                <HelpCircle className="w-4 h-4" />
+                Choose from pre-written templates
               </button>
             </label>
             <textarea

@@ -4,7 +4,11 @@ import Footer from '@/components/Footer'
 import Header from '@/components/Header'
 import Logo from '@/components/Logo'
 import { useStore } from '@/store/useStore'
+
+import { formatPrice, formatDate } from '@/utils/formatters'
+import { handleLogout as handleLogoutUtil } from '@/utils/auth'
 import { authApi, requestsApi } from '@/services/api'
+
 import {
   MapPin,
   Shield,
@@ -34,16 +38,33 @@ import {
   Video,
   Heart as HeartIcon,
   Bell,
-  Heart as HeartFav
+  Heart as HeartFav,
+  Clock
 } from 'lucide-react'
 
 const ListingDetail = () => {
   const { listingId } = useParams()
   const navigate = useNavigate()
-  const { allListings, user, setUser , setAllListings, setRequests } = useStore()
-
-  // No need to redirect - this is now a protected route, user must be logged in
+  const { allListings, user, requests, toggleSavedListing, isListingSaved, savedListings } = useStore()
   const [isSaved, setIsSaved] = useState(false)
+
+  // Redirect to dashboard if user is logged in
+  useEffect(() => {
+    if (user && listingId) {
+      navigate(`/dashboard?listing=${listingId}`, { replace: true })
+    }
+  }, [user, listingId, navigate])
+
+  // Check if listing is saved when component loads, listingId changes, or savedListings changes
+  useEffect(() => {
+    if (listingId && user) {
+      setIsSaved(isListingSaved(listingId))
+    } else {
+      setIsSaved(false)
+    }
+  }, [listingId, user, savedListings, isListingSaved])
+  // No need to redirect - this is now a protected route, user must be logged in
+
   const [expandedFAQ, setExpandedFAQ] = useState<string | null>(null)
   const [moveInDate, setMoveInDate] = useState('')
   const [duration, setDuration] = useState('6 months')
@@ -51,28 +72,16 @@ const ListingDetail = () => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showUserMenu, setShowUserMenu] = useState(false)
 
-  const handleLogout = async () => {
-    try {
-      await authApi.logout()
-    } catch (error) {
-      console.error('Logout error:', error)
-    } finally {
-      setUser(null)
-      setAllListings([])
-      setRequests([])
-      localStorage.removeItem('mokogo-user')
-      localStorage.removeItem('mokogo-listing')
-      localStorage.removeItem('mokogo-all-listings')
-      localStorage.removeItem('mokogo-requests')
-      localStorage.removeItem('mokogo-access-token')
-      localStorage.removeItem('mokogo-refresh-token')
-      navigate('/auth')
-    }
-  }
+  const handleLogout = () => handleLogoutUtil(navigate)
 
   const userInitial = user?.name?.[0]?.toUpperCase() || 'U'
 
   const listing = allListings.find(l => l.id === listingId)
+
+  // Check if user has already contacted this property
+  const existingRequest = listingId && user 
+    ? requests.find(r => r.listingId === listingId && r.seekerId === user.id)
+    : null
 
   if (!listing) {
     return (
@@ -92,52 +101,93 @@ const ListingDetail = () => {
   }
 
   const handleSave = () => {
-    setIsSaved(!isSaved)
-  }
+    // Check if user is logged in
+    if (!user) {
+      // Redirect to login with redirect params to come back to this listing
+      navigate(`/auth?redirect=/listings/${listingId}`)
+      return
+    }
 
-  const handleContactHost = async () => {
-    if (!user || !listing) return
-    
-    setIsSubmitting(true)
-    try {
-      await requestsApi.create({
-        listingId: listing.id,
-        message: message || undefined,
-        moveInDate: moveInDate || undefined,
-      })
-      
-      // Show success message
-      alert('Request sent successfully!')
-      
-      // Clear form
-      setMessage('')
-      setMoveInDate('')
-      
-      // Navigate to dashboard
-      navigate('/dashboard')
-    } catch (error: any) {
-      console.error('Error sending request:', error)
-      alert(error.response?.data?.message || 'Failed to send request. Please try again.')
-    } finally {
-      setIsSubmitting(false)
+    // User is logged in - toggle save
+    if (listingId) {
+      toggleSavedListing(listingId)
+      setIsSaved(!isSaved)
     }
   }
+
+  const handleShare = () => {
+    // Check if user is logged in
+    if (!user) {
+      navigate(`/auth?redirect=/listings/${listingId}`)
+      return
+    }
+
+    // User is logged in - implement share functionality
+    if (navigator.share) {
+      navigator.share({
+        title: listing?.title,
+        text: listing?.description,
+        url: window.location.href,
+      }).catch(() => {
+        // User cancelled or error occurred
+      })
+    } else {
+      // Fallback: copy to clipboard
+      navigator.clipboard.writeText(window.location.href)
+      // You could show a toast notification here
+    }
+  }
+
+  const handleReport = () => {
+    // Check if user is logged in
+    if (!user) {
+      navigate(`/auth?redirect=/listings/${listingId}`)
+      return
+    }
+
+    // User is logged in - implement report functionality
+    // You can add a report modal or navigate to report page
+    alert('Report functionality will be implemented')
+  }
+  const handleContactHost = async () => {
+  // Check if user is logged in
+  if (!user) {
+    // Redirect to login with redirect params to go to sent requests after login
+    navigate(`/auth?redirect=/dashboard&view=requests&tab=sent`)
+    return
+  }
+
+  if (!listing) return
+
+  setIsSubmitting(true)
+  try {
+    await requestsApi.create({
+      listingId: listing.id,
+      message: message || undefined,
+      moveInDate: moveInDate || undefined,
+    })
+
+    // Clear form
+    setMessage('')
+    setMoveInDate('')
+
+    // Navigate to dashboard requests page with sent tab
+    navigate('/dashboard?view=requests&tab=sent')
+  } catch (error: any) {
+    console.error('Error sending request:', error)
+    alert(
+      error.response?.data?.message ||
+        'Failed to send request. Please try again.'
+    )
+  } finally {
+    setIsSubmitting(false)
+  }
+}
 
   const toggleFAQ = (faqId: string) => {
     setExpandedFAQ(expandedFAQ === faqId ? null : faqId)
   }
 
-  const formatPrice = (amount: number) => {
-    return new Intl.NumberFormat('en-IN').format(amount)
-  }
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-IN', { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    })
-  }
 
   // Mock similar listings (filter current listing)
   const similarListings = allListings
@@ -332,18 +382,27 @@ const ListingDetail = () => {
               </div>
             </div>
             <div className="flex items-center space-x-4 mt-6 lg:mt-0">
-              <button className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+              <button 
+                onClick={handleShare}
+                disabled={!user}
+                className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
                 <Share2 className="w-4 h-4 text-gray-600" />
                 <span>Share</span>
               </button>
               <button 
                 onClick={handleSave}
-                className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                disabled={!user}
+                className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Heart className={`w-4 h-4 ${isSaved ? 'text-red-500 fill-red-500' : 'text-gray-600'}`} />
                 <span>Save</span>
               </button>
-              <button className="flex items-center space-x-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
+              <button 
+                onClick={handleReport}
+                disabled={!user}
+                className="flex items-center space-x-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
                 <Flag className="w-4 h-4" />
                 <span>Report</span>
               </button>
@@ -729,27 +788,45 @@ const ListingDetail = () => {
                     </div>
                   </div>
                   
-                  <button 
-                    onClick={handleContactHost}
-                    disabled={isSubmitting}
-                    className="w-full bg-orange-400 text-white font-bold py-4 rounded-xl hover:bg-orange-500 hover:shadow-lg transition-all transform hover:scale-105 mb-4 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin inline-block mr-2"></div>
-                        Sending...
-                      </>
-                    ) : (
-                      <>
-                        <MessageCircle className="w-5 h-5 inline mr-2" />
-                        Contact Host
-                      </>
-                    )}
-                  </button>
-                  
-                  <div className="text-center text-sm text-gray-600 mb-4">
-                    You won't be charged yet
-                  </div>
+                  {existingRequest ? (
+                    // Show status if user has already contacted
+                    <div className="w-full bg-blue-50 border border-blue-200 rounded-xl py-4 px-4 mb-4">
+                      <div className="flex items-center justify-center space-x-2">
+                        <Clock className="w-5 h-5 text-blue-600" />
+                        <span className="text-blue-800 font-semibold">
+                          {existingRequest.status === 'pending' 
+                            ? 'Already contacted, awaiting approval' 
+                            : existingRequest.status === 'accepted'
+                            ? 'Request accepted'
+                            : 'Request rejected'}
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <button 
+                        onClick={handleContactHost}
+                        disabled={isSubmitting}
+                        className="w-full bg-orange-400 text-white font-bold py-4 rounded-xl hover:bg-orange-500 hover:shadow-lg transition-all transform hover:scale-105 mb-4 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isSubmitting ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin inline-block mr-2"></div>
+                            Sending...
+                          </>
+                        ) : (
+                          <>
+                            <MessageCircle className="w-5 h-5 inline mr-2" />
+                            Contact Host
+                          </>
+                        )}
+                      </button>
+                      
+                      <div className="text-center text-sm text-gray-600 mb-4">
+                        You won't be charged yet
+                      </div>
+                    </>
+                  )}
                   
                   <div className="border-t border-stone-200 pt-4">
                     <div className="flex justify-between items-center mb-2">
@@ -787,12 +864,17 @@ const ListingDetail = () => {
                     </button>
                     <button 
                       onClick={handleSave}
-                      className="w-full flex items-center justify-center space-x-2 py-3 border border-stone-300 rounded-lg hover:bg-stone-50 transition-colors"
+                      disabled={!user}
+                      className="w-full flex items-center justify-center space-x-2 py-3 border border-stone-300 rounded-lg hover:bg-stone-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <HeartIcon className={`w-5 h-5 ${isSaved ? 'text-red-500 fill-red-500' : 'text-red-500'}`} />
                       <span>Save to Favorites</span>
                     </button>
-                    <button className="w-full flex items-center justify-center space-x-2 py-3 border border-stone-300 rounded-lg hover:bg-stone-50 transition-colors">
+                    <button 
+                      onClick={handleShare}
+                      disabled={!user}
+                      className="w-full flex items-center justify-center space-x-2 py-3 border border-stone-300 rounded-lg hover:bg-stone-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
                       <Share2 className="w-5 h-5 text-orange-400" />
                       <span>Share Listing</span>
                     </button>

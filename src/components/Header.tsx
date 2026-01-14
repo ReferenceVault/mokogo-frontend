@@ -83,41 +83,50 @@ const Header = () => {
             <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-orange-400 to-orange-500 rounded-full group-hover:w-full transition-all duration-300" />
           </Link>
           
-          {isAuthenticated ? (
-            <button
-              onClick={handleListYourSpace}
-              className="relative group"
-            >
-              <span className={`text-sm font-medium transition-all duration-300 ${
-                isActive('/auth') || isActive('/listing') || isActive('/dashboard')
-                  ? 'text-orange-500 font-semibold' 
-                  : 'text-gray-600 group-hover:text-orange-500'
-              }`}>
-                List Your Space
-              </span>
-              {(isActive('/auth') || isActive('/listing') || isActive('/dashboard')) && (
-                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-orange-400 to-orange-500 rounded-full" />
-              )}
-              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-orange-400 to-orange-500 rounded-full group-hover:w-full transition-all duration-300" />
-            </button>
-          ) : (
-            <Link 
-              to="/auth" 
-              className="relative group"
-            >
-              <span className={`text-sm font-medium transition-all duration-300 ${
-                isActive('/auth') || isActive('/listing') || isActive('/dashboard')
-                  ? 'text-orange-500 font-semibold' 
-                  : 'text-gray-600 group-hover:text-orange-500'
-              }`}>
-                List Your Space
-              </span>
-              {(isActive('/auth') || isActive('/listing') || isActive('/dashboard')) && (
-                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-orange-400 to-orange-500 rounded-full" />
-              )}
-              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-orange-400 to-orange-500 rounded-full group-hover:w-full transition-all duration-300" />
-            </Link>
-          )}
+        {isAuthenticated ? (
+  <button
+    onClick={handleListYourSpace}
+    className="relative group"
+  >
+    <span
+      className={`text-sm font-medium transition-all duration-300 ${
+        isActive('/auth') || isActive('/listing') || isActive('/dashboard')
+          ? 'text-orange-500 font-semibold'
+          : 'text-gray-600 group-hover:text-orange-500'
+      }`}
+    >
+      List Your Space
+    </span>
+
+    {(isActive('/auth') || isActive('/listing') || isActive('/dashboard')) && (
+      <span className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-orange-400 to-orange-500 rounded-full" />
+    )}
+
+    <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-orange-400 to-orange-500 rounded-full group-hover:w-full transition-all duration-300" />
+  </button>
+) : (
+  <Link
+    to="/auth?redirect=/dashboard&view=listings"
+    className="relative group"
+  >
+    <span
+      className={`text-sm font-medium transition-all duration-300 ${
+        isActive('/auth') || isActive('/listing') || isActive('/dashboard')
+          ? 'text-orange-500 font-semibold'
+          : 'text-gray-600 group-hover:text-orange-500'
+      }`}
+    >
+      List Your Space
+    </span>
+
+    {(isActive('/auth') || isActive('/listing') || isActive('/dashboard')) && (
+      <span className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-orange-400 to-orange-500 rounded-full" />
+    )}
+
+    <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-orange-400 to-orange-500 rounded-full group-hover:w-full transition-all duration-300" />
+  </Link>
+)}
+
         </nav>
 
         {/* Right section with Log in button or Dashboard link */}
