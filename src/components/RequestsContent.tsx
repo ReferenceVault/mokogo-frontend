@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useStore } from '@/store/useStore'
 import { requestsApi, RequestResponse } from '@/services/api'
 import { websocketService } from '@/services/websocket'
@@ -11,34 +10,23 @@ import {
   XCircle, 
   MapPin,
   Calendar,
-  Briefcase,
-  Cake,
   MessageSquare,
   ChevronRight,
   Copy,
   Plus,
-  Send,
-  Eye,
-  X,
-  Home
+  Send
 } from 'lucide-react'
-
-import { Listing } from '@/types'
-import { formatRent, formatDateRelative } from '@/utils/formatters'
 
 interface RequestsContentProps {
   initialTab?: 'received' | 'sent'
-  onListingClick?: (listingId: string) => void
   onApprove?: (requestId: string, conversationId?: string) => void
 }
 
 const RequestsContent = ({
   initialTab = 'received',
-  onListingClick,
   onApprove
 }: RequestsContentProps) => {
-  const navigate = useNavigate()
-  const { user, allListings, requests, updateRequest } = useStore()
+  const { user, allListings } = useStore()
 
   const [allRequests, setAllRequests] = useState<RequestResponse[]>([])
   const [loading, setLoading] = useState(true)

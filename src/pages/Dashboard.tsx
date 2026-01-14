@@ -348,7 +348,6 @@ const Dashboard = () => {
     }
   }, [user, hasListings, allListings.length, activeView])
   const userName = user?.name || 'User'
-  const userInitial = user?.name?.[0]?.toUpperCase() || 'U'
   const userImageUrl = (user as any)?.profileImageUrl
 
   // Redirect to overview if user tries to access requests without listings or sent requests
@@ -377,7 +376,6 @@ const Dashboard = () => {
         ]}
         userName={userName}
         userEmail={user?.email || ''}
-        userInitial={userInitial}
         userImageUrl={userImageUrl}
         onProfile={() => setActiveView('profile')}
         onLogout={handleLogout}
@@ -489,11 +487,7 @@ const Dashboard = () => {
           ) : activeView === 'requests' ? (
             <RequestsContent
               initialTab={requestsInitialTab || 'received'}
-              onListingClick={(listingId) => {
-                setViewingListingId(listingId)
-                setActiveView('listing-detail')
-              }}
-              onApprove={async (requestId) => {
+              onApprove={async () => {
                 // When a request is approved, navigate to messages
                 // The backend creates the conversation automatically
                 setActiveView('messages')
