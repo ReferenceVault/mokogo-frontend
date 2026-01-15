@@ -551,6 +551,7 @@ const Dashboard = () => {
         <main className="flex-1 pr-11 lg:pr-14">
           {activeView === 'listing-detail' && viewingListingId ? (
             <ListingDetailContent 
+              key={viewingListingId}
               listingId={viewingListingId} 
               onBack={() => {
                 setActiveView(listingReturnView)

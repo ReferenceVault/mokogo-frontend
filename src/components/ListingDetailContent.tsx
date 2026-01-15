@@ -74,13 +74,17 @@ const ListingDetailContent = ({ listingId, onBack, onExplore }: ListingDetailCon
   useEffect(() => {
     const loadListing = async () => {
       if (!listingId) {
+        console.warn('ListingDetailContent: No listingId provided')
         setListing(null)
         setIsLoading(false)
         return
       }
 
+      console.log('ListingDetailContent: Loading listing', listingId)
+
       // First check if it's in allListings (user's own listings)
       if (foundListing) {
+        console.log('ListingDetailContent: Found in allListings')
         setListing(foundListing)
         setIsLoading(false)
         return
@@ -90,25 +94,33 @@ const ListingDetailContent = ({ listingId, onBack, onExplore }: ListingDetailCon
       try {
         // Try to get listing directly by ID (works for both logged in and not logged in)
         // The backend endpoint is public, so we can use getByIdPublic
-        let response: any
+        let response: any = null
+        let errorOccurred = false
+        
         try {
           // Try public endpoint first (works without auth)
           response = await listingsApi.getByIdPublic(listingId)
         } catch (publicError: any) {
+          console.log('Public endpoint failed, trying authenticated endpoint...', publicError?.response?.status)
           // If public fails and user is logged in, try authenticated endpoint
           if (user) {
             try {
               response = await listingsApi.getById(listingId)
-            } catch (authError) {
-              console.error('Error fetching listing:', authError)
-              throw publicError // Use the original error
+            } catch (authError: any) {
+              console.error('Both public and authenticated endpoints failed:', {
+                publicError: publicError?.response?.status,
+                authError: authError?.response?.status,
+                message: authError?.message
+              })
+              errorOccurred = true
             }
           } else {
-            throw publicError
+            console.error('Public endpoint failed and user is not logged in:', publicError?.response?.status)
+            errorOccurred = true
           }
         }
 
-        if (response) {
+        if (response && !errorOccurred) {
           const mappedListing: Listing = {
             id: response._id || response.id,
             title: response.title,
@@ -138,9 +150,10 @@ const ListingDetailContent = ({ listingId, onBack, onExplore }: ListingDetailCon
         }
 
         // If we get here, listing was not found
+        console.warn('Listing not found:', listingId)
         setListing(null)
-      } catch (error) {
-        console.error('Error loading listing detail:', error)
+      } catch (error: any) {
+        console.error('Unexpected error loading listing detail:', error)
         setListing(null)
       } finally {
         setIsLoading(false)
@@ -156,28 +169,10 @@ const ListingDetailContent = ({ listingId, onBack, onExplore }: ListingDetailCon
     }
   }, [listingId, savedListings, isListingSaved])
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px] text-gray-600">
-        Loading listing...
-      </div>
-    )
-  }
-
-  if (!listing) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <h1 className="text-2xl font-semibold text-gray-900 mb-2">Listing not found</h1>
-          {onBack && (
-            <button onClick={onBack} className="text-orange-400 hover:text-orange-500">
-              Back to Dashboard
-            </button>
-          )}
-        </div>
-      </div>
-    )
-  }
+  // Check if conversation exists for this listing (only if request is approved)
+  // Use a ref to prevent duplicate calls and cache results
+  const conversationCheckRef = useRef<{ key: string; timestamp: number } | null>(null)
+  const CONVERSATION_CACHE_TTL = 30000 // 30 seconds cache
 
   // Fetch request status on mount and when listingId/user changes (only for logged in users)
   useEffect(() => {
@@ -214,11 +209,6 @@ const ListingDetailContent = ({ listingId, onBack, onExplore }: ListingDetailCon
 
     fetchRequestStatus()
   }, [user, listingId])
-
-  // Check if conversation exists for this listing (only if request is approved)
-  // Use a ref to prevent duplicate calls and cache results
-  const conversationCheckRef = useRef<{ key: string; timestamp: number } | null>(null)
-  const CONVERSATION_CACHE_TTL = 30000 // 30 seconds cache
   
   useEffect(() => {
     const checkConversation = async () => {
@@ -273,6 +263,33 @@ const ListingDetailContent = ({ listingId, onBack, onExplore }: ListingDetailCon
       setConversationId(null)
     }
   }, [user, listingId, requestStatus.status])
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px] text-gray-600">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-orange-400 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p>Loading listing...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!listing) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <h1 className="text-2xl font-semibold text-gray-900 mb-2">Listing not found</h1>
+          <p className="text-gray-600 mb-4">The listing you're looking for doesn't exist or is no longer available.</p>
+          {onBack && (
+            <button onClick={onBack} className="text-orange-400 hover:text-orange-500">
+              Back to Dashboard
+            </button>
+          )}
+        </div>
+      </div>
+    )
+  }
 
   // Handle navigation to messages
   // If request is approved, conversation should exist (created by backend)

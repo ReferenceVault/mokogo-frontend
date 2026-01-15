@@ -33,6 +33,8 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const conversationsLoadedRef = useRef(false)
   const menuRef = useRef<HTMLDivElement>(null)
+  const messagesContainerRef = useRef<HTMLDivElement>(null)
+
   const conversationMenuRefs = useRef<Map<string, HTMLDivElement>>(new Map())
 
   useEffect(() => {
@@ -220,7 +222,11 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
   }, [selectedConversationId])
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    //messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  // Scroll only the messages container, not the entire page
+  if (messagesContainerRef.current) {
+    messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight
+  }
   }, [messages])
 
   const fetchConversations = async () => {
@@ -617,7 +623,9 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {/* <div className="flex-1 overflow-y-auto p-4 space-y-4"> */}
+            <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-4">
+
               {(() => {
                 const userId = typeof user === 'object' && user?.id ? user.id : ''
                 // Find the last message sent by current user
