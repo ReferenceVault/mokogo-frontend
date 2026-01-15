@@ -7,7 +7,7 @@ import UserAvatar from '@/components/UserAvatar'
 import { useStore } from '@/store/useStore'
 import { Listing } from '@/types'
 
-import { listingsApi, CreateListingRequest, authApi } from '@/services/api'
+import { listingsApi, CreateListingRequest, authApi, messagesApi, requestsApi } from '@/services/api'
 import { Search, Bell, Heart as HeartIcon, LayoutGrid, Home, MessageSquare, Bookmark, Calendar, Plus, MoreHorizontal } from 'lucide-react'
 
 import Step1Photos from './steps/Step1Photos'
@@ -87,10 +87,60 @@ const ListingWizard = () => {
   const [isSaving, setIsSaving] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
   const [validatedSteps, setValidatedSteps] = useState<Set<number>>(new Set())
+  const [conversationsCount, setConversationsCount] = useState<number>(0)
+  const [pendingRequestsCount, setPendingRequestsCount] = useState<number>(0)
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }, [])
+
+  // Fetch conversations count
+  useEffect(() => {
+    const fetchConversationsCount = async () => {
+      if (!user?.id) {
+        setConversationsCount(0)
+        return
+      }
+      
+      try {
+        const conversations = await messagesApi.getAllConversations()
+        setConversationsCount(conversations.length)
+      } catch (error: any) {
+        if (error.response?.status === 429) {
+          console.warn('Rate limited on conversations fetch')
+        } else {
+          console.error('Error fetching conversations count:', error)
+          setConversationsCount(0)
+        }
+      }
+    }
+    
+    fetchConversationsCount()
+  }, [user])
+
+  // Fetch pending requests count
+  useEffect(() => {
+    const fetchPendingRequestsCount = async () => {
+      if (!user?.id) {
+        setPendingRequestsCount(0)
+        return
+      }
+      
+      try {
+        const receivedRequests = await requestsApi.getAllForOwner('pending')
+        setPendingRequestsCount(receivedRequests.length)
+      } catch (error: any) {
+        if (error.response?.status === 429) {
+          console.warn('Rate limited on requests fetch')
+        } else {
+          console.error('Error fetching pending requests count:', error)
+          setPendingRequestsCount(0)
+        }
+      }
+    }
+    
+    fetchPendingRequestsCount()
+  }, [user])
 
   // Helper function to format date for HTML date input (YYYY-MM-DD)
   const formatDateForInput = (date: string | Date | undefined): string => {
@@ -359,9 +409,7 @@ const ListingWizard = () => {
           if (dataToSave.description && dataToSave.description.trim()) {
             draftData.description = dataToSave.description
           }
-          if (dataToSave.mikoTags && dataToSave.mikoTags.length > 0) {
-            draftData.mikoTags = dataToSave.mikoTags
-          }
+          // mikoTags is not sent to API - backend doesn't accept it
         } else {
           // Continue button: ONLY include fields from validated steps
           // Only include photos if photos step is validated
@@ -429,9 +477,7 @@ const ListingWizard = () => {
           if (dataToSave.description && dataToSave.description.trim()) {
             draftData.description = dataToSave.description
           }
-          if (validatedSteps.has(5) && dataToSave.mikoTags && dataToSave.mikoTags.length > 0) {
-            draftData.mikoTags = dataToSave.mikoTags
-          }
+          // mikoTags is not sent to API - backend doesn't accept it
         }
       }
 
@@ -660,13 +706,7 @@ const ListingWizard = () => {
           if (dataToSave.preferredGender && dataToSave.preferredGender.trim()) updateData.preferredGender = dataToSave.preferredGender
         }
 
-        // Include MIKO tags if MIKO step (step 5) is validated
-        if (updatedValidatedSteps.has(5)) {
-          if (dataToSave.mikoTags && dataToSave.mikoTags.length > 0) {
-            updateData.mikoTags = dataToSave.mikoTags
-          }
-        }
-        
+        // MIKO tags are not sent to API - backend doesn't accept mikoTags property
         // Include description if provided
         if (dataToSave.description && dataToSave.description.trim()) {
           updateData.description = dataToSave.description
@@ -827,7 +867,6 @@ const ListingWizard = () => {
         preferredGender: listingData.preferredGender || '',
         description: listingData.description,
         photos: listingData.photos || [],
-        mikoTags: listingData.mikoTags || [],
         status: 'live',
       }
 
@@ -1136,24 +1175,47 @@ const ListingWizard = () => {
                   <span>Overview</span>
                 </button>
                 <button 
-                  onClick={() => navigate('/dashboard')}
+                  onClick={() => navigate('/dashboard?view=listings')}
                   className="w-full flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 text-gray-500 hover:text-gray-900 hover:bg-white/50"
                 >
                   <Home className="w-4 h-4 mr-3" />
                   <span>My Listings</span>
+                  {allListings.filter(l => l.status === 'live').length > 0 && (
+                    <span className="ml-auto text-xs bg-orange-400/20 text-orange-600 px-2 py-1 rounded-full">
+                      {allListings.filter(l => l.status === 'live').length}
+                    </span>
+                  )}
                 </button>
-                <button className="w-full flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 text-gray-500 hover:text-gray-900 hover:bg-white/50">
+                <button 
+                  onClick={() => navigate('/dashboard?view=messages')}
+                  className="w-full flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 text-gray-500 hover:text-gray-900 hover:bg-white/50"
+                >
                   <MessageSquare className="w-4 h-4 mr-3" />
                   <span>Conversations</span>
-                  <span className="ml-auto text-xs bg-orange-400/20 text-orange-600 px-2 py-1 rounded-full">12</span>
+                  {conversationsCount > 0 && (
+                    <span className="ml-auto text-xs bg-orange-400/20 text-orange-600 px-2 py-1 rounded-full">
+                      {conversationsCount}
+                    </span>
+                  )}
                 </button>
-                <button className="w-full flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 text-gray-500 hover:text-gray-900 hover:bg-white/50">
+                <button 
+                  onClick={() => navigate('/dashboard?view=requests')}
+                  className="w-full flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 text-gray-500 hover:text-gray-900 hover:bg-white/50"
+                >
+                  <Calendar className="w-4 h-4 mr-3" />
+                  <span>Requests</span>
+                  {pendingRequestsCount > 0 && (
+                    <span className="ml-auto text-xs bg-orange-400/20 text-orange-600 px-2 py-1 rounded-full">
+                      {pendingRequestsCount}
+                    </span>
+                  )}
+                </button>
+                <button 
+                  onClick={() => navigate('/dashboard?view=saved')}
+                  className="w-full flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 text-gray-500 hover:text-gray-900 hover:bg-white/50"
+                >
                   <Bookmark className="w-4 h-4 mr-3" />
                   <span>Saved Properties</span>
-                </button>
-                <button className="w-full flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 text-gray-500 hover:text-gray-900 hover:bg-white/50">
-                  <Calendar className="w-4 h-4 mr-3" />
-                  <span>Viewings</span>
                 </button>
               </div>
             </div>
