@@ -210,8 +210,8 @@ const Header = ({ forceGuest = false }: HeaderProps) => {
         {/* Right section with Log in button or Dashboard/User menu */}
         <div className="flex items-center">
           {isAuthenticated ? (
-            // On landing page, show Dashboard button. On other pages, show user avatar with menu
-            currentPath === '/' ? (
+            // On landing page, explore, and how-it-works pages, show Dashboard button. On other pages, show user avatar with menu
+            currentPath === '/' || currentPath.startsWith('/explore') || currentPath.startsWith('/how-it-works') ? (
               <Link 
                 to="/dashboard" 
                 className="group relative bg-gradient-to-r from-orange-400 to-orange-500 text-white px-6 py-2.5 rounded-full font-medium transition-all duration-300 shadow-md hover:shadow-lg hover:shadow-orange-500/30 hover:scale-105 active:scale-95 overflow-hidden"
