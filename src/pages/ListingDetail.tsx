@@ -8,7 +8,7 @@ import { useStore } from '@/store/useStore'
 
 import { formatPrice, formatDate } from '@/utils/formatters'
 import { handleLogout as handleLogoutUtil } from '@/utils/auth'
-import { requestsApi, listingsApi, messagesApi, usersApi } from '@/services/api'
+import { requestsApi, listingsApi, messagesApi, usersApi, UserProfile } from '@/services/api'
 import { Listing } from '@/types'
 
 import {
@@ -42,9 +42,7 @@ const ListingDetail = () => {
   const [loading, setLoading] = useState(true)
   const [listing, setListing] = useState<Listing | null>(null)
   const [isListingLoading, setIsListingLoading] = useState(true)
-  const hostAbout =
-    user?.about?.trim() ||
-    `Hi! I'm ${user?.name || 'a professional'} working in ${listing?.city || 'this city'}. I love meeting new people and creating a comfortable, friendly environment for my flatmates. I'm clean, organized, and respect personal space while being approachable for any questions or concerns.`
+  const [listingOwner, setListingOwner] = useState<UserProfile | null>(null)
 
   // Keep listing detail public regardless of auth state
   useEffect(() => {
@@ -70,22 +68,69 @@ const ListingDetail = () => {
         setLoading(false)
         setIsListingLoading(false)
         
-        // Try to get ownerId from API for ownership check
-        if (user) {
-          try {
-            const listingDetail = await listingsApi.getById(listingId)
-            setListingOwnerId(listingDetail.ownerId)
-          } catch (error) {
-            // getById failed - user is not the owner, fetch from public to get ownerId
+        // Try to get ownerId from API for ownership check and fetch owner profile
+        try {
+          const listingDetail = await listingsApi.getById(listingId).catch(() => null)
+          if (listingDetail) {
+            const ownerId = listingDetail.ownerId
+            setListingOwnerId(ownerId)
+            // Fetch owner profile
+            if (ownerId && (!user || ownerId !== user.id)) {
+              try {
+                const ownerProfile = await usersApi.getUserById(ownerId)
+                setListingOwner(ownerProfile)
+              } catch (error) {
+                console.error('Error fetching listing owner profile:', error)
+              }
+            } else if (ownerId && user && ownerId === user.id) {
+              setListingOwner(user as any)
+            }
+          } else {
+            // Fallback to public listings
             try {
               const publicListings = await listingsApi.getAllPublic('live')
               const found = publicListings.find(l => (l._id || l.id) === listingId)
               if (found) {
-                setListingOwnerId((found as any).ownerId || null)
+                const ownerId = (found as any).ownerId || null
+                setListingOwnerId(ownerId)
+                // Fetch owner profile if we have ownerId
+                if (ownerId && (!user || ownerId !== user.id)) {
+                  try {
+                    const ownerProfile = await usersApi.getUserById(ownerId)
+                    setListingOwner(ownerProfile)
+                  } catch (error) {
+                    console.error('Error fetching listing owner profile:', error)
+                  }
+                } else if (ownerId && user && ownerId === user.id) {
+                  setListingOwner(user as any)
+                }
               }
             } catch (publicError) {
               console.error('Error fetching public listing:', publicError)
             }
+          }
+        } catch (error) {
+          // If getById fails, try public listings
+          try {
+            const publicListings = await listingsApi.getAllPublic('live')
+            const found = publicListings.find(l => (l._id || l.id) === listingId)
+            if (found) {
+              const ownerId = (found as any).ownerId || null
+              setListingOwnerId(ownerId)
+              // Fetch owner profile if we have ownerId
+              if (ownerId && (!user || ownerId !== user.id)) {
+                try {
+                  const ownerProfile = await usersApi.getUserById(ownerId)
+                  setListingOwner(ownerProfile)
+                } catch (error) {
+                  console.error('Error fetching listing owner profile:', error)
+                }
+              } else if (ownerId && user && ownerId === user.id) {
+                setListingOwner(user as any)
+              }
+            }
+          } catch (publicError) {
+            console.error('Error fetching public listing:', publicError)
           }
         }
         return
@@ -141,7 +186,23 @@ const ListingDetail = () => {
           }
           setListing(mappedListing)
           // Store ownerId to check ownership
-          setListingOwnerId(response.ownerId || null)
+          const ownerId = response.ownerId || null
+          setListingOwnerId(ownerId)
+          
+          // Fetch owner profile if we have ownerId and it's not the current user
+          if (ownerId && (!user || ownerId !== user.id)) {
+            try {
+              const ownerProfile = await usersApi.getUserById(ownerId)
+              setListingOwner(ownerProfile)
+            } catch (error) {
+              console.error('Error fetching listing owner profile:', error)
+              // If fetch fails, owner might not exist or we don't have permission
+              setListingOwner(null)
+            }
+          } else if (ownerId && user && ownerId === user.id) {
+            // If owner is current user, use current user's profile
+            setListingOwner(user as any)
+          }
         } else {
           setListing(null)
         }
@@ -264,6 +325,12 @@ const ListingDetail = () => {
   const isOwner = !!user && !!listingOwnerId && (
     listingOwnerId === user.id || listingOwnerId === (user as any)._id
   )
+
+  // Get host information - use listing owner if available, otherwise fallback to current user
+  const hostInfo = listingOwner || (user as any)
+  const hostAbout =
+    hostInfo?.about?.trim() ||
+    `Hi! I'm ${hostInfo?.name || 'a professional'} working in ${listing?.city || 'this city'}. I love meeting new people and creating a comfortable, friendly environment for my flatmates. I'm clean, organized, and respect personal space while being approachable for any questions or concerns.`
 
   // Fetch request status on mount and when listingId/user changes
   useEffect(() => {
@@ -931,15 +998,19 @@ const ListingDetail = () => {
                 
                 <div className="flex items-start space-x-6">
                   <div className="flex-shrink-0">
-                    <div className="w-20 h-20 rounded-full bg-orange-400 flex items-center justify-center border-4 border-orange-400/20">
-                      <span className="text-white font-semibold text-xl">
-                        {user?.name?.[0]?.toUpperCase() || 'H'}
-                      </span>
-                    </div>
+                    <UserAvatar 
+                      user={{ 
+                        name: hostInfo?.name, 
+                        profileImageUrl: hostInfo?.profileImageUrl 
+                      }}
+                      size="xl"
+                      showBorder={true}
+                      className="bg-orange-400 border-orange-400/20"
+                    />
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center space-x-4 mb-3">
-                      <h3 className="text-xl font-bold text-gray-900">{user?.name || 'Host'}</h3>
+                      <h3 className="text-xl font-bold text-gray-900">{hostInfo?.name || 'Host'}</h3>
                       <div className="flex items-center space-x-2">
                         <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-semibold">Verified Host</span>
                         <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-semibold">Superhost</span>

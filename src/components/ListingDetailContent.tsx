@@ -60,14 +60,18 @@ const ListingDetailContent = ({ listingId, onBack, onExplore }: ListingDetailCon
   }>({ status: null })
   const [loadingRequestStatus, setLoadingRequestStatus] = useState(true)
   const [conversationId, setConversationId] = useState<string | null>(null)
-  const hostAbout =
-    user?.about?.trim() ||
-    `Hi! I'm ${user?.name || 'a professional'} working in ${listing?.city || 'this city'}. I love meeting new people and creating a comfortable, friendly environment for my flatmates. I'm clean, organized, and respect personal space while being approachable for any questions or concerns.`
+  const [listingOwner, setListingOwner] = useState<any>(null)
   
   // Check if current user is the owner of this listing
   // If listing is in allListings, it means it's the user's own listing
   // (allListings only contains user's own listings from getAll API)
   const isOwner = !!user && allListings.some(l => l.id === listingId)
+  
+  // Get host information - use listing owner if available, otherwise fallback to current user
+  const hostInfo = listingOwner || (user as any)
+  const hostAbout =
+    hostInfo?.about?.trim() ||
+    `Hi! I'm ${hostInfo?.name || 'a professional'} working in ${listing?.city || 'this city'}. I love meeting new people and creating a comfortable, friendly environment for my flatmates. I'm clean, organized, and respect personal space while being approachable for any questions or concerns.`
 
   const foundListing = allListings.find(l => l.id === listingId)
 
@@ -145,6 +149,23 @@ const ListingDetailContent = ({ listingId, onBack, onExplore }: ListingDetailCon
             mikoTags: response.mikoTags,
           }
           setListing(mappedListing)
+          
+          // Fetch owner profile if we have ownerId and it's not the current user
+          const ownerId = response.ownerId
+          if (ownerId && (!user || ownerId !== user.id)) {
+            try {
+              const ownerProfile = await usersApi.getUserById(ownerId)
+              setListingOwner(ownerProfile)
+            } catch (error) {
+              console.error('Error fetching listing owner profile:', error)
+              // If fetch fails, owner might not exist or we don't have permission
+              setListingOwner(null)
+            }
+          } else if (ownerId && user && ownerId === user.id) {
+            // If owner is current user, use current user's profile
+            setListingOwner(user as any)
+          }
+          
           setIsLoading(false)
           return
         }
@@ -696,8 +717,8 @@ const ListingDetailContent = ({ listingId, onBack, onExplore }: ListingDetailCon
                   <div className="flex-shrink-0">
                     <UserAvatar 
                       user={{ 
-                        name: user?.name, 
-                        profileImageUrl: (user as any)?.profileImageUrl 
+                        name: hostInfo?.name, 
+                        profileImageUrl: hostInfo?.profileImageUrl 
                       }}
                       size="xl"
                       showBorder={true}
@@ -705,7 +726,7 @@ const ListingDetailContent = ({ listingId, onBack, onExplore }: ListingDetailCon
                     />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-base font-bold text-gray-900 mb-2">{user?.name || 'Host'}</h3>
+                    <h3 className="text-base font-bold text-gray-900 mb-2">{hostInfo?.name || 'Host'}</h3>
                     
                     <p className="text-sm text-gray-700 mb-3">
                       {hostAbout}

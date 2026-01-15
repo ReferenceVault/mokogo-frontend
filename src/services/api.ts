@@ -169,6 +169,11 @@ export const usersApi = {
     const response = await api.patch<UserProfile>('/users/profile/me', data)
     return response.data
   },
+
+  getUserById: async (userId: string): Promise<UserProfile> => {
+    const response = await api.get<UserProfile>(`/users/${userId}`)
+    return response.data
+  },
 }
 
 // Listing API interfaces
