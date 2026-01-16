@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { User, Listing, Request } from '@/types'
+import { ConversationResponse, RequestResponse } from '@/services/api'
 
 interface AppState {
   user: User | null
@@ -7,6 +8,11 @@ interface AppState {
   allListings: Listing[]
   requests: Request[]
   savedListings: string[] // Array of listing IDs
+  // Cached API data to prevent duplicate calls
+  cachedConversations: ConversationResponse[] | null
+  cachedRequestsForOwner: RequestResponse[] | null
+  cachedRequestsForRequester: RequestResponse[] | null
+  dataFetchedAt: number | null // Timestamp of last data fetch
   setUser: (user: User | null) => void
   setSavedListings: (listingIds: string[]) => void
   setCurrentListing: (listing: Listing | null) => void
@@ -17,6 +23,12 @@ interface AppState {
   updateRequest: (requestId: string, updates: Partial<Request>) => void
   toggleSavedListing: (listingId: string) => void
   isListingSaved: (listingId: string) => boolean
+  // Cache management
+  setCachedConversations: (conversations: ConversationResponse[] | null) => void
+  setCachedRequestsForOwner: (requests: RequestResponse[] | null) => void
+  setCachedRequestsForRequester: (requests: RequestResponse[] | null) => void
+  setDataFetchedAt: (timestamp: number | null) => void
+  clearCache: () => void
 }
 
 export const useStore = create<AppState>((set, get) => ({
@@ -25,6 +37,10 @@ export const useStore = create<AppState>((set, get) => ({
   allListings: [],
   requests: [],
   savedListings: [],
+  cachedConversations: null,
+  cachedRequestsForOwner: null,
+  cachedRequestsForRequester: null,
+  dataFetchedAt: null,
   setUser: (user) => {
     set({ user })
     if (user) {
@@ -33,6 +49,8 @@ export const useStore = create<AppState>((set, get) => ({
       localStorage.removeItem('mokogo-user')
       localStorage.removeItem('mokogo-saved-listings')
       set({ savedListings: [] })
+      // Clear cache on logout
+      get().clearCache()
     }
   },
   setCurrentListing: (listing) => {
@@ -113,6 +131,26 @@ export const useStore = create<AppState>((set, get) => ({
   setSavedListings: (listingIds) => {
     set({ savedListings: listingIds })
     localStorage.setItem('mokogo-saved-listings', JSON.stringify(listingIds))
+  },
+  setCachedConversations: (conversations) => {
+    set({ cachedConversations: conversations })
+  },
+  setCachedRequestsForOwner: (requests) => {
+    set({ cachedRequestsForOwner: requests })
+  },
+  setCachedRequestsForRequester: (requests) => {
+    set({ cachedRequestsForRequester: requests })
+  },
+  setDataFetchedAt: (timestamp) => {
+    set({ dataFetchedAt: timestamp })
+  },
+  clearCache: () => {
+    set({
+      cachedConversations: null,
+      cachedRequestsForOwner: null,
+      cachedRequestsForRequester: null,
+      dataFetchedAt: null,
+    })
   },
 }))
 

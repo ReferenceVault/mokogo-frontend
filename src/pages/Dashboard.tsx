@@ -39,7 +39,23 @@ type ViewType = 'overview' | 'listings' | 'requests' | 'listing-detail' | 'messa
 const Dashboard = () => {
   const navigate = useNavigate()
   const location = useLocation()
-  const { user, currentListing, setCurrentListing, allListings, setAllListings, requests, savedListings, setUser } = useStore()
+  const { 
+    user, 
+    currentListing, 
+    setCurrentListing, 
+    allListings, 
+    setAllListings, 
+    requests, 
+    savedListings, 
+    setUser,
+    cachedConversations,
+    cachedRequestsForOwner,
+    dataFetchedAt,
+    setCachedConversations,
+    setCachedRequestsForOwner,
+    setCachedRequestsForRequester,
+    setDataFetchedAt,
+  } = useStore()
   const [showBoostModal, setShowBoostModal] = useState(false)
   const [showArchiveModal, setShowArchiveModal] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
@@ -151,56 +167,64 @@ const Dashboard = () => {
     fetchProfile()
   }, [user, setUser])
 
-  // Fetch conversations count on mount and when messages view is active
-  // Use a ref to prevent duplicate calls
-  const conversationsFetchRef = useRef(false)
+  // Fetch all data once on mount (conversations, requests)
+  const dataFetchInProgressRef = useRef(false)
   
   useEffect(() => {
-    const fetchConversationsCount = async () => {
-      if (!user?.id) {
-        setConversationsCount(0)
+    const fetchAllData = async () => {
+      if (!user?.id || dataFetchInProgressRef.current) {
         return
       }
       
-      // Prevent duplicate calls within 2 seconds
-      if (conversationsFetchRef.current) {
+      // Check if data was fetched recently (within last 30 seconds)
+      const now = Date.now()
+      const CACHE_DURATION = 30000 // 30 seconds
+      if (dataFetchedAt && (now - dataFetchedAt) < CACHE_DURATION) {
+        // Use cached data for counts
+        if (cachedConversations) {
+          setConversationsCount(cachedConversations.length)
+        }
+        if (cachedRequestsForOwner) {
+          setPendingRequestsCount(cachedRequestsForOwner.filter(r => r.status === 'pending').length)
+        }
         return
       }
       
-      conversationsFetchRef.current = true
+      dataFetchInProgressRef.current = true
       
       try {
-        const conversations = await messagesApi.getAllConversations()
+        // Fetch all data in parallel
+        const [conversations, requestsForOwner, requestsForRequester] = await Promise.all([
+          messagesApi.getAllConversations().catch(() => []),
+          requestsApi.getAllForOwner().catch(() => []),
+          requestsApi.getAllForRequester().catch(() => []),
+        ])
+        
+        // Cache the data
+        setCachedConversations(conversations)
+        setCachedRequestsForOwner(requestsForOwner)
+        setCachedRequestsForRequester(requestsForRequester)
+        setDataFetchedAt(now)
+        
+        // Update counts from cached data
         setConversationsCount(conversations.length)
+        setPendingRequestsCount(requestsForOwner.filter(r => r.status === 'pending').length)
       } catch (error: any) {
-        // Handle 429 (Too Many Requests) gracefully
-        if (error.response?.status === 429) {
-          console.warn('Rate limited on conversations fetch, using cached count')
-          // Don't update count, keep existing value
-        } else {
-          console.error('Error fetching conversations count:', error)
-          setConversationsCount(0)
+        console.error('Error fetching dashboard data:', error)
+        // Use cached data if available
+        if (cachedConversations) {
+          setConversationsCount(cachedConversations.length)
+        }
+        if (cachedRequestsForOwner) {
+          setPendingRequestsCount(cachedRequestsForOwner.filter(r => r.status === 'pending').length)
         }
       } finally {
-        // Reset after 2 seconds to allow retry
-        setTimeout(() => {
-          conversationsFetchRef.current = false
-        }, 2000)
+        dataFetchInProgressRef.current = false
       }
     }
     
-    fetchConversationsCount()
-    
-    // Only refresh count when messages view becomes active (not on every change)
-    if (activeView === 'messages') {
-      // Small delay to avoid immediate duplicate call
-      const timeoutId = setTimeout(() => {
-        conversationsFetchRef.current = false
-        fetchConversationsCount()
-      }, 500)
-      return () => clearTimeout(timeoutId)
-    }
-  }, [user, activeView])
+    fetchAllData()
+  }, [user?.id]) // Only fetch when user changes, not on view changes
 
   // Check if we're viewing a listing or specific view from URL query params
   const [requestsInitialTab, setRequestsInitialTab] = useState<'received' | 'sent' | undefined>(undefined)
@@ -351,29 +375,17 @@ const Dashboard = () => {
   const savedListingItems = savedPublicListings.filter(l => savedListings.includes(l.id))
   const hasListings = allListings.length > 0 // Check if user has any listings
 
-  // Fetch pending received requests count
+  // Update counts from cached data when cache is available
   useEffect(() => {
-    const fetchPendingCount = async () => {
-      if (!user || !hasListings) {
-        setPendingRequestsCount(0)
-        return
-      }
-
-      try {
-        const receivedRequests = await requestsApi.getAllForOwner('pending')
-        setPendingRequestsCount(receivedRequests.length)
-      } catch (error) {
-        console.error('Error fetching pending requests count:', error)
-        setPendingRequestsCount(0)
-      }
+    if (cachedConversations) {
+      setConversationsCount(cachedConversations.length)
     }
-
-    fetchPendingCount()
-    // Also refetch when activeView changes to requests to update count
-    if (activeView === 'requests') {
-      fetchPendingCount()
+    if (cachedRequestsForOwner && hasListings) {
+      setPendingRequestsCount(cachedRequestsForOwner.filter(r => r.status === 'pending').length)
+    } else if (!hasListings) {
+      setPendingRequestsCount(0)
     }
-  }, [user, hasListings, allListings.length, activeView])
+  }, [cachedConversations, cachedRequestsForOwner, hasListings])
   const userName = user?.name || 'User'
   const userImageUrl = (user as any)?.profileImageUrl
 

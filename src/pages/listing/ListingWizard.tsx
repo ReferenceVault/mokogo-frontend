@@ -2,14 +2,15 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Footer from '@/components/Footer'
 import Toast from '@/components/Toast'
-import Logo from '@/components/Logo'
-import UserAvatar from '@/components/UserAvatar'
+import DashboardHeader from '@/components/DashboardHeader'
+import DashboardSidebar from '@/components/DashboardSidebar'
+import SocialSidebar from '@/components/SocialSidebar'
 import { useStore } from '@/store/useStore'
 import { Listing } from '@/types'
-import { parseListingFromText, ListingParseResult } from '@/utils/listingParser'
+import { handleLogout as handleLogoutUtil } from '@/utils/auth'
 
-import { listingsApi, CreateListingRequest, authApi, messagesApi, requestsApi } from '@/services/api'
-import { Search, Bell, Heart as HeartIcon, LayoutGrid, Home, MessageSquare, Bookmark, Calendar, Plus, MoreHorizontal } from 'lucide-react'
+import { listingsApi, CreateListingRequest } from '@/services/api'
+import { Search, LayoutGrid, Home, MessageSquare, Bookmark, Calendar, Plus, Sparkles } from 'lucide-react'
 
 import Step1Photos from './steps/Step1Photos'
 import Step2Location from './steps/Step2Location'
@@ -78,74 +79,38 @@ const STEPS = [
 
 const ListingWizard = () => {
   const navigate = useNavigate()
-  const { currentListing, setCurrentListing, allListings, addListing, setAllListings, user, setUser, setRequests } = useStore()
+  const { currentListing, setCurrentListing, allListings: storeAllListings, addListing, setAllListings, user } = useStore()
   const [currentStep, setCurrentStep] = useState(0)
   const [expandedSections, setExpandedSections] = useState<Set<number>>(new Set([0])) // Only first section expanded by default
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState<string>('')
   const [errors, setErrors] = useState<Record<string, string>>({})
-  const [showUserMenu, setShowUserMenu] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
   const [validatedSteps, setValidatedSteps] = useState<Set<number>>(new Set())
-  const [conversationsCount, setConversationsCount] = useState<number>(0)
-  const [pendingRequestsCount, setPendingRequestsCount] = useState<number>(0)
-  const [pasteText, setPasteText] = useState('')
-  const [parseResult, setParseResult] = useState<ListingParseResult | null>(null)
-  const [parseError, setParseError] = useState('')
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  
+  // Get cached counts from store
+  const { 
+    cachedConversations, 
+    cachedRequestsForOwner, 
+    savedListings,
+    requests 
+  } = useStore()
+  
+  
+  const conversationsCount = cachedConversations?.length || 0
+  const pendingRequestsCount = cachedRequestsForOwner?.filter(r => r.status === 'pending').length || 0
+  const activeListings = storeAllListings.filter(l => l.status === 'live')
+  const sentRequests = requests.filter(r => r.seekerId === user?.id)
+  const hasListings = storeAllListings.length > 0
+  const hasSentRequests = sentRequests.length > 0
+  const showRequestsTab = hasListings || hasSentRequests
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }, [])
-
-  // Fetch conversations count
-  useEffect(() => {
-    const fetchConversationsCount = async () => {
-      if (!user?.id) {
-        setConversationsCount(0)
-        return
-      }
-      
-      try {
-        const conversations = await messagesApi.getAllConversations()
-        setConversationsCount(conversations.length)
-      } catch (error: any) {
-        if (error.response?.status === 429) {
-          console.warn('Rate limited on conversations fetch')
-        } else {
-          console.error('Error fetching conversations count:', error)
-          setConversationsCount(0)
-        }
-      }
-    }
-    
-    fetchConversationsCount()
-  }, [user])
-
-  // Fetch pending requests count
-  useEffect(() => {
-    const fetchPendingRequestsCount = async () => {
-      if (!user?.id) {
-        setPendingRequestsCount(0)
-        return
-      }
-      
-      try {
-        const receivedRequests = await requestsApi.getAllForOwner('pending')
-        setPendingRequestsCount(receivedRequests.length)
-      } catch (error: any) {
-        if (error.response?.status === 429) {
-          console.warn('Rate limited on requests fetch')
-        } else {
-          console.error('Error fetching pending requests count:', error)
-          setPendingRequestsCount(0)
-        }
-      }
-    }
-    
-    fetchPendingRequestsCount()
-  }, [user])
 
   // Helper function to format date for HTML date input (YYYY-MM-DD)
   const formatDateForInput = (date: string | Date | undefined): string => {
@@ -164,65 +129,6 @@ const ListingWizard = () => {
       return date.toISOString().split('T')[0]
     }
     return ''
-  }
-
-  const getStartStepFromData = (data: Partial<Listing>) => {
-    let step = 0
-    if (data.photos && data.photos.length >= 3) step = 1
-    if (data.city && data.locality) step = 2
-    if (data.bhkType && data.roomType && data.furnishingLevel) step = 3
-    if (data.rent && data.deposit && data.moveInDate) step = 4
-    if (data.preferredGender) step = 5
-    if (data.mikoTags && data.mikoTags.length > 0) step = 6
-    return step
-  }
-
-  const handleParseListingText = () => {
-    if (!pasteText.trim()) {
-      setParseError('Paste listing text to extract details.')
-      return
-    }
-    const result = parseListingFromText(pasteText)
-    setParseResult(result)
-    setParseError('')
-  }
-
-  const handleApplyParsed = () => {
-    if (!parseResult) return
-    const updated = {
-      ...listingDataRef.current,
-      ...parseResult.data,
-      rent: parseResult.data.rent || listingDataRef.current.rent || 0,
-      deposit: parseResult.data.deposit || listingDataRef.current.deposit || 0,
-      moveInDate: parseResult.data.moveInDate || listingDataRef.current.moveInDate || '',
-      mikoTags: listingDataRef.current.mikoTags || []
-    }
-    listingDataRef.current = updated
-    setListingData(updated)
-    setErrors({})
-    const step = getStartStepFromData(updated)
-    setCurrentStep(step)
-    setExpandedSections(new Set([step]))
-  }
-
-  const handleLogout = async () => {
-    try {
-      await authApi.logout()
-    } catch (error) {
-      console.error('Logout error:', error)
-    } finally {
-      setUser(null)
-      setCurrentListing(null)
-      setAllListings([])
-      setRequests([])
-      localStorage.removeItem('mokogo-user')
-      localStorage.removeItem('mokogo-listing')
-      localStorage.removeItem('mokogo-all-listings')
-      localStorage.removeItem('mokogo-requests')
-      localStorage.removeItem('mokogo-access-token')
-      localStorage.removeItem('mokogo-refresh-token')
-      navigate('/auth')
-    }
   }
   
   // Check if we're editing an existing listing (has real ID and not a draft)
@@ -949,9 +855,9 @@ const ListingWizard = () => {
       setCurrentListing(publishedListing)
       
       // Add to all listings if not already present
-      const existingIndex = allListings.findIndex(l => l.id === publishedListing.id)
+      const existingIndex = storeAllListings.findIndex((l: Listing) => l.id === publishedListing.id)
       if (existingIndex >= 0) {
-        const updatedListings = [...allListings]
+        const updatedListings = [...storeAllListings]
         updatedListings[existingIndex] = publishedListing
         setAllListings(updatedListings)
       } else {
@@ -1142,168 +1048,113 @@ const ListingWizard = () => {
 
 
   return (
-    <div className="min-h-screen bg-stone-100 flex flex-col">
-      {/* Dashboard-style Header */}
-      <header className="sticky top-0 z-50 bg-white/70 backdrop-blur-md border-b border-stone-200">
-        <div className="max-w-7xl mx-auto px-6 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-8">
-              <Logo />
-              
-              <nav className="hidden md:flex items-center space-x-1">
-                <button 
-                  onClick={() => navigate('/dashboard')}
-                  className="px-4 py-2 text-sm font-medium transition-colors duration-200 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-white/50"
-                >
-                  Dashboard
-                </button>
-                <button 
-                  className="px-4 py-2 text-sm font-medium transition-colors duration-200 rounded-lg text-gray-900"
-                >
-                  {isEditing ? 'Update Listing' : 'Create Listing'}
-                </button>
-              </nav>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <div className="hidden lg:flex items-center bg-white/85 backdrop-blur-md rounded-xl px-4 py-2 border border-stone-200">
-                <Search className="w-4 h-4 text-gray-400 mr-3" />
-                <input 
-                  type="text" 
-                  placeholder="Search listings, areas..." 
-                  className="bg-transparent border-none outline-none text-sm text-gray-700 placeholder-gray-400 w-64" 
-                />
-              </div>
-              
-              <button className="relative p-2 text-gray-500 hover:text-gray-700 transition-colors duration-200">
-                <Bell className="w-5 h-5" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-orange-400 rounded-full"></span>
-              </button>
-              
-              <button className="p-2 text-gray-500 hover:text-gray-700 transition-colors duration-200">
-                <HeartIcon className="w-5 h-5" />
-              </button>
-              
-              <div 
-                className="flex items-center gap-3 cursor-pointer relative"
-                onClick={() => setShowUserMenu(!showUserMenu)}
-              >
-                <UserAvatar 
-                  user={user}
-                  size="md"
-                  showBorder={true}
-                  className="shadow-lg bg-gradient-to-br from-orange-400 to-orange-500 text-white"
-                />
-              </div>
-
-              {showUserMenu && (
-                <div className="absolute top-full right-4 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
-                  <button
-                    onClick={handleLogout}
-                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                  >
-                    Log out
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Click outside to close user menu */}
-      {showUserMenu && (
-        <div 
-          className="fixed inset-0 z-40" 
-          onClick={() => setShowUserMenu(false)}
-        />
-      )}
+    <div className="min-h-screen bg-gradient-to-br from-orange-50/30 via-white to-orange-50/20 flex flex-col">
+      {/* Right Side Social Sidebar */}
+      <SocialSidebar position="right" />
       
+      {/* Dashboard Header */}
+      <DashboardHeader
+        activeView="listings"
+        onViewChange={(view) => {
+          if (view === 'overview' || view === 'listings') {
+            navigate(`/dashboard?view=${view}`)
+          }
+        }}
+        menuItems={[
+          { label: 'Dashboard', view: 'overview' },
+          { label: 'My Listings', view: 'listings' }
+        ]}
+        userName={user?.name || 'User'}
+        userEmail={user?.email || ''}
+        userImageUrl={(user as any)?.profileImageUrl}
+        onProfile={() => navigate('/dashboard?view=profile')}
+        onLogout={() => handleLogoutUtil(navigate)}
+      />
+
       <div className="flex flex-1">
         {/* Sidebar */}
-        <aside className="w-72 min-h-screen bg-white/70 backdrop-blur-md border-r border-stone-200 sticky top-16">
-          <div className="p-6">
-            <div className="mb-8">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Workspace</h3>
-                <button className="text-gray-500 hover:text-orange-400 transition-colors duration-200">
-                  <MoreHorizontal className="w-4 h-4" />
-                </button>
-              </div>
-              
-              <div className="space-y-1">
-                <button 
-                  onClick={() => navigate('/dashboard')}
-                  className="w-full flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 text-gray-500 hover:text-gray-900 hover:bg-white/50"
-                >
-                  <LayoutGrid className="w-4 h-4 mr-3" />
-                  <span>Overview</span>
-                </button>
-                <button 
-                  onClick={() => navigate('/dashboard?view=listings')}
-                  className="w-full flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 text-gray-500 hover:text-gray-900 hover:bg-white/50"
-                >
-                  <Home className="w-4 h-4 mr-3" />
-                  <span>My Listings</span>
-                  {allListings.filter(l => l.status === 'live').length > 0 && (
-                    <span className="ml-auto text-xs bg-orange-400/20 text-orange-600 px-2 py-1 rounded-full">
-                      {allListings.filter(l => l.status === 'live').length}
-                    </span>
-                  )}
-                </button>
-                <button 
-                  onClick={() => navigate('/dashboard?view=messages')}
-                  className="w-full flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 text-gray-500 hover:text-gray-900 hover:bg-white/50"
-                >
-                  <MessageSquare className="w-4 h-4 mr-3" />
-                  <span>Conversations</span>
-                  {conversationsCount > 0 && (
-                    <span className="ml-auto text-xs bg-orange-400/20 text-orange-600 px-2 py-1 rounded-full">
-                      {conversationsCount}
-                    </span>
-                  )}
-                </button>
-                <button 
-                  onClick={() => navigate('/dashboard?view=requests')}
-                  className="w-full flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 text-gray-500 hover:text-gray-900 hover:bg-white/50"
-                >
-                  <Calendar className="w-4 h-4 mr-3" />
-                  <span>Requests</span>
-                  {pendingRequestsCount > 0 && (
-                    <span className="ml-auto text-xs bg-orange-400/20 text-orange-600 px-2 py-1 rounded-full">
-                      {pendingRequestsCount}
-                    </span>
-                  )}
-                </button>
-                <button 
-                  onClick={() => navigate('/dashboard?view=saved')}
-                  className="w-full flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 text-gray-500 hover:text-gray-900 hover:bg-white/50"
-                >
-                  <Bookmark className="w-4 h-4 mr-3" />
-                  <span>Saved Properties</span>
-                </button>
-              </div>
-            </div>
-            
-            <div className="bg-orange-400/8 rounded-2xl p-4 border border-stone-200">
-              <div className="flex items-start space-x-3">
-                <div className="w-10 h-10 rounded-lg bg-orange-400 flex items-center justify-center flex-shrink-0">
-                  <Plus className="w-5 h-5 text-white" />
+        <DashboardSidebar
+          title="Workspace"
+          collapsed={sidebarCollapsed}
+          onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+          activeView="listing-wizard"
+          menuItems={[
+            {
+              id: 'miko',
+              label: 'Miko Vibe Search',
+              icon: Sparkles,
+              onClick: () => navigate('/dashboard')
+            },
+            {
+              id: 'explore',
+              label: 'Explore',
+              icon: Search,
+              onClick: () => navigate('/dashboard?view=explore')
+            },
+            {
+              id: 'overview',
+              label: 'Overview',
+              icon: LayoutGrid,
+              onClick: () => navigate('/dashboard')
+            },
+            {
+              id: 'listings',
+              label: 'My Listings',
+              icon: Home,
+              badge: activeListings.length > 0 ? activeListings.length : undefined,
+              onClick: () => navigate('/dashboard?view=listings')
+            },
+            {
+              id: 'messages',
+              label: 'Conversations',
+              icon: MessageSquare,
+              badge: conversationsCount > 0 ? conversationsCount : undefined,
+              onClick: () => navigate('/dashboard?view=messages')
+            },
+            {
+              id: 'saved',
+              label: 'Saved Properties',
+              icon: Bookmark,
+              badge: savedListings.length > 0 ? savedListings.length : undefined,
+              onClick: () => navigate('/dashboard?view=saved')
+            },
+            // Only show Requests tab if user has listings OR sent requests
+            ...(showRequestsTab ? [{
+              id: 'requests',
+              label: 'Requests',
+              icon: Calendar,
+              badge: pendingRequestsCount > 0 ? pendingRequestsCount : undefined,
+              onClick: () => navigate('/dashboard?view=requests')
+            }] : [])
+          ]}
+          quickFilters={[]}
+          ctaSection={
+            <>
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(249,115,22,0.1),transparent_55%)]" />
+              <div className="relative flex items-start space-x-3">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center flex-shrink-0 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                  <Plus className="w-6 h-6 text-white" />
                 </div>
                 <div>
                   <h4 className="text-sm font-semibold text-gray-900 mb-1">Post Your Listing</h4>
-                  <p className="text-xs text-gray-500 mb-3">Find your perfect roommate in minutes</p>
+                  <p className="text-xs text-gray-600 mb-3">Find your perfect roommate in minutes</p>
                   <button 
                     onClick={() => navigate('/listing/wizard')}
-                    className="text-xs font-medium text-orange-400 hover:underline"
+                    className="text-xs font-semibold text-orange-600 hover:text-orange-700 transition-colors flex items-center gap-1 group-hover:gap-2"
                   >
-                    Get Started →
+                    Get Started
+                    <span className="transition-transform group-hover:translate-x-1">→</span>
                   </button>
                 </div>
               </div>
-            </div>
-          </div>
-        </aside>
+            </>
+          }
+          collapsedCtaButton={{
+            icon: Plus,
+            onClick: () => navigate('/listing/wizard'),
+            title: 'Post Your Listing'
+          }}
+        />
 
         {/* Main Content */}
         <main className="flex-1 bg-stone-100">

@@ -43,6 +43,9 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
       if (token) {
         websocketService.connect(token)
       }
+      
+      // Always fetch fresh conversations to get latest messages and unread counts
+      // Cache is used for initial load, but we need fresh data for messages view
       fetchConversations()
       conversationsLoadedRef.current = true
     } else if (!user) {
@@ -59,13 +62,19 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
     const handleNewMessage = (newMessage: MessageResponse) => {
       // Update conversations list to refresh unread count and last message
       setConversations(prev => {
-        return prev.map(conv => {
+        const updated = prev.map(conv => {
           const convId = conv._id || conv.id
-          if (convId === newMessage.conversationId) {
+          const messageConvId = typeof newMessage.conversationId === 'object' 
+            ? (newMessage.conversationId as any)._id 
+            : newMessage.conversationId
+            
+          if (convId === messageConvId || convId === newMessage.conversationId) {
             // Update last message and increment unread count if not from current user
-            const senderId = typeof newMessage.senderId === 'object' ? newMessage.senderId._id : newMessage.senderId
+            const senderId = typeof newMessage.senderId === 'object' 
+              ? (newMessage.senderId as any)._id 
+              : newMessage.senderId
             const userId = typeof user === 'object' && user?.id ? user.id : ''
-            const isFromCurrentUser = senderId === userId
+            const isFromCurrentUser = senderId === userId || senderId === (user as any)?._id
             const isCurrentConversation = selectedConversationId === convId
             
             return {
@@ -78,6 +87,13 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
             }
           }
           return conv
+        })
+        
+        // Sort by lastMessageAt to show most recent first
+        return updated.sort((a, b) => {
+          const timeA = new Date(a.lastMessageAt || 0).getTime()
+          const timeB = new Date(b.lastMessageAt || 0).getTime()
+          return timeB - timeA
         })
       })
 
@@ -218,6 +234,22 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
     if (selectedConversationId) {
       fetchMessages(selectedConversationId)
       websocketService.emit('join_conversation', { conversationId: selectedConversationId })
+      
+      // Mark conversation as read and reset unread count
+      setConversations(prev => {
+        return prev.map(conv => {
+          const convId = conv._id || conv.id
+          if (convId === selectedConversationId) {
+            return { ...conv, unreadCount: 0 }
+          }
+          return conv
+        })
+      })
+      
+      // Mark as read on server
+      messagesApi.markAsRead(selectedConversationId).catch(err => {
+        console.error('Error marking conversation as read:', err)
+      })
     }
   }, [selectedConversationId])
 
@@ -239,7 +271,18 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
         messagesApi.getOnlineUsers().catch(() => []) // Fetch online users, ignore errors
       ])
       
-      setConversations(conversationsData)
+      // Sort conversations by lastMessageAt (most recent first)
+      const sortedConversations = [...conversationsData].sort((a, b) => {
+        const timeA = new Date(a.lastMessageAt || 0).getTime()
+        const timeB = new Date(b.lastMessageAt || 0).getTime()
+        return timeB - timeA
+      })
+      
+      // Cache the conversations
+      useStore.getState().setCachedConversations(sortedConversations)
+      useStore.getState().setDataFetchedAt(Date.now())
+      
+      setConversations(sortedConversations)
       setOnlineUsers(new Set(onlineUsersData))
       
       if (initialConversationId && !selectedConversationId) {
@@ -443,8 +486,16 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
 
 
   const getLastMessage = (conversation: ConversationResponse) => {
+    // Check if lastMessageId is an object with text property
     if (conversation.lastMessageId && typeof conversation.lastMessageId === 'object') {
-      return conversation.lastMessageId.text
+      const lastMessage = conversation.lastMessageId as MessageResponse
+      return lastMessage.text || 'No messages yet'
+    }
+    // If lastMessageId is a string ID, we can't get the text without fetching
+    // But we should have it from the API response
+    // Fallback to checking if there's a lastMessage property
+    if ((conversation as any).lastMessage && typeof (conversation as any).lastMessage === 'object') {
+      return ((conversation as any).lastMessage as MessageResponse).text || 'No messages yet'
     }
     return 'No messages yet'
   }

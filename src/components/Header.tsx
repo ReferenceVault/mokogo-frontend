@@ -16,7 +16,22 @@ const Header = ({ forceGuest = false }: HeaderProps) => {
   const user = useStore((state) => state.user)
   const setUser = useStore((state) => state.setUser)
   const setCurrentListing = useStore((state) => state.setCurrentListing)
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  // Initialize authentication state synchronously to avoid flash of wrong button
+  const checkAuthSync = () => {
+    const accessToken = localStorage.getItem('mokogo-access-token')
+    const savedUser = localStorage.getItem('mokogo-user')
+    let currentUser = user
+    if (!currentUser && savedUser) {
+      try {
+        currentUser = JSON.parse(savedUser)
+      } catch (e) {
+        console.error('Error parsing saved user:', e)
+      }
+    }
+    return !!(accessToken && currentUser) && !forceGuest
+  }
+
+  const [isAuthenticated, setIsAuthenticated] = useState(checkAuthSync)
   const [showUserMenu, setShowUserMenu] = useState(false)
   const userMenuRef = useRef<HTMLDivElement>(null)
 
@@ -34,7 +49,8 @@ const Header = ({ forceGuest = false }: HeaderProps) => {
         }
       }
       
-      setIsAuthenticated(!!(accessToken && currentUser) && !forceGuest)
+      const authenticated = !!(accessToken && currentUser) && !forceGuest
+      setIsAuthenticated(authenticated)
     }
     
     checkAuth()
