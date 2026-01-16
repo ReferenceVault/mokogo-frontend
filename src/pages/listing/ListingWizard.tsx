@@ -8,6 +8,7 @@ import SocialSidebar from '@/components/SocialSidebar'
 import { useStore } from '@/store/useStore'
 import { Listing } from '@/types'
 import { handleLogout as handleLogoutUtil } from '@/utils/auth'
+import { parseListingFromText, ListingParseResult } from '@/utils/listingParser'
 
 import { listingsApi, CreateListingRequest } from '@/services/api'
 import { Search, LayoutGrid, Home, MessageSquare, Bookmark, Calendar, Plus, Sparkles } from 'lucide-react'
@@ -90,6 +91,9 @@ const ListingWizard = () => {
   const [isCreating, setIsCreating] = useState(false)
   const [validatedSteps, setValidatedSteps] = useState<Set<number>>(new Set())
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [pasteText, setPasteText] = useState('')
+  const [parseResult, setParseResult] = useState<ListingParseResult | null>(null)
+  const [parseError, setParseError] = useState('')
   
   // Get cached counts from store
   const { 
@@ -1023,6 +1027,45 @@ const ListingWizard = () => {
     if (diff < 60) return 'Saved just now'
     if (diff < 3600) return `Saved ${Math.floor(diff / 60)} min ago`
     return `Saved at ${lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+  }
+
+  const getStartStepFromData = (data: Partial<Listing>) => {
+    let step = 0
+    if (data.photos && data.photos.length >= 3) step = 1
+    if (data.city && data.locality) step = 2
+    if (data.bhkType && data.roomType && data.furnishingLevel) step = 3
+    if (data.rent && data.deposit && data.moveInDate) step = 4
+    if (data.preferredGender) step = 5
+    if (data.mikoTags && data.mikoTags.length > 0) step = 6
+    return step
+  }
+
+  const handleParseListingText = () => {
+    if (!pasteText.trim()) {
+      setParseError('Paste listing text to extract details.')
+      return
+    }
+    const result = parseListingFromText(pasteText)
+    setParseResult(result)
+    setParseError('')
+  }
+
+  const handleApplyParsed = () => {
+    if (!parseResult) return
+    const updated = {
+      ...listingDataRef.current,
+      ...parseResult.data,
+      rent: parseResult.data.rent || listingDataRef.current.rent || 0,
+      deposit: parseResult.data.deposit || listingDataRef.current.deposit || 0,
+      moveInDate: parseResult.data.moveInDate || listingDataRef.current.moveInDate || '',
+      mikoTags: listingDataRef.current.mikoTags || []
+    }
+    listingDataRef.current = updated
+    setListingData(updated)
+    setErrors({})
+    const step = getStartStepFromData(updated)
+    setCurrentStep(step)
+    setExpandedSections(new Set([step]))
   }
 
   const renderStepContent = (stepIndex: number) => {
