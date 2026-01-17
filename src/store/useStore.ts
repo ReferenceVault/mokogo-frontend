@@ -42,6 +42,11 @@ export const useStore = create<AppState>((set, get) => ({
   cachedRequestsForRequester: null,
   dataFetchedAt: null,
   setUser: (user) => {
+    const currentUser = get().user
+    // Only update if user actually changed
+    if (currentUser === user) return
+    if (currentUser && user && JSON.stringify(currentUser) === JSON.stringify(user)) return
+    
     set({ user })
     if (user) {
       localStorage.setItem('mokogo-user', JSON.stringify(user))

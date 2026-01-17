@@ -34,6 +34,7 @@ const Header = ({ forceGuest = false }: HeaderProps) => {
   const [isAuthenticated, setIsAuthenticated] = useState(checkAuthSync)
   const [showUserMenu, setShowUserMenu] = useState(false)
   const userMenuRef = useRef<HTMLDivElement>(null)
+  const profileFetchRef = useRef<string | null>(null)
 
   useEffect(() => {
     // Check if user is authenticated
@@ -79,18 +80,31 @@ const Header = ({ forceGuest = false }: HeaderProps) => {
       // Only fetch if profileImageUrl is missing
       if ((user as any).profileImageUrl) return
       
+      // Prevent multiple simultaneous fetches for the same user
+      if (profileFetchRef.current === user.id) return
+      profileFetchRef.current = user.id
+      
       try {
         const profile = await usersApi.getMyProfile()
-        // Merge profile data with existing user data
-        const updatedUser = { ...user, ...profile }
-        setUser(updatedUser as any)
+        // Only update if profileImageUrl is actually present and different
+        if (profile.profileImageUrl && profile.profileImageUrl !== (user as any).profileImageUrl) {
+          const updatedUser = { ...user, ...profile }
+          setUser(updatedUser as any)
+        }
       } catch (error) {
         console.error('Error fetching user profile in Header:', error)
+      } finally {
+        // Reset after a delay to allow retry if needed
+        setTimeout(() => {
+          if (profileFetchRef.current === user.id) {
+            profileFetchRef.current = null
+          }
+        }, 5000)
       }
     }
     
     fetchProfile()
-  }, [isAuthenticated, user, setUser])
+  }, [isAuthenticated, user?.id, setUser])
 
   // Close user menu when clicking outside
   useEffect(() => {
