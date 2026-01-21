@@ -10,9 +10,7 @@ interface Step2LocationProps {
 }
 
 const cities = [
-  'Mumbai', 'Bangalore', 'Pune', 'Delhi NCR', 'Hyderabad', 'Chennai', 
-  'Kolkata', 'Ahmedabad', 'Jaipur', 'Lucknow', 'Chandigarh', 'Indore', 
-  'Nagpur', 'Coimbatore', 'Kochi'
+  'Mumbai', 'Bangalore', 'Pune', 'Delhi NCR', 'Hyderabad'
 ]
 
 const Step2Location = ({ data, onChange, error, onClearError }: Step2LocationProps) => {
