@@ -24,12 +24,13 @@ const Step1Photos = ({ data, onChange }: Step1PhotosProps) => {
     // Validate all files first
     Array.from(files).forEach((file) => {
       if (file.size > maxSize) {
-        errors.push(`${file.name} exceeds 5MB limit`)
+        const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2)
+        errors.push(`"${file.name}" is too large (${fileSizeMB}MB). Please upload files smaller than 5MB each.`)
         return
       }
 
       if (!file.type.startsWith('image/')) {
-        errors.push(`${file.name} is not an image`)
+        errors.push(`"${file.name}" is not a valid image file. Please upload JPEG, PNG, or WebP images only.`)
         return
       }
 
@@ -37,7 +38,13 @@ const Step1Photos = ({ data, onChange }: Step1PhotosProps) => {
     })
 
     if (errors.length > 0) {
-      setError(errors.join(', '))
+      // Format error message nicely
+      if (errors.length === 1) {
+        setError(errors[0])
+      } else {
+        setError(`Multiple files have issues:\n${errors.map((e, i) => `${i + 1}. ${e}`).join('\n')}`)
+      }
+      return
     }
 
     if (validFiles.length === 0) return
@@ -56,26 +63,56 @@ const Step1Photos = ({ data, onChange }: Step1PhotosProps) => {
       // Extract user-friendly error message from various error formats
       let errorMessage = 'Failed to upload photos. Please try again.'
       
-      if (error.response) {
-        // Handle different error response formats
-        const responseData = error.response.data
-        if (typeof responseData === 'string') {
-          errorMessage = responseData
-        } else if (responseData?.message) {
-          errorMessage = Array.isArray(responseData.message) 
-            ? responseData.message.join(', ')
-            : responseData.message
-        } else if (responseData?.error) {
-          errorMessage = responseData.error
+      // Handle network errors or nginx-level errors (no response)
+      if (!error.response) {
+        if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+          errorMessage = 'Upload timed out. The file might be too large. Please try smaller files or check your internet connection.'
+        } else if (error.message?.includes('Network Error') || error.message?.includes('Failed to fetch')) {
+          errorMessage = 'Network error. Please check your internet connection and try again.'
+        } else {
+          errorMessage = 'Unable to upload files. Please check your internet connection and try again.'
         }
+      } else if (error.response) {
+        // Handle HTTP response errors
+        const status = error.response.status
+        const responseData = error.response.data
         
-        // Handle specific status codes
-        if (error.response.status === 413) {
-          errorMessage = 'File size is too large. Please upload files smaller than 5MB each.'
-        } else if (error.response.status === 400) {
-          // Keep the message from response if available, otherwise use default
-          if (!responseData?.message) {
+        // Handle 413 Payload Too Large (from nginx or backend)
+        if (status === 413) {
+          errorMessage = 'File size is too large. Please upload files smaller than 5MB each. If the problem persists, the server may have size restrictions.'
+        } 
+        // Handle 400 Bad Request
+        else if (status === 400) {
+          if (responseData) {
+            if (typeof responseData === 'string') {
+              errorMessage = responseData
+            } else if (responseData?.message) {
+              errorMessage = Array.isArray(responseData.message) 
+                ? responseData.message.join(', ')
+                : responseData.message
+            } else if (responseData?.error) {
+              errorMessage = responseData.error
+            } else {
+              errorMessage = 'Invalid file. Please check file size and format.'
+            }
+          } else {
             errorMessage = 'Invalid file. Please check file size and format.'
+          }
+        }
+        // Handle 500+ server errors
+        else if (status >= 500) {
+          errorMessage = 'Server error occurred. Please try again in a moment.'
+        }
+        // Handle other errors with response data
+        else {
+          if (typeof responseData === 'string') {
+            errorMessage = responseData
+          } else if (responseData?.message) {
+            errorMessage = Array.isArray(responseData.message) 
+              ? responseData.message.join(', ')
+              : responseData.message
+          } else if (responseData?.error) {
+            errorMessage = responseData.error
           }
         }
       } else if (error.message) {
@@ -139,13 +176,13 @@ const Step1Photos = ({ data, onChange }: Step1PhotosProps) => {
               </svg>
             </div>
             <div className="ml-3 flex-1">
-              <h3 className="text-sm font-semibold text-red-800 mb-1">Upload Error</h3>
-              <p className="text-sm text-red-700">{error}</p>
+              <p className="text-sm font-medium text-red-800 whitespace-pre-line">{error}</p>
             </div>
             <button
               type="button"
               onClick={() => setError('')}
-              className="ml-3 flex-shrink-0 text-red-500 hover:text-red-700"
+              className="ml-3 flex-shrink-0 text-red-500 hover:text-red-700 transition-colors"
+              aria-label="Dismiss"
             >
               <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
