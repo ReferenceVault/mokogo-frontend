@@ -141,9 +141,38 @@ const ProfileContent = () => {
       
       // Update user in store
       setUser({ ...user, profileImageUrl: url } as any)
+      setNotice({ type: 'success', message: 'Profile image updated successfully!' })
     } catch (error: any) {
       console.error('Error uploading image:', error)
-      setNotice({ type: 'error', message: error.response?.data?.message || 'Failed to upload image. Please try again.' })
+      
+      // Extract user-friendly error message
+      let errorMessage = 'Failed to upload image. Please try again.'
+      
+      if (error.response) {
+        const responseData = error.response.data
+        if (typeof responseData === 'string') {
+          errorMessage = responseData
+        } else if (responseData?.message) {
+          errorMessage = Array.isArray(responseData.message) 
+            ? responseData.message.join(', ')
+            : responseData.message
+        } else if (responseData?.error) {
+          errorMessage = responseData.error
+        }
+        
+        // Handle specific status codes
+        if (error.response.status === 413) {
+          errorMessage = 'Image size is too large. Please upload an image smaller than 5MB.'
+        } else if (error.response.status === 400) {
+          if (!responseData?.message) {
+            errorMessage = 'Invalid image file. Please check file size and format.'
+          }
+        }
+      } else if (error.message) {
+        errorMessage = error.message
+      }
+      
+      setNotice({ type: 'error', message: errorMessage })
     } finally {
       setUploadingImage(false)
       if (fileInputRef.current) {
