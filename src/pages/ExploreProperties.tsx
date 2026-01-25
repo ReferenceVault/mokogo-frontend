@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useCallback } from 'react'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import SocialSidebar from '@/components/SocialSidebar'
@@ -31,6 +31,10 @@ const ExploreProperties = () => {
           title: listing.title,
           city: listing.city || '',
           locality: listing.locality || '',
+          placeId: listing.placeId,
+          latitude: listing.latitude,
+          longitude: listing.longitude,
+          formattedAddress: listing.formattedAddress,
           societyName: listing.societyName,
           bhkType: listing.bhkType || '',
           roomType: listing.roomType || '',
@@ -80,21 +84,55 @@ const ExploreProperties = () => {
   const filters = useMemo(() => ({
     city: searchParams.get('city') || '',
     area: searchParams.get('area') || '',
+    areaPlaceId: searchParams.get('areaPlaceId') || '',
+    areaLat: searchParams.get('areaLat') ? parseFloat(searchParams.get('areaLat')!) : null,
+    areaLng: searchParams.get('areaLng') ? parseFloat(searchParams.get('areaLng')!) : null,
     maxRent: searchParams.get('maxRent') || '',
     moveInDate: searchParams.get('moveInDate') || '',
-    genderPreference: searchParams.get('genderPreference') || '',
   }), [searchParams])
+
+  // Calculate distance between two coordinates using Haversine formula (in km)
+  const calculateDistance = useCallback((lat1: number, lon1: number, lat2: number, lon2: number): number => {
+    const R = 6371 // Earth's radius in kilometers
+    const dLat = (lat2 - lat1) * Math.PI / 180
+    const dLon = (lon2 - lon1) * Math.PI / 180
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2)
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+    return R * c
+  }, [])
 
   const filteredListings = useMemo(() => {
     const liveListings = exploreListings.filter(listing => listing.status === 'live')
-    return liveListings.filter(listing => {
+    const filtered = liveListings.filter(listing => {
       const hasMikoFilters =
-        Boolean(filters.city || filters.area || filters.maxRent || filters.moveInDate || filters.genderPreference) ||
+        Boolean(filters.city || filters.area || filters.maxRent || filters.moveInDate) ||
         Boolean(roomTypePreference) ||
         mikoTags.length > 0
 
       const cityMatch = filters.city ? listing.city === filters.city : false
-      const areaMatch = filters.area ? listing.locality === filters.area : false
+      
+      // Area matching: if coordinates provided, use distance (within 10km), otherwise exact match
+      let areaMatch = false
+      let listingDistance: number | null = null
+      if (filters.area) {
+        if (filters.areaLat !== null && filters.areaLng !== null && listing.latitude && listing.longitude) {
+          // Use distance-based matching (within 10km)
+          listingDistance = calculateDistance(
+            filters.areaLat,
+            filters.areaLng,
+            listing.latitude,
+            listing.longitude
+          )
+          areaMatch = listingDistance <= 10 // 10km radius
+        } else {
+          // Fallback to exact locality match
+          areaMatch = listing.locality === filters.area
+        }
+      }
+      
       const maxRentMatch = filters.maxRent
         ? listing.rent <= parseInt(filters.maxRent)
         : false
@@ -106,11 +144,6 @@ const ExploreProperties = () => {
             listingDate.setHours(0, 0, 0, 0)
             return listingDate >= filterDate
           })()
-        : false
-      const genderMatch = filters.genderPreference
-        ? listing.preferredGender
-          ? listing.preferredGender === 'Any' || listing.preferredGender === filters.genderPreference
-          : false
         : false
 
       const roomTypeMatch = roomTypePreference
@@ -137,7 +170,7 @@ const ExploreProperties = () => {
         if (filters.city && !cityMatch) return false
 
         const hasOtherFilters =
-          Boolean(filters.area || filters.maxRent || filters.moveInDate || filters.genderPreference) ||
+          Boolean(filters.area || filters.maxRent || filters.moveInDate) ||
           Boolean(roomTypePreference) ||
           mikoTags.length > 0
 
@@ -149,7 +182,6 @@ const ExploreProperties = () => {
           areaMatch ||
           maxRentMatch ||
           moveInDateMatch ||
-          genderMatch ||
           roomTypeMatch ||
           mikoTagsMatch
         )
@@ -159,12 +191,39 @@ const ExploreProperties = () => {
       if (filters.area && !areaMatch) return false
       if (filters.maxRent && !maxRentMatch) return false
       if (filters.moveInDate && !moveInDateMatch) return false
-      if (filters.genderPreference && !genderMatch) return false
       if (roomTypePreference && !roomTypeMatch) return false
 
       return true
     })
-  }, [exploreListings, filters, isMikoMode, mikoTags, roomTypePreference])
+
+    // Sort by distance if area coordinates are provided
+    if (filters.area && filters.areaLat !== null && filters.areaLng !== null) {
+      return filtered.sort((a, b) => {
+        // Only listings with coordinates can be sorted by distance
+        if (a.latitude && a.longitude && b.latitude && b.longitude) {
+          const distanceA = calculateDistance(
+            filters.areaLat!,
+            filters.areaLng!,
+            a.latitude,
+            a.longitude
+          )
+          const distanceB = calculateDistance(
+            filters.areaLat!,
+            filters.areaLng!,
+            b.latitude,
+            b.longitude
+          )
+          return distanceA - distanceB // Sort ascending (closest first)
+        }
+        // Listings without coordinates go to the end
+        if (a.latitude && a.longitude) return -1
+        if (b.latitude && b.longitude) return 1
+        return 0
+      })
+    }
+
+    return filtered
+  }, [exploreListings, filters, isMikoMode, mikoTags, roomTypePreference, calculateDistance])
 
   // Calculate listings count per city from actual listings
   const getCityListingsCount = (cityName: string) => {

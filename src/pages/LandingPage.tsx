@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import SocialSidebar from '@/components/SocialSidebar'
 import { useStore } from '@/store/useStore'
 import { Listing, VibeTagId } from '@/types'
-import { listingsApi, ListingResponse, subscriptionsApi } from '@/services/api'
+import { listingsApi, ListingResponse, subscriptionsApi, placesApi, AutocompletePrediction } from '@/services/api'
 import CustomSelect from '@/components/CustomSelect'
 import { formatRent } from '@/utils/formatters'
 import { MoveInDateField } from '@/components/MoveInDateField'
@@ -17,10 +17,20 @@ const LandingPage = () => {
   const { allListings, setAllListings, user } = useStore()
   const [searchFilters, setSearchFilters] = useState({
     city: '',
+    area: '',
+    areaPlaceId: '',
+    areaLat: 0,
+    areaLng: 0,
     moveInDate: '',
     maxRent: '',
-    genderPreference: ''
   })
+  const [areaSuggestions, setAreaSuggestions] = useState<AutocompletePrediction[]>([])
+  const [showAreaSuggestions, setShowAreaSuggestions] = useState(false)
+  const [isLoadingArea, setIsLoadingArea] = useState(false)
+  const [areaInputValue, setAreaInputValue] = useState('')
+  const areaSuggestionsRef = useRef<HTMLDivElement>(null)
+  const areaInputRef = useRef<HTMLInputElement>(null)
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [searchMode, setSearchMode] = useState<'standard' | 'miko'>('standard')
   const [isMikoOpen, setIsMikoOpen] = useState(false)
   const [isLoadingListings, setIsLoadingListings] = useState(true)
@@ -77,14 +87,124 @@ const LandingPage = () => {
   }, [setAllListings])
 
 
-  const handleSearch = () => {
-    // Navigate to city listings page if city is selected
-    if (searchFilters.city) {
-      navigate(`/city/${encodeURIComponent(searchFilters.city)}`)
-    } else {
-      // If no city selected, navigate to explore page
-      navigate('/explore')
+  // Fetch area autocomplete suggestions with debouncing
+  const fetchAreaSuggestions = useCallback(async (input: string, city: string) => {
+    if (!input || input.trim().length < 2 || !city) {
+      setAreaSuggestions([])
+      setShowAreaSuggestions(false)
+      return
     }
+
+    setIsLoadingArea(true)
+    try {
+      const results = await placesApi.getAutocomplete(input.trim(), city)
+      setAreaSuggestions(results)
+      setShowAreaSuggestions(results.length > 0)
+    } catch (error) {
+      console.error('Error fetching area suggestions:', error)
+      setAreaSuggestions([])
+      setShowAreaSuggestions(false)
+    } finally {
+      setIsLoadingArea(false)
+    }
+  }, [])
+
+  // Handle area input change
+  const handleAreaInputChange = (value: string) => {
+    setAreaInputValue(value)
+    setSearchFilters(prev => ({
+      ...prev,
+      area: value,
+      areaPlaceId: '',
+      areaLat: 0,
+      areaLng: 0,
+    }))
+    setShowAreaSuggestions(false)
+
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current)
+    }
+
+    if (searchFilters.city && value.trim().length >= 2) {
+      debounceTimerRef.current = setTimeout(() => {
+        fetchAreaSuggestions(value, searchFilters.city)
+      }, 300)
+    }
+  }
+
+  // Handle area suggestion selection
+  const handleAreaSuggestionSelect = async (prediction: AutocompletePrediction) => {
+    setAreaInputValue(prediction.structured_formatting.main_text)
+    setShowAreaSuggestions(false)
+    setAreaSuggestions([])
+
+    try {
+      const placeDetails = await placesApi.getPlaceDetails(prediction.place_id)
+      setSearchFilters(prev => ({
+        ...prev,
+        area: prediction.structured_formatting.main_text,
+        areaPlaceId: placeDetails.place_id,
+        areaLat: placeDetails.geometry.location.lat,
+        areaLng: placeDetails.geometry.location.lng,
+      }))
+    } catch (error) {
+      console.error('Error fetching area details:', error)
+      setSearchFilters(prev => ({
+        ...prev,
+        area: prediction.structured_formatting.main_text,
+        areaPlaceId: prediction.place_id,
+      }))
+    }
+  }
+
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        areaSuggestionsRef.current &&
+        !areaSuggestionsRef.current.contains(event.target as Node) &&
+        areaInputRef.current &&
+        !areaInputRef.current.contains(event.target as Node)
+      ) {
+        setShowAreaSuggestions(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [])
+
+  // Clear area when city changes
+  useEffect(() => {
+    if (!searchFilters.city) {
+      setAreaInputValue('')
+      setSearchFilters(prev => ({
+        ...prev,
+        area: '',
+        areaPlaceId: '',
+        areaLat: 0,
+        areaLng: 0,
+      }))
+      setAreaSuggestions([])
+      setShowAreaSuggestions(false)
+    }
+  }, [searchFilters.city])
+
+  const handleSearch = () => {
+    const params = new URLSearchParams()
+    if (searchFilters.city) params.set('city', searchFilters.city)
+    if (searchFilters.area && searchFilters.areaPlaceId) {
+      params.set('area', searchFilters.area)
+      params.set('areaPlaceId', searchFilters.areaPlaceId)
+      if (searchFilters.areaLat) params.set('areaLat', searchFilters.areaLat.toString())
+      if (searchFilters.areaLng) params.set('areaLng', searchFilters.areaLng.toString())
+    }
+    if (searchFilters.maxRent) params.set('maxRent', searchFilters.maxRent)
+    if (searchFilters.moveInDate) params.set('moveInDate', searchFilters.moveInDate)
+
+    navigate(`/explore?${params.toString()}`)
   }
 
   const handleMikoComplete = (result: { tags: VibeTagId[]; roomTypePreference?: 'private' | 'shared' | 'either'; city?: string }) => {
@@ -103,7 +223,12 @@ const LandingPage = () => {
     }
     if (searchFilters.maxRent) params.set('maxRent', searchFilters.maxRent)
     if (searchFilters.moveInDate) params.set('moveInDate', searchFilters.moveInDate)
-    if (searchFilters.genderPreference) params.set('genderPreference', searchFilters.genderPreference)
+    if (searchFilters.area && searchFilters.areaPlaceId) {
+      params.set('area', searchFilters.area)
+      params.set('areaPlaceId', searchFilters.areaPlaceId)
+      if (searchFilters.areaLat) params.set('areaLat', searchFilters.areaLat.toString())
+      if (searchFilters.areaLng) params.set('areaLng', searchFilters.areaLng.toString())
+    }
 
     setIsMikoOpen(false)
     if (user) {
@@ -346,6 +471,54 @@ const LandingPage = () => {
                           options={searchCities.map(city => ({ value: city, label: city }))}
                         />
                       </div>
+                      <div className="[&_button]:h-[50px] [&_button]:py-0 group relative" ref={areaSuggestionsRef}>
+                        <label className="block text-sm font-medium text-stone-700 mb-2">
+                          Area / Locality
+                        </label>
+                        <div className="relative">
+                          <input
+                            ref={areaInputRef}
+                            type="text"
+                            value={areaInputValue}
+                            onChange={(e) => handleAreaInputChange(e.target.value)}
+                            onFocus={() => {
+                              if (areaSuggestions.length > 0 && areaInputValue.trim().length >= 2) {
+                                setShowAreaSuggestions(true)
+                              }
+                            }}
+                            className="w-full h-[50px] px-3.5 rounded-lg border-2 border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400 bg-white transition-all duration-300 hover:border-orange-300 text-sm"
+                            placeholder={searchFilters.city ? "Start typing area..." : "Select city first"}
+                            disabled={!searchFilters.city}
+                          />
+                          {isLoadingArea && (
+                            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                              <svg className="animate-spin h-5 w-5 text-orange-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                            </div>
+                          )}
+                          {showAreaSuggestions && areaSuggestions.length > 0 && (
+                            <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                              {areaSuggestions.map((prediction) => (
+                                <button
+                                  key={prediction.place_id}
+                                  type="button"
+                                  onClick={() => handleAreaSuggestionSelect(prediction)}
+                                  className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0"
+                                >
+                                  <div className="font-medium text-gray-900">
+                                    {prediction.structured_formatting.main_text}
+                                  </div>
+                                  <div className="text-sm text-gray-500 mt-0.5">
+                                    {prediction.structured_formatting.secondary_text}
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
                       <div className="[&_button]:h-[50px] [&_button]:py-0 group">
                         <label className="block text-sm font-medium text-stone-700 mb-2">
                           Move-in Date
@@ -368,19 +541,6 @@ const LandingPage = () => {
                           value={searchFilters.maxRent}
                           onChange={(e) => setSearchFilters({ ...searchFilters, maxRent: e.target.value })}
                           className="w-full h-[50px] px-3.5 rounded-lg border-2 border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400 bg-white transition-all duration-300 hover:border-orange-300 text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                        />
-                      </div>
-                      <div className="[&_button]:h-[50px] [&_button]:py-0 group">
-                        <CustomSelect
-                          label="Gender Preference"
-                          value={searchFilters.genderPreference}
-                          onValueChange={(value) => setSearchFilters({ ...searchFilters, genderPreference: value })}
-                          placeholder="Select"
-                          options={[
-                            { value: 'Male', label: 'Male' },
-                            { value: 'Female', label: 'Female' },
-                            { value: 'Any', label: 'Any' }
-                          ]}
                         />
                       </div>
                       <div>
