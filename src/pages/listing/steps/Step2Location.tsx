@@ -166,7 +166,9 @@ const Step2Location = ({ data, onChange, error, onClearError }: Step2LocationPro
       )
       const extractedCity = cityComponent?.long_name || data.city || ''
 
-      // Extract locality/area name (try multiple locality-related types)
+      // Extract locality/area name
+      // Important: always prefer the suggestion title shown to the user (main_text)
+      // so the textbox and saved value match exactly what the user selected.
       const localityComponent = placeDetails.address_components.find(
         (component) => component.types.includes('sublocality')
       ) || placeDetails.address_components.find(
@@ -177,11 +179,11 @@ const Step2Location = ({ data, onChange, error, onClearError }: Step2LocationPro
         (component) => component.types.includes('premise')
       )
       
-      // Fallback: use display name or first part of formatted address
-      const localityName = localityComponent?.long_name || 
+      // Use suggestion title first, then fall back if it's missing for some reason
+      const localityName = prediction.structured_formatting.main_text ||
+                          localityComponent?.long_name || 
                           placeDetails.name || 
-                          placeDetails.formatted_address.split(',')[0]?.trim() ||
-                          prediction.structured_formatting.main_text
+                          placeDetails.formatted_address.split(',')[0]?.trim()
 
       // Update listing data with all place information
       // This saves: place_id, latitude, longitude, formatted_address, city, locality
