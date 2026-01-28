@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { Listing } from '@/types'
 import CustomSelect from '@/components/CustomSelect'
 import { placesApi, AutocompletePrediction } from '@/services/api'
@@ -20,6 +21,7 @@ const Step2Location = ({ data, onChange, error, onClearError }: Step2LocationPro
   const [isLoading, setIsLoading] = useState(false)
   const [localityError, setLocalityError] = useState<string>('')
   const [inputValue, setInputValue] = useState(data.locality || '')
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 })
   const suggestionsRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -52,6 +54,73 @@ const Step2Location = ({ data, onChange, error, onClearError }: Step2LocationPro
     }
   }, [data.city, data.locality, data.placeId, error, onClearError])
 
+  // Calculate dropdown position based on input field
+  const updateDropdownPosition = useCallback(() => {
+    if (inputRef.current) {
+      const rect = inputRef.current.getBoundingClientRect()
+      setDropdownPosition({
+        top: rect.bottom + 4, // 4px spacing
+        left: rect.left,
+        width: rect.width,
+      })
+    }
+  }, [])
+
+  // Fetch autocomplete suggestions with debouncing
+  const fetchSuggestions = useCallback(async (input: string, city: string) => {
+    if (!input || input.trim().length < 2 || !city) {
+      setSuggestions([])
+      setShowSuggestions(false)
+      return
+    }
+
+    setIsLoading(true)
+    try {
+      const results = await placesApi.getAutocomplete(input.trim(), city)
+      setSuggestions(results)
+      if (results.length > 0) {
+        setShowSuggestions(true)
+        updateDropdownPosition()
+      } else {
+        setShowSuggestions(false)
+      }
+    } catch (error) {
+      console.error('Error fetching autocomplete suggestions:', error)
+      setSuggestions([])
+      setShowSuggestions(false)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [updateDropdownPosition])
+
+  // Update position when suggestions are shown
+  useEffect(() => {
+    if (showSuggestions) {
+      updateDropdownPosition()
+    }
+  }, [showSuggestions, updateDropdownPosition])
+
+  // Handle scroll and resize to update dropdown position
+  useEffect(() => {
+    if (!showSuggestions) return
+
+    const handleScroll = () => {
+      updateDropdownPosition()
+    }
+
+    const handleResize = () => {
+      updateDropdownPosition()
+    }
+
+    window.addEventListener('scroll', handleScroll, true)
+    window.addEventListener('resize', handleResize)
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll, true)
+      window.removeEventListener('resize', handleResize)
+    }
+  }, [showSuggestions, updateDropdownPosition])
+
   // Close suggestions when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -68,28 +137,6 @@ const Step2Location = ({ data, onChange, error, onClearError }: Step2LocationPro
     document.addEventListener('mousedown', handleClickOutside)
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [])
-
-  // Fetch autocomplete suggestions with debouncing
-  const fetchSuggestions = useCallback(async (input: string, city: string) => {
-    if (!input || input.trim().length < 2 || !city) {
-      setSuggestions([])
-      setShowSuggestions(false)
-      return
-    }
-
-    setIsLoading(true)
-    try {
-      const results = await placesApi.getAutocomplete(input.trim(), city)
-      setSuggestions(results)
-      setShowSuggestions(results.length > 0)
-    } catch (error) {
-      console.error('Error fetching autocomplete suggestions:', error)
-      setSuggestions([])
-      setShowSuggestions(false)
-    } finally {
-      setIsLoading(false)
     }
   }, [])
 
@@ -262,6 +309,7 @@ const Step2Location = ({ data, onChange, error, onClearError }: Step2LocationPro
               value={inputValue}
               onChange={(e) => handleLocalityInputChange(e.target.value)}
               onFocus={() => {
+                updateDropdownPosition()
                 if (suggestions.length > 0 && inputValue.trim().length >= 2) {
                   setShowSuggestions(true)
                 }
@@ -279,9 +327,17 @@ const Step2Location = ({ data, onChange, error, onClearError }: Step2LocationPro
               </div>
             )}
             
-            {/* Suggestions Dropdown */}
-            {showSuggestions && suggestions.length > 0 && (
-              <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+            {/* Suggestions Dropdown - Rendered via Portal */}
+            {showSuggestions && suggestions.length > 0 && createPortal(
+              <div 
+                ref={suggestionsRef}
+                className="fixed bg-white border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto z-[9999]"
+                style={{
+                  top: `${dropdownPosition.top}px`,
+                  left: `${dropdownPosition.left}px`,
+                  width: `${dropdownPosition.width}px`,
+                }}
+              >
                 {suggestions.map((prediction) => (
                   <button
                     key={prediction.place_id}
@@ -297,7 +353,8 @@ const Step2Location = ({ data, onChange, error, onClearError }: Step2LocationPro
                     </div>
                   </button>
                 ))}
-              </div>
+              </div>,
+              document.body
             )}
           </div>
           {!data.city && (
