@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { Link, useNavigate } from 'react-router-dom'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
@@ -28,6 +29,7 @@ const LandingPage = () => {
   const [showAreaSuggestions, setShowAreaSuggestions] = useState(false)
   const [isLoadingArea, setIsLoadingArea] = useState(false)
   const [areaInputValue, setAreaInputValue] = useState('')
+  const [areaDropdownPosition, setAreaDropdownPosition] = useState({ top: 0, left: 0, width: 0 })
   const areaSuggestionsRef = useRef<HTMLDivElement>(null)
   const areaInputRef = useRef<HTMLInputElement>(null)
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -86,6 +88,17 @@ const LandingPage = () => {
     fetchListings()
   }, [setAllListings])
 
+  // Calculate dropdown position based on input field
+  const updateAreaDropdownPosition = useCallback(() => {
+    if (areaInputRef.current) {
+      const rect = areaInputRef.current.getBoundingClientRect()
+      setAreaDropdownPosition({
+        top: rect.bottom + 4, // 4px spacing
+        left: rect.left,
+        width: rect.width,
+      })
+    }
+  }, [])
 
   // Fetch area autocomplete suggestions with debouncing
   const fetchAreaSuggestions = useCallback(async (input: string, city: string) => {
@@ -99,7 +112,12 @@ const LandingPage = () => {
     try {
       const results = await placesApi.getAutocomplete(input.trim(), city)
       setAreaSuggestions(results)
-      setShowAreaSuggestions(results.length > 0)
+      if (results.length > 0) {
+        setShowAreaSuggestions(true)
+        updateAreaDropdownPosition()
+      } else {
+        setShowAreaSuggestions(false)
+      }
     } catch (error) {
       console.error('Error fetching area suggestions:', error)
       setAreaSuggestions([])
@@ -107,7 +125,7 @@ const LandingPage = () => {
     } finally {
       setIsLoadingArea(false)
     }
-  }, [])
+  }, [updateAreaDropdownPosition])
 
   // Handle area input change
   const handleAreaInputChange = (value: string) => {
@@ -131,6 +149,13 @@ const LandingPage = () => {
       }, 300)
     }
   }
+
+  // Update position when suggestions are shown or input is focused
+  useEffect(() => {
+    if (showAreaSuggestions) {
+      updateAreaDropdownPosition()
+    }
+  }, [showAreaSuggestions, updateAreaDropdownPosition])
 
   // Handle area suggestion selection
   const handleAreaSuggestionSelect = async (prediction: AutocompletePrediction) => {
@@ -156,6 +181,27 @@ const LandingPage = () => {
       }))
     }
   }
+
+  // Handle scroll and resize to update dropdown position
+  useEffect(() => {
+    if (!showAreaSuggestions) return
+
+    const handleScroll = () => {
+      updateAreaDropdownPosition()
+    }
+
+    const handleResize = () => {
+      updateAreaDropdownPosition()
+    }
+
+    window.addEventListener('scroll', handleScroll, true)
+    window.addEventListener('resize', handleResize)
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll, true)
+      window.removeEventListener('resize', handleResize)
+    }
+  }, [showAreaSuggestions, updateAreaDropdownPosition])
 
   // Close suggestions when clicking outside
   useEffect(() => {
@@ -482,6 +528,7 @@ const LandingPage = () => {
                             value={areaInputValue}
                             onChange={(e) => handleAreaInputChange(e.target.value)}
                             onFocus={() => {
+                              updateAreaDropdownPosition()
                               if (areaSuggestions.length > 0 && areaInputValue.trim().length >= 2) {
                                 setShowAreaSuggestions(true)
                               }
@@ -498,8 +545,16 @@ const LandingPage = () => {
                               </svg>
                             </div>
                           )}
-                          {showAreaSuggestions && areaSuggestions.length > 0 && (
-                            <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                          {showAreaSuggestions && areaSuggestions.length > 0 && createPortal(
+                            <div 
+                              ref={areaSuggestionsRef}
+                              className="fixed bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto z-[9999]"
+                              style={{
+                                top: `${areaDropdownPosition.top}px`,
+                                left: `${areaDropdownPosition.left}px`,
+                                width: `${areaDropdownPosition.width}px`,
+                              }}
+                            >
                               {areaSuggestions.map((prediction) => (
                                 <button
                                   key={prediction.place_id}
@@ -515,7 +570,8 @@ const LandingPage = () => {
                                   </div>
                                 </button>
                               ))}
-                            </div>
+                            </div>,
+                            document.body
                           )}
                         </div>
                       </div>
