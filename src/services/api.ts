@@ -241,6 +241,15 @@ export const usersApi = {
     profileCacheAt = Date.now()
     return response.data
   },
+  updateMyProfileImage: async (profileImageUrl: string): Promise<UserProfile> => {
+    const response = await retryOnThrottle(async () => {
+      const res = await api.patch<UserProfile>('/users/profile/profile-image', { profileImageUrl })
+      return res
+    })
+    profileCache = response.data
+    profileCacheAt = Date.now()
+    return response.data
+  },
 
   getUserById: async (userId: string): Promise<UserProfile> => {
     const response = await api.get<UserProfile>(`/users/${userId}`)
