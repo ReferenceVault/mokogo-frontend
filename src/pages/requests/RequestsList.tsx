@@ -771,7 +771,7 @@ const RequestsList = () => {
                 },
                 {
                   title: 'Profile Completeness',
-                  description: 'Seekers with complete profiles (photo, occupation, references) are more serious candidates.',
+                  description: 'Seekers with complete profiles (occupation, references) are more serious candidates.',
                   tip: '8 out of 12 requests have complete profiles',
                   icon: Users,
                   color: 'from-green-400 to-green-500'

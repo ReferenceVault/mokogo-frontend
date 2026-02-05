@@ -77,11 +77,7 @@ const Dashboard = () => {
   const [conversationsCount, setConversationsCount] = useState<number>(0)
   const [pendingRequestsCount, setPendingRequestsCount] = useState<number>(0)
 
-  const userData = user as any
-  const isProfileComplete = Boolean(
-    checkProfileComplete(user) &&
-    userData?.profileImageUrl
-  )
+  const isProfileComplete = checkProfileComplete(user)
 
   // Track if fetch is in progress to prevent duplicate calls
   const fetchInProgressRef = useRef(false)

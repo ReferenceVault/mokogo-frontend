@@ -19,6 +19,13 @@ const ProfileContent = () => {
   const nameParts = getUserName()
   const userData = user as any
   
+  // Track if phone number was saved in this session (after user enters and saves)
+  const [phoneNumberSaved, setPhoneNumberSaved] = useState(false)
+  
+  // Check if phone number exists in saved user data (from DB) OR was just saved
+  const hasSavedPhoneNumber = phoneNumberSaved || (!!(userData?.phoneNumber || userData?.phone) && 
+    (userData?.phoneNumber || userData?.phone).toString().trim() !== '')
+  
   const [formData, setFormData] = useState({
     firstName: nameParts.first,
     lastName: nameParts.last,
@@ -45,6 +52,36 @@ const ProfileContent = () => {
   const [notice, setNotice] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null)
   const modalRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  
+  // Refs for form fields to scroll to on validation error
+  const firstNameRef = useRef<HTMLInputElement>(null)
+  const lastNameRef = useRef<HTMLInputElement>(null)
+  const dateOfBirthRef = useRef<HTMLDivElement>(null)
+  const genderRef = useRef<HTMLSelectElement>(null)
+  const occupationRef = useRef<HTMLInputElement>(null)
+  const companyNameRef = useRef<HTMLInputElement>(null)
+  const currentCityRef = useRef<HTMLInputElement>(null)
+  const areaRef = useRef<HTMLInputElement>(null)
+  const aboutRef = useRef<HTMLTextAreaElement>(null)
+  const smokingRef = useRef<HTMLSelectElement>(null)
+  const drinkingRef = useRef<HTMLSelectElement>(null)
+  const foodPreferenceRef = useRef<HTMLSelectElement>(null)
+  
+  // Map field names to refs
+  const fieldRefs: Record<string, React.RefObject<any>> = {
+    firstName: firstNameRef,
+    lastName: lastNameRef,
+    dateOfBirth: dateOfBirthRef,
+    gender: genderRef,
+    occupation: occupationRef,
+    companyName: companyNameRef,
+    currentCity: currentCityRef,
+    area: areaRef,
+    about: aboutRef,
+    smoking: smokingRef,
+    drinking: drinkingRef,
+    foodPreference: foodPreferenceRef,
+  }
 
   // Fetch profile data on mount
   useEffect(() => {
@@ -94,6 +131,11 @@ const ProfileContent = () => {
           drinking: profile.drinking || '',
           foodPreference: profile.foodPreference || ''
         })
+        
+        // Set phoneNumberSaved if phone exists in profile (from DB)
+        if (profile.phoneNumber && profile.phoneNumber.trim() !== '') {
+          setPhoneNumberSaved(true)
+        }
         
         if (profile.profileImageUrl) {
           setProfileImageUrl(profile.profileImageUrl)
@@ -146,19 +188,21 @@ const ProfileContent = () => {
     setUploadingImage(true)
     try {
       const url = await uploadApi.uploadProfileImage(file)
-      setProfileImageUrl(url)
       
-      // Save image URL to profile immediately
-      await usersApi.updateMyProfile({ profileImageUrl: url })
+      // Save image URL to profile immediately using dedicated endpoint
+      await usersApi.updateMyProfileImage(url)
+      
+      // Update local state
+      setProfileImageUrl(url)
       
       // Update user in store
       setUser({ ...user, profileImageUrl: url } as any)
-      setNotice({ type: 'success', message: 'Profile image updated successfully!' })
+      setNotice({ type: 'success', message: 'Profile image uploaded and saved successfully!' })
     } catch (error: any) {
       console.error('Error uploading image:', error)
       
       // Extract user-friendly error message
-      let errorMessage = 'Failed to upload image. Please try again.'
+      let errorMessage = 'Failed to upload profile image. Please try again.'
       
       // Handle network errors or nginx-level errors (no response)
       if (!error.response) {
@@ -241,18 +285,52 @@ const ProfileContent = () => {
     if (!formData.drinking) newErrors.drinking = 'Drinking preference is required'
     if (!formData.foodPreference) newErrors.foodPreference = 'Food preference is required'
 
+    // Phone number validation (optional but if provided, must be valid)
+    if (formData.phone && formData.phone.trim() !== '') {
+      const phoneRegex = /^[0-9]{10}$/
+      const cleanedPhone = formData.phone.trim().replace(/\D/g, '')
+      if (cleanedPhone.length !== 10) {
+        newErrors.phone = 'Phone number must be exactly 10 digits'
+      } else if (!phoneRegex.test(cleanedPhone)) {
+        newErrors.phone = 'Phone number must contain only digits'
+      }
+    }
+
     setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
+    
+    // Return first error field name for scrolling
+    const firstErrorField = Object.keys(newErrors)[0]
+    return { isValid: Object.keys(newErrors).length === 0, firstErrorField }
+  }
+
+  const scrollToField = (fieldName: string) => {
+    const fieldRef = fieldRefs[fieldName]
+    if (fieldRef?.current) {
+      fieldRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      // Focus the field if it's an input or select
+      if (fieldRef.current instanceof HTMLInputElement || fieldRef.current instanceof HTMLSelectElement || fieldRef.current instanceof HTMLTextAreaElement) {
+        setTimeout(() => {
+          fieldRef.current?.focus()
+        }, 300)
+      }
+    }
   }
 
   const handleSave = async () => {
-    if (!validate()) return
+    const validation = validate()
+    if (!validation.isValid) {
+      // Scroll to first error field
+      if (validation.firstErrorField) {
+        scrollToField(validation.firstErrorField)
+      }
+      return
+    }
 
     setSaving(true)
     try {
       const updateData = {
         name: `${formData.firstName} ${formData.lastName}`.trim(),
-        phoneNumber: formData.phone,
+        ...(formData.phone && formData.phone.trim() && { phoneNumber: formData.phone.trim().replace(/\D/g, '') }),
         dateOfBirth: formData.dateOfBirth,
         gender: formData.gender,
         occupation: formData.occupation,
@@ -268,8 +346,15 @@ const ProfileContent = () => {
 
       const updatedProfile = await usersApi.updateMyProfile(updateData)
       
-      // Update user in store
+      // Update user in store - this will update the phoneNumber if it was saved
       setUser({ ...user, ...updatedProfile } as any)
+      
+      // Update formData with the saved phone number to reflect the disabled state
+      if (updatedProfile.phoneNumber) {
+        setFormData(prev => ({ ...prev, phone: updatedProfile.phoneNumber || '' }))
+        // Mark phone number as saved so field becomes disabled
+        setPhoneNumberSaved(true)
+      }
       
       setNotice({ type: 'success', message: 'Profile saved successfully!' })
     } catch (error: any) {
@@ -413,6 +498,7 @@ const ProfileContent = () => {
                 First Name <span className="text-red-500">*</span>
               </label>
               <input
+                ref={firstNameRef}
                 type="text"
                 value={formData.firstName}
                 onChange={(e) => handleChange('firstName', e.target.value)}
@@ -430,6 +516,7 @@ const ProfileContent = () => {
                 Last Name <span className="text-red-500">*</span>
               </label>
               <input
+                ref={lastNameRef}
                 type="text"
                 value={formData.lastName}
                 onChange={(e) => handleChange('lastName', e.target.value)}
@@ -466,10 +553,51 @@ const ProfileContent = () => {
             <input
               type="tel"
               value={formData.phone}
-              disabled
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm bg-gray-50 text-gray-500 cursor-not-allowed"
+              onChange={(e) => {
+                const value = e.target.value
+                // Only allow digits, spaces, hyphens, and parentheses (for formatting)
+                // Remove all non-digit characters for storage
+                const digitsOnly = value.replace(/\D/g, '')
+                // Limit to 10 digits
+                if (digitsOnly.length <= 10) {
+                  handleChange('phone', digitsOnly)
+                }
+              }}
+              onKeyDown={(e) => {
+                // Allow: backspace, delete, tab, escape, enter, home, end, arrow keys
+                if ([8, 9, 27, 13, 46, 35, 36, 37, 38, 39, 40].indexOf(e.keyCode) !== -1 ||
+                    // Allow Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+                    (e.keyCode === 65 && (e.ctrlKey || e.metaKey)) ||
+                    (e.keyCode === 67 && (e.ctrlKey || e.metaKey)) ||
+                    (e.keyCode === 86 && (e.ctrlKey || e.metaKey)) ||
+                    (e.keyCode === 88 && (e.ctrlKey || e.metaKey))) {
+                  return
+                }
+                // Ensure that it is a number and stop the keypress
+                if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105)) {
+                  e.preventDefault()
+                }
+              }}
+              disabled={hasSavedPhoneNumber}
+              className={`w-full px-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 ${
+                hasSavedPhoneNumber
+                  ? 'border-gray-300 bg-gray-50 text-gray-500 cursor-not-allowed'
+                  : errors.phone
+                    ? 'border-red-500'
+                    : 'border-gray-300'
+              }`}
+              placeholder="Enter 10-digit phone number"
+              maxLength={10}
             />
-            <p className="text-xs text-gray-500 mt-1">Phone number cannot be changed</p>
+            {errors.phone && (
+              <p className="text-xs text-red-500 mt-1">{errors.phone}</p>
+            )}
+            {!errors.phone && hasSavedPhoneNumber && (
+              <p className="text-xs text-gray-500 mt-1">Phone number cannot be changed once saved</p>
+            )}
+            {!errors.phone && !hasSavedPhoneNumber && (
+              <p className="text-xs text-gray-500 mt-1">Add your phone number (optional, cannot be changed once saved)</p>
+            )}
           </div>
 
           <div className="mt-2 p-3 bg-blue-50 border border-blue-100 rounded-lg">
@@ -479,7 +607,7 @@ const ProfileContent = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
+            <div ref={dateOfBirthRef}>
               <label className="block text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-2">
                 <Calendar className="w-4 h-4 text-gray-400" />
                 Date of Birth <span className="text-red-500">*</span>
@@ -499,6 +627,7 @@ const ProfileContent = () => {
                 Gender <span className="text-red-500">*</span>
               </label>
               <select
+                ref={genderRef}
                 value={formData.gender}
                 onChange={(e) => handleChange('gender', e.target.value)}
                 className={`w-full px-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 ${
@@ -531,6 +660,7 @@ const ProfileContent = () => {
               Occupation / Role <span className="text-red-500">*</span>
             </label>
             <input
+              ref={occupationRef}
               type="text"
               value={formData.occupation}
               onChange={(e) => handleChange('occupation', e.target.value)}
@@ -550,6 +680,7 @@ const ProfileContent = () => {
               Company Name <span className="text-red-500">*</span>
             </label>
             <input
+              ref={companyNameRef}
               type="text"
               value={formData.companyName}
               onChange={(e) => handleChange('companyName', e.target.value)}
@@ -579,6 +710,7 @@ const ProfileContent = () => {
               Current City <span className="text-red-500">*</span>
             </label>
             <input
+              ref={currentCityRef}
               type="text"
               value={formData.currentCity}
               onChange={(e) => handleChange('currentCity', e.target.value)}
@@ -597,6 +729,7 @@ const ProfileContent = () => {
               Area <span className="text-red-500">*</span>
             </label>
             <input
+              ref={areaRef}
               type="text"
               value={formData.area}
               onChange={(e) => handleChange('area', e.target.value)}
@@ -631,6 +764,7 @@ const ProfileContent = () => {
               </button>
             </label>
             <textarea
+              ref={aboutRef}
               value={formData.about}
               onChange={(e) => handleChange('about', e.target.value)}
               rows={5}
@@ -665,6 +799,7 @@ const ProfileContent = () => {
               Smoking <span className="text-red-500">*</span>
             </label>
             <select
+              ref={smokingRef}
               value={formData.smoking}
               onChange={(e) => handleChange('smoking', e.target.value)}
               className={`w-full px-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 ${
@@ -687,6 +822,7 @@ const ProfileContent = () => {
               Drinking <span className="text-red-500">*</span>
             </label>
             <select
+              ref={drinkingRef}
               value={formData.drinking}
               onChange={(e) => handleChange('drinking', e.target.value)}
               className={`w-full px-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 ${
@@ -709,6 +845,7 @@ const ProfileContent = () => {
               Food Preference <span className="text-red-500">*</span>
             </label>
             <select
+              ref={foodPreferenceRef}
               value={formData.foodPreference}
               onChange={(e) => handleChange('foodPreference', e.target.value)}
               className={`w-full px-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 ${
@@ -729,15 +866,54 @@ const ProfileContent = () => {
 
       {notice && (
         <div
-          className={`mt-6 rounded-xl border px-4 py-3 text-sm ${
+          className={`fixed top-4 right-4 z-50 rounded-xl border-2 px-4 py-3 text-sm shadow-xl max-w-md transform transition-all duration-500 ease-in-out ${
             notice.type === 'success'
-              ? 'border-green-200 bg-green-50 text-green-700'
+              ? 'border-green-400 bg-gradient-to-r from-green-50 to-green-100 text-green-800 shadow-green-200/50 animate-[slideInRight_0.5s_ease-out,bounce_0.5s_ease-out_0.5s]'
               : notice.type === 'error'
-                ? 'border-red-200 bg-red-50 text-red-700'
-                : 'border-orange-200 bg-orange-50 text-orange-700'
+                ? 'border-red-300 bg-red-50 text-red-700 shadow-red-200/50 animate-[slideInRight_0.5s_ease-out]'
+                : 'border-orange-300 bg-orange-50 text-orange-700 shadow-orange-200/50 animate-[slideInRight_0.5s_ease-out]'
           }`}
+          style={{
+            animation: notice.type === 'success' 
+              ? 'slideInRight 0.5s ease-out, highlightPulse 2s ease-in-out infinite' 
+              : 'slideInRight 0.5s ease-out'
+          }}
         >
-          {notice.message}
+          <style>{`
+            @keyframes slideInRight {
+              from {
+                transform: translateX(100%);
+                opacity: 0;
+              }
+              to {
+                transform: translateX(0);
+                opacity: 1;
+              }
+            }
+            @keyframes highlightPulse {
+              0%, 100% {
+                box-shadow: 0 10px 25px -5px rgba(34, 197, 94, 0.3), 0 0 0 0 rgba(34, 197, 94, 0.4);
+              }
+              50% {
+                box-shadow: 0 10px 25px -5px rgba(34, 197, 94, 0.5), 0 0 0 8px rgba(34, 197, 94, 0);
+              }
+            }
+          `}</style>
+          <div className="flex items-center gap-2">
+            {notice.type === 'success' && (
+              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-green-500 flex items-center justify-center animate-pulse">
+                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+            )}
+            {notice.type === 'error' && (
+              <svg className="w-5 h-5 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            )}
+            <span className={`font-semibold ${notice.type === 'success' ? 'text-green-900' : ''}`}>{notice.message}</span>
+          </div>
         </div>
       )}
 
