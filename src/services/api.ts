@@ -614,6 +614,7 @@ export interface ConversationResponse {
   createdAt: string
   updatedAt: string
   unreadCount?: number
+  isDisabled?: boolean
 }
 
 export interface MessageResponse {

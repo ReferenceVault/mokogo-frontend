@@ -1291,9 +1291,18 @@ const Dashboard = () => {
             <div className="absolute inset-0 bg-gradient-to-br from-orange-50/50 via-transparent to-transparent rounded-2xl" />
             <div className="relative">
               <h3 className="text-xl font-bold text-gray-900 mb-2">Archive listing</h3>
-              <p className="text-gray-600 mb-6">
-                Are you sure you want to archive this listing? It will no longer be visible to seekers.
-              </p>
+              <div className="text-gray-600 mb-6 space-y-2">
+                <p>
+                  Are you sure you want to archive this listing? It will no longer be visible to seekers.
+                </p>
+                <div className="mt-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                  <p className="text-sm font-semibold text-orange-900 mb-1">Important:</p>
+                  <ul className="text-sm text-orange-800 space-y-1 list-disc list-inside">
+                    <li>All chats with seekers will be disabled, seeker will not be able to chat again.</li>
+                    <li>Seeker will see message "This listing is no longer active"</li>
+                  </ul>
+                </div>
+              </div>
               <div className="flex gap-3">
                 <button 
                   onClick={handleArchive} 
