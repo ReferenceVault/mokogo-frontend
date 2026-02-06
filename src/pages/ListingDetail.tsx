@@ -5,6 +5,7 @@ import Header from '@/components/Header'
 import Logo from '@/components/Logo'
 import UserAvatar from '@/components/UserAvatar'
 import ProfileCompletionModal from '@/components/ProfileCompletionModal'
+import Toast from '@/components/Toast'
 import { useStore } from '@/store/useStore'
 
 import { formatPrice, formatDate } from '@/utils/formatters'
@@ -268,6 +269,7 @@ const ListingDetail = () => {
     requestId?: string
   }>({ status: null })
   const [loadingRequestStatus, setLoadingRequestStatus] = useState(true)
+  const [showSuccessToast, setShowSuccessToast] = useState(false)
 
   useEffect(() => {
     const loadListing = async () => {
@@ -449,17 +451,6 @@ const ListingDetail = () => {
     }
   }
 
-  // Handle sending request after rejection
-  const handleSendRequestAgain = async () => {
-    // Reset request status to allow new request
-    setRequestStatus({ status: null })
-    // Reset form
-    setMessage('')
-    setMoveInDate('')
-    setDuration('6 months')
-    // Scroll to form
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
 
   if (loading) {
     return (
@@ -616,8 +607,8 @@ const ListingDetail = () => {
       setMoveInDate('')
       setDuration('6 months')
 
-      // Show success message
-      alert('Request sent successfully! The host will review your request.')
+      // Show success toast
+      setShowSuccessToast(true)
   } catch (error: any) {
     console.error('Error sending request:', error)
     const errorMessage = error.response?.data?.message || 'Failed to send request. Please try again.'
@@ -1138,14 +1129,6 @@ const ListingDetail = () => {
                       <MessageCircle className="w-5 h-5 inline mr-2" />
                       Start Conversation
                     </button>
-                  ) : requestStatus.status === 'rejected' ? (
-                    <button 
-                      onClick={handleSendRequestAgain}
-                      className="w-full bg-orange-400 text-white font-bold py-4 rounded-xl hover:bg-orange-500 hover:shadow-lg transition-all transform hover:scale-105 mb-4"
-                    >
-                      <MessageCircle className="w-5 h-5 inline mr-2" />
-                      Send Request Again
-                    </button>
                   ) : (
                     <>
                       <button 
@@ -1326,6 +1309,13 @@ const ListingDetail = () => {
         onClose={() => setShowProfileModal(false)} 
         action="contact"
       />
+      {showSuccessToast && (
+        <Toast 
+          message="Request sent successfully! The host will review your request." 
+          onClose={() => setShowSuccessToast(false)}
+          type="success"
+        />
+      )}
     </div>
   )
 }
