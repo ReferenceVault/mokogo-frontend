@@ -25,6 +25,8 @@ const Step2Location = ({ data, onChange, error, onClearError }: Step2LocationPro
   const suggestionsRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [rateLimitMessage, setRateLimitMessage] = useState<string | null>(null)
+  const rateLimitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Sync input value with data.locality when it changes externally
   useEffect(() => {
@@ -84,10 +86,25 @@ const Step2Location = ({ data, onChange, error, onClearError }: Step2LocationPro
       } else {
         setShowSuggestions(false)
       }
-    } catch (error) {
-      console.error('Error fetching autocomplete suggestions:', error)
-      setSuggestions([])
-      setShowSuggestions(false)
+    } catch (error: any) {
+      // Gracefully handle 429 errors - show user-visible message
+      if (error?.response?.status === 429) {
+        setRateLimitMessage('Too many requests. Please type slower and wait a moment.')
+        setSuggestions([])
+        setShowSuggestions(false)
+        
+        // Auto-dismiss message after 5 seconds
+        if (rateLimitTimerRef.current) {
+          clearTimeout(rateLimitTimerRef.current)
+        }
+        rateLimitTimerRef.current = setTimeout(() => {
+          setRateLimitMessage(null)
+        }, 5000)
+      } else {
+        console.error('Error fetching autocomplete suggestions:', error)
+        setSuggestions([])
+        setShowSuggestions(false)
+      }
     } finally {
       setIsLoading(false)
     }
@@ -140,9 +157,26 @@ const Step2Location = ({ data, onChange, error, onClearError }: Step2LocationPro
     }
   }, [])
 
+  // Cleanup rate limit timer on unmount
+  useEffect(() => {
+    return () => {
+      if (rateLimitTimerRef.current) {
+        clearTimeout(rateLimitTimerRef.current)
+      }
+    }
+  }, [])
+
   // Debounced input handler
   const handleLocalityInputChange = (value: string) => {
     setInputValue(value)
+    
+    // Clear rate limit message when user starts typing again
+    if (rateLimitMessage) {
+      setRateLimitMessage(null)
+      if (rateLimitTimerRef.current) {
+        clearTimeout(rateLimitTimerRef.current)
+      }
+    }
     
     // Clear placeId and related data when user types (invalidates previous selection)
     if (data.placeId) {
@@ -165,11 +199,11 @@ const Step2Location = ({ data, onChange, error, onClearError }: Step2LocationPro
       clearTimeout(debounceTimerRef.current)
     }
 
-    // Only fetch if city is selected
+    // Only fetch if city is selected and input is at least 2 characters
     if (data.city && value.trim().length >= 2) {
       debounceTimerRef.current = setTimeout(() => {
         fetchSuggestions(value, data.city!)
-      }, 300) // 300ms debounce
+      }, 400) // 400ms debounce
     }
   }
 
@@ -324,6 +358,11 @@ const Step2Location = ({ data, onChange, error, onClearError }: Step2LocationPro
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
+              </div>
+            )}
+            {rateLimitMessage && (
+              <div className="absolute top-full left-0 right-0 mt-1 p-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800 z-50">
+                {rateLimitMessage}
               </div>
             )}
             

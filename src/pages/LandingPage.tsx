@@ -33,6 +33,8 @@ const LandingPage = () => {
   const areaSuggestionsRef = useRef<HTMLDivElement>(null)
   const areaInputRef = useRef<HTMLInputElement>(null)
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [rateLimitMessage, setRateLimitMessage] = useState<string | null>(null)
+  const rateLimitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [searchMode, setSearchMode] = useState<'standard' | 'miko'>('standard')
   const [isMikoOpen, setIsMikoOpen] = useState(false)
   const [isLoadingListings, setIsLoadingListings] = useState(true)
@@ -118,10 +120,25 @@ const LandingPage = () => {
       } else {
         setShowAreaSuggestions(false)
       }
-    } catch (error) {
-      console.error('Error fetching area suggestions:', error)
-      setAreaSuggestions([])
-      setShowAreaSuggestions(false)
+    } catch (error: any) {
+      // Gracefully handle 429 errors - show user-visible message
+      if (error?.response?.status === 429) {
+        setRateLimitMessage('Too many requests. Please type slower and wait a moment.')
+        setAreaSuggestions([])
+        setShowAreaSuggestions(false)
+        
+        // Auto-dismiss message after 5 seconds
+        if (rateLimitTimerRef.current) {
+          clearTimeout(rateLimitTimerRef.current)
+        }
+        rateLimitTimerRef.current = setTimeout(() => {
+          setRateLimitMessage(null)
+        }, 5000)
+      } else {
+        console.error('Error fetching area suggestions:', error)
+        setAreaSuggestions([])
+        setShowAreaSuggestions(false)
+      }
     } finally {
       setIsLoadingArea(false)
     }
@@ -130,6 +147,15 @@ const LandingPage = () => {
   // Handle area input change
   const handleAreaInputChange = (value: string) => {
     setAreaInputValue(value)
+    
+    // Clear rate limit message when user starts typing again
+    if (rateLimitMessage) {
+      setRateLimitMessage(null)
+      if (rateLimitTimerRef.current) {
+        clearTimeout(rateLimitTimerRef.current)
+      }
+    }
+    
     setSearchFilters(prev => ({
       ...prev,
       area: value,
@@ -146,7 +172,7 @@ const LandingPage = () => {
     if (searchFilters.city && value.trim().length >= 2) {
       debounceTimerRef.current = setTimeout(() => {
         fetchAreaSuggestions(value, searchFilters.city)
-      }, 300)
+      }, 400)
     }
   }
 
@@ -219,6 +245,15 @@ const LandingPage = () => {
     document.addEventListener('mousedown', handleClickOutside)
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [])
+
+  // Cleanup rate limit timer on unmount
+  useEffect(() => {
+    return () => {
+      if (rateLimitTimerRef.current) {
+        clearTimeout(rateLimitTimerRef.current)
+      }
     }
   }, [])
 
@@ -543,6 +578,11 @@ const LandingPage = () => {
                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                               </svg>
+                            </div>
+                          )}
+                          {rateLimitMessage && (
+                            <div className="absolute top-full left-0 right-0 mt-1 p-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800 z-50">
+                              {rateLimitMessage}
                             </div>
                           )}
                           {showAreaSuggestions && areaSuggestions.length > 0 && createPortal(
