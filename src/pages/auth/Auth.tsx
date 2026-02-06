@@ -125,17 +125,26 @@ const Auth = () => {
   }
 
   const formatPhoneNumber = (value: string) => {
-    const cleaned = value.replace(/\D/g, '')
+    // Allow international format: keep + and digits
+    const cleaned = value.replace(/[^\d+]/g, '').replace(/(?<=\+)\+/g, '') // Remove duplicates of +
+    // Don't format if it starts with + (international format)
+    if (cleaned.startsWith('+')) {
+      return cleaned
+    }
+    // Format local numbers (up to 10 digits) with space
     if (cleaned.length <= 5) return cleaned
     if (cleaned.length <= 10) {
       return `${cleaned.slice(0, 5)} ${cleaned.slice(5)}`
     }
-    return `${cleaned.slice(0, 5)} ${cleaned.slice(5, 10)}`
+    return cleaned
   }
 
   const validatePhone = (phoneNumber: string) => {
-    const cleaned = phoneNumber.replace(/\D/g, '')
-    return cleaned.length === 10
+    if (!phoneNumber || phoneNumber.trim() === '') return true // Optional field
+    // Allow international format: + followed by country code and number (1-15 digits total)
+    const phoneRegex = /^\+?[1-9]\d{1,14}$/
+    const cleaned = phoneNumber.trim().replace(/\s|-|\(|\)/g, '') // Remove spaces, dashes, parentheses
+    return phoneRegex.test(cleaned)
   }
 
   const validateEmail = (email: string) => {
@@ -233,7 +242,7 @@ const Auth = () => {
     }
 
     if (phone && !validatePhone(phone)) {
-      setError('Please enter a valid 10-digit phone number')
+      setError('Please enter a valid phone number (international format supported)')
       return
     }
 
@@ -313,9 +322,13 @@ const Auth = () => {
   }
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, '').slice(0, 10)
-    setPhone(value)
-    setError('')
+    // Allow international format: + and digits, remove spaces/dashes/parentheses but keep +
+    const value = e.target.value.replace(/[^\d+]/g, '').replace(/(?<=\+)\+/g, '') // Remove duplicates of +
+    // Allow up to 16 characters (for international format like +1234567890123)
+    if (value.length <= 16) {
+      setPhone(value)
+      setError('')
+    }
   }
 
   const displayPhone = formatPhoneNumber(phone)
@@ -679,8 +692,8 @@ const Auth = () => {
             ? 'border-red-400 focus:ring-red-400 focus:border-red-400'
             : 'border-orange-200 focus:ring-orange-400 focus:border-orange-400'
         } ${isLoading ? 'opacity-50 cursor-not-allowed' : 'bg-white/80 hover:border-orange-300'}`}
-        placeholder="Enter your phone number"
-        maxLength={12}
+        placeholder="Enter your phone number (e.g., +1234567890)"
+        maxLength={16}
         disabled={isLoading}
       />
     </div>

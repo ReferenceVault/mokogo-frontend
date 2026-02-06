@@ -285,14 +285,14 @@ const ProfileContent = () => {
     if (!formData.drinking) newErrors.drinking = 'Drinking preference is required'
     if (!formData.foodPreference) newErrors.foodPreference = 'Food preference is required'
 
-    // Phone number validation (optional but if provided, must be valid)
+    // Phone number validation (optional but if provided, must be valid international format)
     if (formData.phone && formData.phone.trim() !== '') {
-      const phoneRegex = /^[0-9]{10}$/
-      const cleanedPhone = formData.phone.trim().replace(/\D/g, '')
-      if (cleanedPhone.length !== 10) {
-        newErrors.phone = 'Phone number must be exactly 10 digits'
-      } else if (!phoneRegex.test(cleanedPhone)) {
-        newErrors.phone = 'Phone number must contain only digits'
+      // Allow international format: + followed by country code and number (1-15 digits total)
+      // Or just digits (for backward compatibility)
+      const phoneRegex = /^\+?[1-9]\d{1,14}$/
+      const cleanedPhone = formData.phone.trim().replace(/\s|-|\(|\)/g, '') // Remove spaces, dashes, parentheses
+      if (!phoneRegex.test(cleanedPhone)) {
+        newErrors.phone = 'Please enter a valid phone number (international format supported)'
       }
     }
 
@@ -555,12 +555,11 @@ const ProfileContent = () => {
               value={formData.phone}
               onChange={(e) => {
                 const value = e.target.value
-                // Only allow digits, spaces, hyphens, and parentheses (for formatting)
-                // Remove all non-digit characters for storage
-                const digitsOnly = value.replace(/\D/g, '')
-                // Limit to 10 digits
-                if (digitsOnly.length <= 10) {
-                  handleChange('phone', digitsOnly)
+                // Allow international format: + and digits, remove spaces/dashes/parentheses but keep +
+                const cleaned = value.replace(/[^\d+]/g, '').replace(/(?<=\+)\+/g, '') // Remove duplicates of +
+                // Allow up to 16 characters (for international format like +1234567890123)
+                if (cleaned.length <= 16) {
+                  handleChange('phone', cleaned)
                 }
               }}
               onKeyDown={(e) => {
@@ -586,8 +585,8 @@ const ProfileContent = () => {
                     ? 'border-red-500'
                     : 'border-gray-300'
               }`}
-              placeholder="Enter 10-digit phone number"
-              maxLength={10}
+              placeholder="Enter phone number (e.g., +1234567890)"
+              maxLength={16}
             />
             {errors.phone && (
               <p className="text-xs text-red-500 mt-1">{errors.phone}</p>
