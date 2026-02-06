@@ -317,6 +317,7 @@ export interface ListingResponse {
   photos: string[]
   mikoTags?: VibeTagId[]
   status: 'draft' | 'live' | 'archived' | 'fulfilled'
+  listingVersion?: number
   createdAt: string
   updatedAt: string
 }
@@ -507,9 +508,11 @@ export interface RequestResponse {
   listingId: string | { _id: string; title: string; city: string; locality: string; photos?: string[] }
   ownerId: string | { _id: string; name: string; email: string; profileImageUrl?: string }
   requesterId: string | { _id: string; name: string; email: string; profileImageUrl?: string }
+  listingVersion?: number
   message?: string
   moveInDate?: string
   status: 'pending' | 'approved' | 'rejected'
+  conversationId?: string
   createdAt: string
   updatedAt: string
 }
@@ -614,6 +617,7 @@ export interface ConversationResponse {
   createdAt: string
   updatedAt: string
   unreadCount?: number
+  isDisabled?: boolean
 }
 
 export interface MessageResponse {

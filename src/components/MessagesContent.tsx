@@ -317,6 +317,13 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
   const handleSendMessage = async () => {
     if (!message.trim() || !selectedConversationId || sending) return
 
+    // Check if conversation is disabled
+    const currentConversation = conversations.find(c => (c._id || c.id) === selectedConversationId)
+    if (currentConversation?.isDisabled) {
+      alert('This listing is no longer active')
+      return
+    }
+
     setSending(true)
     const messageText = message.trim()
     setMessage('')
@@ -345,11 +352,15 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
       // Note: We don't call the API here because WebSocket handles it
       // The WebSocket gateway will create the message and emit it back
       // If WebSocket fails, we'll remove the optimistic message in the catch block
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error sending message:', error)
       // Remove optimistic message on error
       setMessages(prev => prev.filter(m => !m._id?.startsWith('temp-')))
-      alert('Failed to send message. Please try again.')
+      if (error?.message?.includes('no longer active') || error?.message?.includes('Listing')) {
+        alert('This listing is no longer active')
+      } else {
+        alert('Failed to send message. Please try again.')
+      }
     } finally {
       setSending(false)
     }
@@ -673,6 +684,16 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
               </div>
             </div>
 
+            {/* Disabled Banner */}
+            {selectedConversation?.isDisabled && (
+              <div className="px-4 py-2 bg-orange-50 border-b border-orange-200">
+                <div className="flex items-center gap-2 text-sm text-orange-800">
+                  <span>🔕</span>
+                  <span>This listing is no longer active</span>
+                </div>
+              </div>
+            )}
+
             {/* Messages */}
             {/* <div className="flex-1 overflow-y-auto p-4 space-y-4"> */}
             <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -737,37 +758,43 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
 
             {/* Message Input */}
             <div className="p-4 border-t border-gray-200 bg-white">
-              <div className="flex items-end gap-2">
-                <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                  <span className="text-xl text-gray-600">+</span>
-                </button>
-                <input
-                  type="text"
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder="Type your message..."
-                  disabled={sending}
-                  className="flex-1 px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent disabled:opacity-50"
-                />
-                <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                  <Paperclip className="w-5 h-5 text-gray-600" />
-                </button>
-                <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                  <ImageIcon className="w-5 h-5 text-gray-600" />
-                </button>
-                <button 
-                  onClick={handleSendMessage}
-                  disabled={sending || !message.trim()}
-                  className="w-10 h-10 bg-orange-400 text-white rounded-full flex items-center justify-center hover:bg-orange-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {sending ? (
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  ) : (
-                    <Send className="w-5 h-5" />
-                  )}
-                </button>
-              </div>
+              {selectedConversation?.isDisabled ? (
+                <div className="flex items-center justify-center py-3">
+                  <p className="text-sm text-gray-500">Listing no longer available</p>
+                </div>
+              ) : (
+                <div className="flex items-end gap-2">
+                  <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                    <span className="text-xl text-gray-600">+</span>
+                  </button>
+                  <input
+                    type="text"
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder="Type your message..."
+                    disabled={sending}
+                    className="flex-1 px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent disabled:opacity-50"
+                  />
+                  <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                    <Paperclip className="w-5 h-5 text-gray-600" />
+                  </button>
+                  <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                    <ImageIcon className="w-5 h-5 text-gray-600" />
+                  </button>
+                  <button 
+                    onClick={handleSendMessage}
+                    disabled={sending || !message.trim()}
+                    className="w-10 h-10 bg-orange-400 text-white rounded-full flex items-center justify-center hover:bg-orange-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {sending ? (
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
+                      <Send className="w-5 h-5" />
+                    )}
+                  </button>
+                </div>
+              )}
             </div>
           </>
         ) : (

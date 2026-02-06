@@ -4,6 +4,7 @@ import { useStore } from '@/store/useStore'
 import { Listing } from '@/types'
 import { MoveInDateField } from '@/components/MoveInDateField'
 import ProfileCompletionModal from '@/components/ProfileCompletionModal'
+import Toast from '@/components/Toast'
 import { formatPrice, formatDate } from '@/utils/formatters'
 import { isProfileComplete } from '@/utils/profileValidation'
 import { listingsApi, requestsApi, usersApi, messagesApi } from '@/services/api'
@@ -55,6 +56,7 @@ const ListingDetailContent = ({ listingId, onBack, onExplore }: ListingDetailCon
   const [message, setMessage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [requestMessage, setRequestMessage] = useState<string | null>(null)
+  const [messageError, setMessageError] = useState<string | null>(null)
   const [listing, setListing] = useState<Listing | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [showProfileModal, setShowProfileModal] = useState(false)
@@ -64,6 +66,7 @@ const ListingDetailContent = ({ listingId, onBack, onExplore }: ListingDetailCon
     requestId?: string
   }>({ status: null })
   const [loadingRequestStatus, setLoadingRequestStatus] = useState(true)
+  const [showSuccessToast, setShowSuccessToast] = useState(false)
   const [conversationId, setConversationId] = useState<string | null>(null)
   const [listingOwner, setListingOwner] = useState<any>(null)
   const contactCardRef = useRef<HTMLDivElement | null>(null)
@@ -395,16 +398,6 @@ const ListingDetailContent = ({ listingId, onBack, onExplore }: ListingDetailCon
     }
   }
 
-  // Handle sending request after rejection
-  const handleSendRequestAgain = () => {
-    // Reset request status to allow new request
-    setRequestStatus({ status: null })
-    // Reset form
-    setMessage('')
-    setMoveInDate('')
-    // Scroll to form
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
 
   const handleSave = () => {
     if (!listingId) return
@@ -457,12 +450,19 @@ const ListingDetailContent = ({ listingId, onBack, onExplore }: ListingDetailCon
       return
     }
     
+    // Validate message is required
+    if (!message || message.trim() === '') {
+      setMessageError('Message is required')
+      return
+    }
+    
+    setMessageError(null)
     setIsSubmitting(true)
     setRequestMessage(null)
     try {
       const newRequest = await requestsApi.create({
         listingId: listing.id,
-        message: message || undefined,
+        message: message.trim(),
         moveInDate: moveInDate || undefined,
       })
       
@@ -472,17 +472,12 @@ const ListingDetailContent = ({ listingId, onBack, onExplore }: ListingDetailCon
         requestId: newRequest._id || newRequest.id
       })
       
-      // Show success message inline
-      setRequestMessage('Request sent successfully! The host will review your request.')
-      
       // Clear form
       setMessage('')
       setMoveInDate('')
       
-      // Navigate to requests in dashboard
-      if (onBack) {
-        onBack()
-      }
+      // Show success toast
+      setShowSuccessToast(true)
   } catch (error: any) {
     console.error('Error sending request:', error)
     const errorMessage = error.response?.data?.message || 'Failed to send request. Please try again.'
@@ -854,14 +849,23 @@ const ListingDetailContent = ({ listingId, onBack, onExplore }: ListingDetailCon
                         </div>
                         
                         <div className="border border-stone-300 rounded-lg p-2">
-                          <div className="text-xs font-semibold text-gray-700 uppercase mb-1.5">Your Message (Optional)</div>
+                          <div className="text-xs font-semibold text-gray-700 uppercase mb-1.5">Your Message</div>
                           <textarea 
                             value={message}
-                            onChange={(e) => setMessage(e.target.value)}
-                            className="w-full border-0 p-0 text-xs focus:ring-0 resize-none bg-transparent" 
+                            onChange={(e) => {
+                              setMessage(e.target.value)
+                              if (messageError && e.target.value.trim() !== '') {
+                                setMessageError(null)
+                              }
+                            }}
+                            className={`w-full border-0 p-0 text-xs focus:ring-0 resize-none bg-transparent ${messageError ? 'text-red-600' : ''}`}
                             rows={3} 
                             placeholder="Tell the host about yourself..."
+                            required
                           />
+                          {messageError && (
+                            <p className="text-xs text-red-500 mt-1">{messageError}</p>
+                          )}
                         </div>
                       </div>
                       
@@ -889,14 +893,6 @@ const ListingDetailContent = ({ listingId, onBack, onExplore }: ListingDetailCon
                         >
                           <MessageCircle className="w-4 h-4 inline mr-2" />
                           Start Conversation
-                        </button>
-                      ) : requestStatus.status === 'rejected' ? (
-                        <button 
-                          onClick={handleSendRequestAgain}
-                          className="w-full bg-orange-400 text-white font-semibold py-2.5 rounded-lg hover:bg-orange-500 hover:shadow-lg transition-all transform hover:scale-105 mb-3 text-sm"
-                        >
-                          <MessageCircle className="w-4 h-4 inline mr-2" />
-                          Send Request Again
                         </button>
                       ) : (
                         <>
@@ -1069,6 +1065,19 @@ const ListingDetailContent = ({ listingId, onBack, onExplore }: ListingDetailCon
         onClose={() => setShowProfileModal(false)} 
         action="contact"
       />
+      {showSuccessToast && (
+        <Toast 
+          message="Request sent successfully! The host will review your request." 
+          onClose={() => {
+            setShowSuccessToast(false)
+            if (onBack) {
+              onBack()
+            }
+          }}
+          type="success"
+          duration={5000}
+        />
+      )}
     </div>
   )
 }

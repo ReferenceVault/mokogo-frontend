@@ -5,6 +5,7 @@ import Header from '@/components/Header'
 import Logo from '@/components/Logo'
 import UserAvatar from '@/components/UserAvatar'
 import ProfileCompletionModal from '@/components/ProfileCompletionModal'
+import Toast from '@/components/Toast'
 import { useStore } from '@/store/useStore'
 
 import { formatPrice, formatDate } from '@/utils/formatters'
@@ -236,6 +237,7 @@ const ListingDetail = () => {
   const [duration, setDuration] = useState('6 months')
   const [message, setMessage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [messageError, setMessageError] = useState<string | null>(null)
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [listingOwnerId, setListingOwnerId] = useState<string | null>(null)
   const [conversationId, setConversationId] = useState<string | null>(null)
@@ -268,6 +270,7 @@ const ListingDetail = () => {
     requestId?: string
   }>({ status: null })
   const [loadingRequestStatus, setLoadingRequestStatus] = useState(true)
+  const [showSuccessToast, setShowSuccessToast] = useState(false)
 
   useEffect(() => {
     const loadListing = async () => {
@@ -449,17 +452,6 @@ const ListingDetail = () => {
     }
   }
 
-  // Handle sending request after rejection
-  const handleSendRequestAgain = async () => {
-    // Reset request status to allow new request
-    setRequestStatus({ status: null })
-    // Reset form
-    setMessage('')
-    setMoveInDate('')
-    setDuration('6 months')
-    // Scroll to form
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
 
   if (loading) {
     return (
@@ -597,11 +589,18 @@ const ListingDetail = () => {
 
   if (!listing) return
 
+    // Validate message is required
+    if (!message || message.trim() === '') {
+      setMessageError('Message is required')
+      return
+    }
+    
+    setMessageError(null)
     setIsSubmitting(true)
     try {
       const newRequest = await requestsApi.create({
         listingId: listing.id,
-        message: message || undefined,
+        message: message.trim(),
         moveInDate: moveInDate || undefined,
       })
 
@@ -616,8 +615,8 @@ const ListingDetail = () => {
       setMoveInDate('')
       setDuration('6 months')
 
-      // Show success message
-      alert('Request sent successfully! The host will review your request.')
+      // Show success toast
+      setShowSuccessToast(true)
   } catch (error: any) {
     console.error('Error sending request:', error)
     const errorMessage = error.response?.data?.message || 'Failed to send request. Please try again.'
@@ -1102,14 +1101,23 @@ const ListingDetail = () => {
                     </div>
                     
                     <div className="border border-stone-300 rounded-lg p-3">
-                      <div className="text-xs font-semibold text-gray-700 uppercase mb-2">Your Message (Optional)</div>
+                      <div className="text-xs font-semibold text-gray-700 uppercase mb-2">Your Message</div>
                       <textarea 
                         value={message}
-                        onChange={(e) => setMessage(e.target.value)}
-                        className="w-full border-0 p-0 text-sm focus:ring-0 resize-none bg-transparent" 
+                        onChange={(e) => {
+                          setMessage(e.target.value)
+                          if (messageError && e.target.value.trim() !== '') {
+                            setMessageError(null)
+                          }
+                        }}
+                        className={`w-full border-0 p-0 text-sm focus:ring-0 resize-none bg-transparent ${messageError ? 'text-red-600' : ''}`}
                         rows={3} 
                         placeholder="Tell the host about yourself..."
+                        required
                       />
+                      {messageError && (
+                        <p className="text-xs text-red-500 mt-1">{messageError}</p>
+                      )}
                     </div>
                   </div>
                   
@@ -1137,14 +1145,6 @@ const ListingDetail = () => {
                     >
                       <MessageCircle className="w-5 h-5 inline mr-2" />
                       Start Conversation
-                    </button>
-                  ) : requestStatus.status === 'rejected' ? (
-                    <button 
-                      onClick={handleSendRequestAgain}
-                      className="w-full bg-orange-400 text-white font-bold py-4 rounded-xl hover:bg-orange-500 hover:shadow-lg transition-all transform hover:scale-105 mb-4"
-                    >
-                      <MessageCircle className="w-5 h-5 inline mr-2" />
-                      Send Request Again
                     </button>
                   ) : (
                     <>
@@ -1326,6 +1326,13 @@ const ListingDetail = () => {
         onClose={() => setShowProfileModal(false)} 
         action="contact"
       />
+      {showSuccessToast && (
+        <Toast 
+          message="Request sent successfully! The host will review your request." 
+          onClose={() => setShowSuccessToast(false)}
+          type="success"
+        />
+      )}
     </div>
   )
 }

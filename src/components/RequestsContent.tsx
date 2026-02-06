@@ -13,7 +13,8 @@ import {
   ChevronRight,
   Copy,
   Plus,
-  Send
+  Send,
+  X
 } from 'lucide-react'
 
 import { Listing } from '@/types'
@@ -35,6 +36,8 @@ const RequestsContent = ({
   const [allRequests, setAllRequests] = useState<RequestResponse[]>([])
   const [loading, setLoading] = useState(true)
   const [processingId, setProcessingId] = useState<string | null>(null)
+  const [showRejectModal, setShowRejectModal] = useState(false)
+  const [requestToReject, setRequestToReject] = useState<{ _id?: string; id: string } | null>(null)
 
   const hasListings = allListings.length > 0
   const defaultTab = hasListings ? initialTab : 'sent'
@@ -172,11 +175,11 @@ const RequestsContent = ({
         setCachedRequestsForOwner(updatedCached)
       }
       
-      // If onApprove callback is provided, call it with conversation info
+      // If onApprove callback is provided, call it with conversation ID
       if (onApprove) {
-        // Backend automatically creates conversation on approval
-        // Navigate to messages - conversation will be there
-        onApprove(request._id || request.id)
+        // Backend creates conversation on approval and returns conversationId
+        const conversationId = updated.conversationId
+        onApprove(request._id || request.id, conversationId)
       }
     } catch (error: any) {
       console.error('Error approving request:', error)
@@ -186,26 +189,28 @@ const RequestsContent = ({
     }
   }
 
-  const handleReject = async (request: { _id?: string; id: string }) => {
-    if (!user) return
+  const handleRejectClick = (request: { _id?: string; id: string }) => {
+    setRequestToReject(request)
+    setShowRejectModal(true)
+  }
+
+  const handleReject = async () => {
+    if (!user || !requestToReject) return
     
-    if (!confirm('Are you sure you want to reject this request?')) {
-      return
-    }
-    
-    setProcessingId(request._id || request.id)
+    setProcessingId(requestToReject._id || requestToReject.id)
+    setShowRejectModal(false)
     try {
-      const updated = await requestsApi.update(request._id || request.id, { status: 'rejected' })
+      const updated = await requestsApi.update(requestToReject._id || requestToReject.id, { status: 'rejected' })
       
       // Update the request in the list with new status
       setAllRequests(prev => prev.map(r => 
-        (r._id || r.id) === (request._id || request.id) ? updated : r
+        (r._id || r.id) === (requestToReject._id || requestToReject.id) ? updated : r
       ))
       
       // Update cached requests for owner in store to update count
       if (cachedRequestsForOwner) {
         const updatedCached = cachedRequestsForOwner.map(r => 
-          (r._id || r.id) === (request._id || request.id) ? updated : r
+          (r._id || r.id) === (requestToReject._id || requestToReject.id) ? updated : r
         )
         setCachedRequestsForOwner(updatedCached)
       }
@@ -214,6 +219,7 @@ const RequestsContent = ({
       alert(error.response?.data?.message || 'Failed to reject request. Please try again.')
     } finally {
       setProcessingId(null)
+      setRequestToReject(null)
     }
   }
 
@@ -571,7 +577,7 @@ const RequestsContent = ({
                           {request.status === 'pending' && (
                             <div className="flex flex-wrap gap-2 justify-end">
                               <button 
-                                onClick={() => handleReject(request)}
+                                onClick={() => handleRejectClick(request)}
                                 disabled={isProcessing}
                                 className="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-sm font-semibold hover:bg-red-100 transition-all duration-300 flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
                               >
@@ -767,6 +773,57 @@ const RequestsContent = ({
             </div>
           </div>
         </section>
+      )}
+
+      {/* Reject Confirmation Modal */}
+      {showRejectModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                  <XCircle className="w-5 h-5 text-red-600" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900">
+                  Reject Request?
+                </h3>
+              </div>
+              <button
+                onClick={() => {
+                  setShowRejectModal(false)
+                  setRequestToReject(null)
+                }}
+                className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6">
+              <p className="text-gray-700 mb-6">
+                Are you sure you want to reject this request? This action cannot be undone.
+              </p>
+
+              <div className="flex items-center justify-end gap-3">
+                <button
+                  onClick={() => {
+                    setShowRejectModal(false)
+                    setRequestToReject(null)
+                  }}
+                  className="px-6 py-2.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-semibold hover:bg-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleReject}
+                  className="px-6 py-2.5 bg-red-500 text-white rounded-lg text-sm font-semibold hover:bg-red-600 transition-colors"
+                >
+                  Reject Request
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
