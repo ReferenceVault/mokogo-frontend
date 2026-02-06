@@ -607,7 +607,7 @@ const Dashboard = () => {
               onListingClick={(listingId) => {
                 openListingDetail(listingId, 'requests')
               }}
-              onApprove={async (requestId: string, conversationId?: string) => {
+              onApprove={async (_requestId: string, conversationId?: string) => {
                 // When a request is approved, navigate to messages with the conversation
                 setActiveView('messages')
                 if (conversationId) {
