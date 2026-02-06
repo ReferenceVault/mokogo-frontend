@@ -175,11 +175,11 @@ const RequestsContent = ({
         setCachedRequestsForOwner(updatedCached)
       }
       
-      // If onApprove callback is provided, call it with conversation info
+      // If onApprove callback is provided, call it with conversation ID
       if (onApprove) {
-        // Backend automatically creates conversation on approval
-        // Navigate to messages - conversation will be there
-        onApprove(request._id || request.id)
+        // Backend creates conversation on approval and returns conversationId
+        const conversationId = updated.conversationId
+        onApprove(request._id || request.id, conversationId)
       }
     } catch (error: any) {
       console.error('Error approving request:', error)

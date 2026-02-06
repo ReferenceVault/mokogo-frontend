@@ -56,6 +56,7 @@ const ListingDetailContent = ({ listingId, onBack, onExplore }: ListingDetailCon
   const [message, setMessage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [requestMessage, setRequestMessage] = useState<string | null>(null)
+  const [messageError, setMessageError] = useState<string | null>(null)
   const [listing, setListing] = useState<Listing | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [showProfileModal, setShowProfileModal] = useState(false)
@@ -449,12 +450,19 @@ const ListingDetailContent = ({ listingId, onBack, onExplore }: ListingDetailCon
       return
     }
     
+    // Validate message is required
+    if (!message || message.trim() === '') {
+      setMessageError('Message is required')
+      return
+    }
+    
+    setMessageError(null)
     setIsSubmitting(true)
     setRequestMessage(null)
     try {
       const newRequest = await requestsApi.create({
         listingId: listing.id,
-        message: message || undefined,
+        message: message.trim(),
         moveInDate: moveInDate || undefined,
       })
       
@@ -841,14 +849,23 @@ const ListingDetailContent = ({ listingId, onBack, onExplore }: ListingDetailCon
                         </div>
                         
                         <div className="border border-stone-300 rounded-lg p-2">
-                          <div className="text-xs font-semibold text-gray-700 uppercase mb-1.5">Your Message (Optional)</div>
+                          <div className="text-xs font-semibold text-gray-700 uppercase mb-1.5">Your Message</div>
                           <textarea 
                             value={message}
-                            onChange={(e) => setMessage(e.target.value)}
-                            className="w-full border-0 p-0 text-xs focus:ring-0 resize-none bg-transparent" 
+                            onChange={(e) => {
+                              setMessage(e.target.value)
+                              if (messageError && e.target.value.trim() !== '') {
+                                setMessageError(null)
+                              }
+                            }}
+                            className={`w-full border-0 p-0 text-xs focus:ring-0 resize-none bg-transparent ${messageError ? 'text-red-600' : ''}`}
                             rows={3} 
                             placeholder="Tell the host about yourself..."
+                            required
                           />
+                          {messageError && (
+                            <p className="text-xs text-red-500 mt-1">{messageError}</p>
+                          )}
                         </div>
                       </div>
                       

@@ -607,11 +607,16 @@ const Dashboard = () => {
               onListingClick={(listingId) => {
                 openListingDetail(listingId, 'requests')
               }}
-              onApprove={async () => {
-                // When a request is approved, navigate to messages
-                // The backend creates the conversation automatically
+              onApprove={async (requestId: string, conversationId?: string) => {
+                // When a request is approved, navigate to messages with the conversation
                 setActiveView('messages')
-                // MessagesContent will fetch conversations and show the new one
+                if (conversationId) {
+                  // Navigate with conversation ID to open it directly
+                  navigate(`/dashboard?view=messages&conversation=${conversationId}`)
+                } else {
+                  // Fallback: just navigate to messages
+                  navigate('/dashboard?view=messages')
+                }
               }}
             />
           ) : activeView === 'saved' ? (

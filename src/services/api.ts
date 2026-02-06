@@ -512,6 +512,7 @@ export interface RequestResponse {
   message?: string
   moveInDate?: string
   status: 'pending' | 'approved' | 'rejected'
+  conversationId?: string
   createdAt: string
   updatedAt: string
 }
