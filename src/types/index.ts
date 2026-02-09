@@ -59,6 +59,10 @@ export interface Listing {
   flatAmenities: string[]
   societyAmenities: string[]
   preferredGender: string
+  foodPreference?: string
+  petPolicy?: string
+  smokingPolicy?: string
+  drinkingPolicy?: string
   description?: string
   photos: string[]
   status: 'draft' | 'live' | 'archived' | 'fulfilled'

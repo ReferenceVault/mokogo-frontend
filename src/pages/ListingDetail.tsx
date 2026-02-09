@@ -23,7 +23,6 @@ import {
   Images,
   Bed,
   Bath,
-  Square,
   Calendar,
   CheckCircle,
   MessageCircle,
@@ -182,6 +181,10 @@ const ListingDetail = () => {
             flatAmenities: response.flatAmenities || [],
             societyAmenities: response.societyAmenities || [],
             preferredGender: response.preferredGender || '',
+            foodPreference: response.foodPreference,
+            petPolicy: response.petPolicy,
+            smokingPolicy: response.smokingPolicy,
+            drinkingPolicy: response.drinkingPolicy,
             description: response.description,
             photos: response.photos || [],
             status: response.status,
@@ -309,6 +312,10 @@ const ListingDetail = () => {
           flatAmenities: response.flatAmenities || [],
           societyAmenities: response.societyAmenities || [],
           preferredGender: response.preferredGender || '',
+          foodPreference: response.foodPreference,
+          petPolicy: response.petPolicy,
+          smokingPolicy: response.smokingPolicy,
+          drinkingPolicy: response.drinkingPolicy,
           description: response.description,
           photos: response.photos || [],
           status: response.status,
@@ -827,10 +834,30 @@ const ListingDetail = () => {
                   <span>ID Verified Host</span>
                 </div>
               </div>
-              <div className="flex items-center space-x-4 flex-wrap">
+              <div className="flex items-center gap-x-4 gap-y-3 flex-wrap">
                 {listing.preferredGender && (
                   <span className="bg-pink-100 text-pink-800 px-3 py-1 rounded-full text-sm font-medium">
                     {listing.preferredGender === 'Male' ? 'Male Preferred' : listing.preferredGender === 'Female' ? 'Female Preferred' : 'Any Gender'}
+                  </span>
+                )}
+                {listing.foodPreference && (
+                  <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+                    🥗 {listing.foodPreference === 'Vegetarian only' ? 'Vegetarian only' : listing.foodPreference === 'Non-veg allowed' ? 'Non-veg allowed' : 'Open'}
+                  </span>
+                )}
+                {listing.petPolicy && (
+                  <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-medium">
+                    {listing.petPolicy === 'Pets allowed' ? '🐾 Pet friendly' : '🚫 No pets'}
+                  </span>
+                )}
+                {listing.smokingPolicy && (
+                  <span className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-medium">
+                    {listing.smokingPolicy === 'Not allowed' ? '🚭 No smoking' : listing.smokingPolicy === 'Allowed' ? '💨 Smoking allowed' : '🚬 No issues'}
+                  </span>
+                )}
+                {listing.drinkingPolicy && (
+                  <span className="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm font-medium">
+                    {listing.drinkingPolicy === 'Not allowed' ? '🚫 Alcohol restricted' : listing.drinkingPolicy === 'Allowed' ? '🍷 Drinking allowed' : '🥂 No issues'}
                   </span>
                 )}
                 <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
@@ -945,7 +972,7 @@ const ListingDetail = () => {
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                   <div className="text-center p-4 bg-stone-50 rounded-xl">
                     <Bed className="w-8 h-8 text-orange-400 mx-auto mb-2" />
                     <div className="font-semibold text-gray-900">{listing.bhkType}</div>
@@ -955,11 +982,6 @@ const ListingDetail = () => {
                     <Bath className="w-8 h-8 text-orange-400 mx-auto mb-2" />
                     <div className="font-semibold text-gray-900">1 Bathroom</div>
                     <div className="text-sm text-gray-600">Dedicated</div>
-                  </div>
-                  <div className="text-center p-4 bg-stone-50 rounded-xl">
-                    <Square className="w-8 h-8 text-orange-400 mx-auto mb-2" />
-                    <div className="font-semibold text-gray-900">200 sq ft</div>
-                    <div className="text-sm text-gray-600">Room Size</div>
                   </div>
                   <div className="text-center p-4 bg-stone-50 rounded-xl">
                     <Calendar className="w-8 h-8 text-orange-400 mx-auto mb-2" />

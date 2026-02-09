@@ -16,6 +16,16 @@ const Step5Preferences = ({ data, onChange, error, onClearError }: Step5Preferen
     }
   }, [data.preferredGender, error, onClearError])
 
+  // Clear error when any preference field is selected
+  useEffect(() => {
+    if (
+      (data.foodPreference || data.petPolicy || data.smokingPolicy || data.drinkingPolicy) &&
+      error && onClearError
+    ) {
+      onClearError()
+    }
+  }, [data.foodPreference, data.petPolicy, data.smokingPolicy, data.drinkingPolicy, error, onClearError])
+
   const handleChange = (field: keyof Listing, value: any) => {
     onChange({ [field]: value })
   }
@@ -47,6 +57,106 @@ const Step5Preferences = ({ data, onChange, error, onClearError }: Step5Preferen
                   onClick={() => handleChange('preferredGender', value)}
                   className={`flex-1 px-4 py-3 rounded-lg font-medium transition-colors ${
                     data.preferredGender === value
+                      ? 'bg-orange-400 text-white border-orange-400'
+                      : 'bg-white/30 text-gray-700 border border-stone-200 hover:border-orange-400 hover:text-orange-500'
+                  }`}
+                >
+                  {pref}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Food Preference */}
+        <div>
+          <label className="block text-sm font-medium text-stone-700 mb-3">
+            Food Preference <span className="text-red-500">*</span>
+          </label>
+          <div className="flex gap-3">
+            {['Vegetarian only', 'Non-veg allowed', 'Open'].map((pref) => {
+              return (
+                <button
+                  key={pref}
+                  type="button"
+                  onClick={() => handleChange('foodPreference', pref)}
+                  className={`flex-1 px-4 py-3 rounded-lg font-medium transition-colors ${
+                    data.foodPreference === pref
+                      ? 'bg-orange-400 text-white border-orange-400'
+                      : 'bg-white/30 text-gray-700 border border-stone-200 hover:border-orange-400 hover:text-orange-500'
+                  }`}
+                >
+                  {pref}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Pet Policy */}
+        <div>
+          <label className="block text-sm font-medium text-stone-700 mb-3">
+            Pet Policy <span className="text-red-500">*</span>
+          </label>
+          <div className="flex gap-3">
+            {['Pets allowed', 'Not allowed'].map((pref) => {
+              return (
+                <button
+                  key={pref}
+                  type="button"
+                  onClick={() => handleChange('petPolicy', pref)}
+                  className={`flex-1 px-4 py-3 rounded-lg font-medium transition-colors ${
+                    data.petPolicy === pref
+                      ? 'bg-orange-400 text-white border-orange-400'
+                      : 'bg-white/30 text-gray-700 border border-stone-200 hover:border-orange-400 hover:text-orange-500'
+                  }`}
+                >
+                  {pref}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Smoking Policy */}
+        <div>
+          <label className="block text-sm font-medium text-stone-700 mb-3">
+            Smoking Policy <span className="text-red-500">*</span>
+          </label>
+          <div className="flex gap-3">
+            {['Allowed', 'Not allowed', 'No issues'].map((pref) => {
+              return (
+                <button
+                  key={pref}
+                  type="button"
+                  onClick={() => handleChange('smokingPolicy', pref)}
+                  className={`flex-1 px-4 py-3 rounded-lg font-medium transition-colors ${
+                    data.smokingPolicy === pref
+                      ? 'bg-orange-400 text-white border-orange-400'
+                      : 'bg-white/30 text-gray-700 border border-stone-200 hover:border-orange-400 hover:text-orange-500'
+                  }`}
+                >
+                  {pref}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Drinking Policy */}
+        <div>
+          <label className="block text-sm font-medium text-stone-700 mb-3">
+            Drinking Policy <span className="text-red-500">*</span>
+          </label>
+          <div className="flex gap-3">
+            {['Allowed', 'Not allowed', 'No issues'].map((pref) => {
+              return (
+                <button
+                  key={pref}
+                  type="button"
+                  onClick={() => handleChange('drinkingPolicy', pref)}
+                  className={`flex-1 px-4 py-3 rounded-lg font-medium transition-colors ${
+                    data.drinkingPolicy === pref
                       ? 'bg-orange-400 text-white border-orange-400'
                       : 'bg-white/30 text-gray-700 border border-stone-200 hover:border-orange-400 hover:text-orange-500'
                   }`}
