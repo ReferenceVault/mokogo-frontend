@@ -722,8 +722,59 @@ const ListingWizard = () => {
         // Show toast notification after successful update
         setToastMessage('Draft saved')
         setShowToast(true)
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error updating listing:', error)
+        
+        // Check if error is related to move-in date
+        const errorMessage = error?.response?.data?.message || error?.message || ''
+        if (errorMessage.includes('Move-in date') || errorMessage.includes('move-in date')) {
+          // Set field-specific error for move-in date
+          // Pricing step ID is 'pricing' (step index 3)
+          const stepId = 'pricing'
+          setErrors(prev => ({
+            ...prev,
+            [stepId]: errorMessage,
+            'moveInDate': errorMessage
+          }))
+          
+          // Expand the pricing section to show the error
+          setExpandedSections(prev => {
+            const newSet = new Set(prev)
+            newSet.add(3) // Pricing step index
+            return newSet
+          })
+          
+          // Scroll to move-in date field to ensure error message is visible
+          // Use requestAnimationFrame and multiple timeouts to ensure the section is expanded and rendered first
+          requestAnimationFrame(() => {
+            setTimeout(() => {
+              // First, scroll to section to ensure it's in view
+              const section = document.getElementById('section-3')
+              if (section) {
+                section.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+              }
+              
+              // Then scroll to the actual field after DOM updates
+              setTimeout(() => {
+                const moveInDateField = document.querySelector('[data-move-in-date-field]')
+                if (moveInDateField) {
+                  moveInDateField.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'center',
+                    inline: 'nearest'
+                  })
+                } else if (section) {
+                  // Fallback to section if field not found
+                  section.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                }
+              }, 400)
+            }, 100)
+          })
+        } else {
+          // For other errors, show generic error toast
+          setToastMessage(errorMessage || 'Error updating listing. Please try again.')
+          setShowToast(true)
+        }
       } finally {
         setIsSaving(false)
       }
@@ -1011,9 +1062,9 @@ const ListingWizard = () => {
           } else if (errMsg.includes('deposit')) {
             newErrors.pricing = newErrors.pricing || 'Deposit is required'
             newErrors.deposit = 'Deposit is required'
-          } else if (errMsg.includes('moveInDate')) {
-            newErrors.pricing = newErrors.pricing || 'Move-in date is required'
-            newErrors.moveInDate = 'Move-in date is required'
+          } else if (errMsg.includes('moveInDate') || errMsg.includes('Move-in date') || errMsg.includes('move-in date')) {
+            newErrors.pricing = newErrors.pricing || errMsg
+            newErrors.moveInDate = errMsg
           } else if (errMsg.includes('tomorrow') || errMsg.includes('future')) {
             newErrors.pricing = newErrors.pricing || 'Move-in date must be tomorrow or later'
             newErrors.moveInDate = 'Move-in date must be tomorrow or later'
@@ -1024,11 +1075,17 @@ const ListingWizard = () => {
         })
       } else {
         const message = typeof backendErrors === 'string' ? backendErrors : 'Failed to create listing. Please try again.'
-        newErrors.general = message
-        // Clear any previous toast and show error
-        setShowToast(false)
-        setToastMessage(message)
-        setShowToast(true)
+        // Don't show toast for move-in date errors
+        if (message.includes('Move-in date') || message.includes('move-in date')) {
+          newErrors.pricing = message
+          newErrors.moveInDate = message
+        } else {
+          newErrors.general = message
+          // Clear any previous toast and show error
+          setShowToast(false)
+          setToastMessage(message)
+          setShowToast(true)
+        }
       }
       
       setErrors(newErrors)
