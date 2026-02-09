@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { Listing } from '@/types'
 import { MoveInDateField } from '@/components/MoveInDateField'
 
@@ -10,6 +10,32 @@ interface Step4PricingProps {
 }
 
 const Step4Pricing = ({ data, onChange, error, onClearError }: Step4PricingProps) => {
+  const moveInDateRef = useRef<HTMLDivElement>(null)
+  
+  // Focus move-in date field when there's an error related to it
+  useEffect(() => {
+    if (error && (error.includes('Move-in date') || error.includes('move-in date'))) {
+      // Scroll to and focus the move-in date field, ensuring error message is visible
+      // Use a longer timeout to ensure the component is fully rendered
+      setTimeout(() => {
+        if (moveInDateRef.current) {
+          // Scroll to center the field including the error message below it
+          moveInDateRef.current.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center',
+            inline: 'nearest'
+          })
+          // Try to focus the button inside MoveInDateField
+          setTimeout(() => {
+            const button = moveInDateRef.current?.querySelector('button')
+            if (button) {
+              button.focus()
+            }
+          }, 100)
+        }
+      }, 400)
+    }
+  }, [error])
   // Clear errors when fields become valid
   useEffect(() => {
     if (data.rent && data.rent > 0 && error && onClearError) {
@@ -50,7 +76,8 @@ const Step4Pricing = ({ data, onChange, error, onClearError }: Step4PricingProps
       <h2 className="text-[1.375rem] font-semibold text-gray-900 mb-1">Pricing</h2>
       <p className="text-[0.9625rem] text-gray-600 mb-4">Rent and deposit</p>
 
-      {error && (
+      {/* Show general error only if it's not a move-in date error (move-in date errors show below the field) */}
+      {error && !error.includes('Move-in date') && !error.includes('move-in date') && (
         <div className="mb-3 p-2 bg-red-50 border border-red-200 rounded-lg text-red-700 text-[0.825rem]">
           {error}
         </div>
@@ -102,15 +129,31 @@ const Step4Pricing = ({ data, onChange, error, onClearError }: Step4PricingProps
           <label className="block text-sm font-medium text-stone-700 mb-2">
             Available From <span className="text-red-500">*</span>
           </label>
-          <div className="[&_button]:!px-4 [&_button]:!py-3 [&_button]:!bg-gradient-to-br [&_button]:!from-white [&_button]:!via-white [&_button]:!to-orange-50/40 [&_button]:!border-2 [&_button]:!border-orange-300/60 [&_button]:!rounded-xl [&_button]:!focus:ring-2 [&_button]:!focus:ring-orange-400/60 [&_button]:!focus:border-orange-400 [&_button]:!shadow-md hover:[&_button]:!shadow-lg hover:[&_button]:!border-orange-400 [&_button]:!text-gray-900 [&_button]:!font-medium [&_button]:!h-[52px]">
+          <div 
+            ref={moveInDateRef}
+            data-move-in-date-field
+            className={`[&_button]:!px-4 [&_button]:!py-3 [&_button]:!bg-gradient-to-br [&_button]:!from-white [&_button]:!via-white [&_button]:!to-orange-50/40 [&_button]:!border-2 ${
+              error && (error.includes('Move-in date') || error.includes('move-in date'))
+                ? '[&_button]:!border-red-500 [&_button]:!ring-2 [&_button]:!ring-red-200'
+                : '[&_button]:!border-orange-300/60'
+            } [&_button]:!rounded-xl [&_button]:!focus:ring-2 [&_button]:!focus:ring-orange-400/60 [&_button]:!focus:border-orange-400 [&_button]:!shadow-md hover:[&_button]:!shadow-lg hover:[&_button]:!border-orange-400 [&_button]:!text-gray-900 [&_button]:!font-medium [&_button]:!h-[52px]`}>
             <MoveInDateField
               value={data.moveInDate || ''}
-              onChange={(date) => handleChange('moveInDate', date)}
+              onChange={(date) => {
+                handleChange('moveInDate', date)
+                // Clear error when user changes the date
+                if (error && onClearError) {
+                  onClearError('moveInDate')
+                }
+              }}
               min={today}
               hideLabel={true}
               numberOfMonths={1}
             />
           </div>
+          {error && (error.includes('Move-in date') || error.includes('move-in date')) && (
+            <p className="mt-1 text-sm text-red-600">{error}</p>
+          )}
         </div>
       </div>
     </div>
