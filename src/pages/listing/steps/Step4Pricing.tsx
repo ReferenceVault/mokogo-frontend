@@ -71,6 +71,17 @@ const Step4Pricing = ({ data, onChange, error, onClearError }: Step4PricingProps
 
   const today = new Date().toISOString().split('T')[0]
 
+  const sanitizeAmountInput = (raw: string) => {
+    // Keep only digits
+    const digitsOnly = raw.replace(/\D/g, '')
+    // Limit to max 5 digits
+    const limited = digitsOnly.slice(0, 5)
+    if (!limited) return 0
+    const value = parseInt(limited, 10)
+    // Extra safety: clamp to 99999
+    return Math.min(value, 99999)
+  }
+
   return (
     <div>
       <h2 className="text-[1.375rem] font-semibold text-gray-900 mb-1">Pricing</h2>
@@ -96,7 +107,7 @@ const Step4Pricing = ({ data, onChange, error, onClearError }: Step4PricingProps
             <input
               type="number"
               value={data.rent || ''}
-              onChange={(e) => handleChange('rent', parseInt(e.target.value) || 0)}
+              onChange={(e) => handleChange('rent', sanitizeAmountInput(e.target.value))}
               className="w-full px-4 py-3 bg-gradient-to-br from-white via-white to-orange-50/30 border-2 border-orange-200/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-mokogo-primary/50 focus:border-mokogo-primary transition-all duration-200 shadow-sm hover:shadow-md hover:border-orange-300/70 text-gray-700 font-medium pl-12 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               placeholder="e.g., 12000"
               min="0"
@@ -116,7 +127,7 @@ const Step4Pricing = ({ data, onChange, error, onClearError }: Step4PricingProps
             <input
               type="number"
               value={data.deposit || ''}
-              onChange={(e) => handleChange('deposit', parseInt(e.target.value) || 0)}
+              onChange={(e) => handleChange('deposit', sanitizeAmountInput(e.target.value))}
               className="w-full px-4 py-3 bg-gradient-to-br from-white via-white to-orange-50/30 border-2 border-orange-200/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-mokogo-primary/50 focus:border-mokogo-primary transition-all duration-200 shadow-sm hover:shadow-md hover:border-orange-300/70 text-gray-700 font-medium pl-12 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               placeholder="e.g., 24000"
               min="0"
