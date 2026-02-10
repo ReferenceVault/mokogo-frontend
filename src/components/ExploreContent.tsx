@@ -78,6 +78,7 @@ const ExploreContent = ({
 
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const [advancedFilters, setAdvancedFilters] = useState<ListingFilterState | null>(null)
+  const [sortOption, setSortOption] = useState<'rent_low_high' | 'rent_high_low' | 'newest'>('newest')
 
   useEffect(() => {
     const fetchListings = async () => {
@@ -281,6 +282,23 @@ const ExploreContent = ({
       })
       .map(item => item.listing)
   }, [filteredListings, isMikoMode, mikoTags])
+
+  const sortedListings = useMemo(() => {
+    const base = [...rankedListings]
+
+    if (sortOption === 'rent_low_high') {
+      return base.sort((a, b) => (a.rent || 0) - (b.rent || 0))
+    }
+
+    if (sortOption === 'rent_high_low') {
+      return base.sort((a, b) => (b.rent || 0) - (a.rent || 0))
+    }
+
+    // Newest to oldest
+    return base.sort(
+      (a, b) => new Date(b.createdAt || '').getTime() - new Date(a.createdAt || '').getTime()
+    )
+  }, [rankedListings, sortOption])
 
   const advancedFilterCount = useMemo(() => {
     if (!advancedFilters) return 0
@@ -704,9 +722,33 @@ const ExploreContent = ({
             <div className="text-center py-16 text-gray-600">
               Loading listings...
             </div>
-          ) : rankedListings.length > 0 ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-stretch">
-              {rankedListings.map((listing) => {
+          ) : sortedListings.length > 0 ? (
+            <>
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-sm text-gray-700">
+                  {sortedListings.length} {sortedListings.length === 1 ? 'place' : 'places'} found
+                </p>
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="text-gray-600">Sort by</span>
+                  <div className="w-44">
+                    <CustomSelect
+                      label=""
+                      value={sortOption}
+                      onValueChange={(value) =>
+                        setSortOption(value as 'rent_low_high' | 'rent_high_low' | 'newest')
+                      }
+                      placeholder="Select"
+                      options={[
+                        { value: 'rent_low_high', label: 'Rent: Low to High' },
+                        { value: 'rent_high_low', label: 'Rent: High to Low' },
+                        { value: 'newest', label: 'Newest Listings' },
+                      ]}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-stretch">
+              {sortedListings.map((listing) => {
                 const listingTags = getListingMikoTags(listing)
                 const matchPercent = isMikoMode ? getMikoMatchPercent(mikoTags, listingTags) : 0
                 const saved = isListingSaved(listing.id)
@@ -783,6 +825,7 @@ const ExploreContent = ({
                 </button>
               )})}
             </div>
+            </>
           ) : (
             <div className="text-center py-16 space-y-4">
               <div className="w-24 h-24 mx-auto bg-mokogo-primary/10 rounded-full flex items-center justify-center">

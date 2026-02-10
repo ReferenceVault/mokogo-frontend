@@ -10,6 +10,7 @@ import { Listing, VibeTagId } from '@/types'
 import { formatRent } from '@/utils/formatters'
 import { getListingMikoTags } from '@/utils/miko'
 import ListingFilters, { ListingFilterState } from '@/components/ListingFilters'
+import CustomSelect from '@/components/CustomSelect'
 
 const ExploreProperties = () => {
   const location = useLocation()
@@ -18,6 +19,7 @@ const ExploreProperties = () => {
   const [exploreListings, setExploreListings] = useState<Listing[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isFilterOpen, setIsFilterOpen] = useState(false)
+  const [sortOption, setSortOption] = useState<'rent_low_high' | 'rent_high_low' | 'newest'>('newest')
 
   // Scroll to top when component mounts
   useEffect(() => {
@@ -193,7 +195,7 @@ const ExploreProperties = () => {
     navigate(`${location.pathname}?${params.toString()}`, { replace: true })
   }
 
-  // Backend already handles filtering and sorting, but we still need to filter by Miko tags on client side
+  // Backend already handles filtering, but we still need to filter by Miko tags on client side
   const filteredListings = useMemo(() => {
     // Backend returns filtered and sorted listings, we only need to filter by Miko tags
     if (mikoTags.length === 0) {
@@ -205,6 +207,23 @@ const ExploreProperties = () => {
       return listingTags.some(tag => mikoTags.includes(tag))
     })
   }, [exploreListings, mikoTags])
+
+  const sortedListings = useMemo(() => {
+    const base = [...filteredListings]
+
+    if (sortOption === 'rent_low_high') {
+      return base.sort((a, b) => (a.rent || 0) - (b.rent || 0))
+    }
+
+    if (sortOption === 'rent_high_low') {
+      return base.sort((a, b) => (b.rent || 0) - (a.rent || 0))
+    }
+
+    // Newest to oldest
+    return base.sort(
+      (a, b) => new Date(b.createdAt || '').getTime() - new Date(a.createdAt || '').getTime()
+    )
+  }, [filteredListings, sortOption])
 
   // Calculate listings count per city from actual listings
   const getCityListingsCount = (cityName: string) => {
@@ -419,9 +438,28 @@ const ExploreProperties = () => {
             <div className="mb-16">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
-                  {isLoading ? 'Loading...' : `${filteredListings.length}+ Available Properties`}
+                  {isLoading ? 'Loading...' : `${sortedListings.length}+ Available Properties`}
                 </h2>
-                <button
+                <div className="flex items-center gap-3">
+                  <div className="hidden sm:flex items-center gap-2 text-xs md:text-sm">
+                    <span className="text-gray-600">Sort by</span>
+                    <div className="w-40">
+                      <CustomSelect
+                        label=""
+                        value={sortOption}
+                        onValueChange={(value) =>
+                          setSortOption(value as 'rent_low_high' | 'rent_high_low' | 'newest')
+                        }
+                        placeholder="Select"
+                        options={[
+                          { value: 'rent_low_high', label: 'Rent: Low to High' },
+                          { value: 'rent_high_low', label: 'Rent: High to Low' },
+                          { value: 'newest', label: 'Newest Listings' },
+                        ]}
+                      />
+                    </div>
+                  </div>
+                  <button
                     type="button"
                     onClick={() => setIsFilterOpen(true)}
                     className="inline-flex items-center gap-2 rounded-full border border-orange-300 bg-white px-4 py-2 text-xs font-semibold text-orange-600 shadow-sm hover:bg-orange-50"
@@ -439,7 +477,8 @@ const ExploreProperties = () => {
                         filters.lgbtqFriendly,
                       ].filter(Boolean).length}
                     </span>
-                  </button>     
+                  </button>
+                </div>
               </div>
 
               {isLoading ? (
@@ -449,13 +488,13 @@ const ExploreProperties = () => {
                     <p className="mt-4 text-gray-600">Loading listings...</p>
                   </div>
                 </div>
-              ) : filteredListings.length === 0 ? (
+              ) : sortedListings.length === 0 ? (
                 <div className="text-center py-12">
                   <p className="text-gray-600">No listings available at the moment. Check back soon!</p>
                 </div>
               ) : (
                 <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  {filteredListings.map((listing) => (
+                  {sortedListings.map((listing) => (
                       <Link
                         key={listing.id}
                         to={`/listings/${listing.id}`}

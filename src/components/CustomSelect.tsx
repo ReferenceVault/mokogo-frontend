@@ -109,7 +109,7 @@ const CustomSelect = ({
           type="button"
           onClick={() => !disabled && setIsOpen(!isOpen)}
           disabled={disabled}
-          className={`w-full px-4 py-3 bg-white/50 backdrop-blur-sm border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400/50 focus:border-orange-400 transition-all duration-200 shadow-sm hover:shadow-md hover:border-orange-300 appearance-none cursor-pointer text-stone-900 font-medium text-left flex items-center justify-between ${
+          className={`w-full px-3 py-3 bg-white/50 backdrop-blur-sm border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400/50 focus:border-orange-400 transition-all duration-200 shadow-sm hover:shadow-md hover:border-orange-300 appearance-none cursor-pointer text-stone-900 font-medium text-left flex items-center justify-between ${
             error ? 'border-red-300 focus:border-red-400 focus:ring-red-400/50' : ''
           } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
@@ -151,7 +151,7 @@ const CustomSelect = ({
                         key={option.value}
                         type="button"
                         onClick={() => handleSelect(option.value)}
-                        className={`w-full px-4 py-2.5 text-left text-stone-700 hover:bg-orange-50 transition-colors duration-150 my-1 rounded-lg ${
+                        className={`w-full px-3 py-2.5 text-left text-stone-700 hover:bg-orange-50 transition-colors duration-150 my-1 rounded-lg ${
                           value === option.value ? 'bg-orange-100 text-orange-600 font-medium' : ''
                         }`}
                       >
@@ -166,7 +166,7 @@ const CustomSelect = ({
                     key={option.value}
                     type="button"
                     onClick={() => handleSelect(option.value)}
-                    className={`w-full px-4 py-2.5 text-left text-stone-700 hover:bg-orange-50 transition-colors duration-150 my-1 rounded-lg ${
+                    className={`w-full px-3 py-2.5 text-left text-stone-700 hover:bg-orange-50 transition-colors duration-150 my-1 rounded-lg ${
                       value === option.value ? 'bg-orange-100 text-orange-600 font-medium' : ''
                     }`}
                   >
