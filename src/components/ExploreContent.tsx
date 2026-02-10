@@ -9,6 +9,7 @@ import MikoTagPills from '@/components/MikoTagPills'
 import { listingsApi, ListingResponse, placesApi, AutocompletePrediction } from '@/services/api'
 import { useStore } from '@/store/useStore'
 import { sortListingsByDistance, isListingWithinRadius } from '@/utils/distance'
+import ListingFilters, { ListingFilterState } from '@/components/ListingFilters'
 
 interface ExploreContentProps {
   onListingClick: (listingId: string) => void
@@ -75,6 +76,9 @@ const ExploreContent = ({
     return null
   })
 
+  const [isFilterOpen, setIsFilterOpen] = useState(false)
+  const [advancedFilters, setAdvancedFilters] = useState<ListingFilterState | null>(null)
+
   useEffect(() => {
     const fetchListings = async () => {
       setIsLoading(true)
@@ -110,6 +114,7 @@ const ExploreContent = ({
           createdAt: listing.createdAt,
           updatedAt: listing.updatedAt,
           mikoTags: listing.mikoTags,
+          lgbtqFriendly: (listing as any).lgbtqFriendly,
         }))
         setExploreListings(mappedListings)
       } catch (error) {
@@ -277,8 +282,47 @@ const ExploreContent = ({
       .map(item => item.listing)
   }, [filteredListings, isMikoMode, mikoTags])
 
+  const advancedFilterCount = useMemo(() => {
+    if (!advancedFilters) return 0
+    const DEFAULT_MIN_RENT = 0
+    const DEFAULT_MAX_RENT = 0
+    const {
+      minRent,
+      maxRent,
+      roomTypes,
+      furnishingLevels,
+      preferredGender,
+      bhkTypes,
+      bathroomTypes,
+      lgbtqFriendly,
+    } = advancedFilters
+    return (
+      (minRent !== undefined && minRent !== DEFAULT_MIN_RENT ? 1 : 0) +
+      (maxRent !== undefined && maxRent !== DEFAULT_MAX_RENT ? 1 : 0) +
+      (roomTypes && roomTypes.length ? 1 : 0) +
+      (furnishingLevels && furnishingLevels.length ? 1 : 0) +
+      (preferredGender ? 1 : 0) +
+      (bhkTypes && bhkTypes.length ? 1 : 0) +
+      (bathroomTypes && bathroomTypes.length ? 1 : 0) +
+      (lgbtqFriendly ? 1 : 0)
+    )
+  }, [advancedFilters])
+
   const handleFilterChange = (key: string, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }))
+
+    // If advanced filters are active and gender changes inline,
+    // re-apply advanced filters with the new gender so results update
+    if (key === 'preferredGender' && advancedFilters) {
+      const nextState: ListingFilterState = {
+        ...advancedFilters,
+        preferredGender: value || undefined,
+      }
+      setAdvancedFilters(nextState)
+      // Fire and forget; this will call the backend with updated gender
+      void handleAdvancedApply(nextState)
+    }
+
     // Clear area filter if city changes
     if (key === 'city') {
       setFilters(prev => ({
@@ -309,6 +353,130 @@ const ExploreContent = ({
   }
 
   const hasActiveFilters = filters.city || filters.area || filters.moveInDate || filters.preferredGender
+
+  const handleAdvancedApply = async (state: ListingFilterState) => {
+    setIsFilterOpen(false)
+    setIsLoading(true)
+    try {
+      setAdvancedFilters(state)
+      const backendFilters: any = {}
+
+      // Include basic explore filters (city/area/date/gender) where relevant
+      if (filters.city) backendFilters.city = filters.city
+      if (filters.area) backendFilters.area = filters.area
+      if (filters.areaLat != null) backendFilters.areaLat = filters.areaLat
+      if (filters.areaLng != null) backendFilters.areaLng = filters.areaLng
+      if (filters.moveInDate) backendFilters.moveInDate = filters.moveInDate
+
+      // Gender: popup selection overrides inline selection for consistency
+      if (state.preferredGender) {
+        handleFilterChange('preferredGender', state.preferredGender)
+      }
+      const effectiveGender = state.preferredGender || filters.preferredGender
+      if (effectiveGender) {
+        backendFilters.preferredGender = effectiveGender
+      }
+
+      if (state.minRent != null && state.minRent > 0) backendFilters.minRent = state.minRent
+      if (state.maxRent != null && state.maxRent > 0) backendFilters.maxRent = state.maxRent
+      if (state.roomTypes.length) backendFilters.roomTypes = state.roomTypes
+      if (state.bhkTypes.length) backendFilters.bhkTypes = state.bhkTypes
+      if (state.furnishingLevels.length) backendFilters.furnishingLevels = state.furnishingLevels
+      if (state.bathroomTypes.length) backendFilters.bathroomTypes = state.bathroomTypes
+      if (state.lgbtqFriendly) backendFilters.lgbtqFriendly = true
+
+      const listings = await listingsApi.getAllPublic('live', backendFilters)
+      const mappedListings: Listing[] = listings.map((listing: ListingResponse) => ({
+        id: listing._id || listing.id,
+        title: listing.title,
+        city: listing.city || '',
+        locality: listing.locality || '',
+        placeId: listing.placeId,
+        latitude: listing.latitude,
+        longitude: listing.longitude,
+        formattedAddress: listing.formattedAddress,
+        societyName: listing.societyName,
+        bhkType: listing.bhkType || '',
+        roomType: listing.roomType || '',
+        rent: listing.rent || 0,
+        deposit: listing.deposit || 0,
+        moveInDate: listing.moveInDate || '',
+        furnishingLevel: listing.furnishingLevel || '',
+        bathroomType: listing.bathroomType,
+        flatAmenities: listing.flatAmenities || [],
+        societyAmenities: listing.societyAmenities || [],
+        preferredGender: listing.preferredGender || '',
+        foodPreference: listing.foodPreference,
+        petPolicy: listing.petPolicy,
+        smokingPolicy: listing.smokingPolicy,
+        drinkingPolicy: listing.drinkingPolicy,
+        description: listing.description,
+        photos: listing.photos || [],
+        status: listing.status,
+        createdAt: listing.createdAt,
+        updatedAt: listing.updatedAt,
+        mikoTags: listing.mikoTags,
+      }))
+      setExploreListings(mappedListings)
+    } catch (error) {
+      console.error('Error applying advanced filters in dashboard explore:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleAdvancedClear = async () => {
+    setAdvancedFilters(null)
+    setIsFilterOpen(false)
+    setIsLoading(true)
+    try {
+      const backendFilters: any = {}
+      if (filters.city) backendFilters.city = filters.city
+      if (filters.area) backendFilters.area = filters.area
+      if (filters.areaLat != null) backendFilters.areaLat = filters.areaLat
+      if (filters.areaLng != null) backendFilters.areaLng = filters.areaLng
+      if (filters.moveInDate) backendFilters.moveInDate = filters.moveInDate
+      // Do NOT send preferredGender here so inline gender becomes a pure client-side filter again
+
+      const listings = await listingsApi.getAllPublic('live', backendFilters)
+      const mappedListings: Listing[] = listings.map((listing: ListingResponse) => ({
+        id: listing._id || listing.id,
+        title: listing.title,
+        city: listing.city || '',
+        locality: listing.locality || '',
+        placeId: listing.placeId,
+        latitude: listing.latitude,
+        longitude: listing.longitude,
+        formattedAddress: listing.formattedAddress,
+        societyName: listing.societyName,
+        bhkType: listing.bhkType || '',
+        roomType: listing.roomType || '',
+        rent: listing.rent || 0,
+        deposit: listing.deposit || 0,
+        moveInDate: listing.moveInDate || '',
+        furnishingLevel: listing.furnishingLevel || '',
+        bathroomType: listing.bathroomType,
+        flatAmenities: listing.flatAmenities || [],
+        societyAmenities: listing.societyAmenities || [],
+        preferredGender: listing.preferredGender || '',
+        foodPreference: listing.foodPreference,
+        petPolicy: listing.petPolicy,
+        smokingPolicy: listing.smokingPolicy,
+        drinkingPolicy: listing.drinkingPolicy,
+        description: listing.description,
+        photos: listing.photos || [],
+        status: listing.status,
+        createdAt: listing.createdAt,
+        updatedAt: listing.updatedAt,
+        mikoTags: listing.mikoTags,
+      }))
+      setExploreListings(mappedListings)
+    } catch (error) {
+      console.error('Error clearing advanced filters in dashboard explore:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   // Fetch area suggestions when user types
   useEffect(() => {
@@ -489,16 +657,26 @@ const ExploreContent = ({
                 ]}
               />
             </div>
-            {hasActiveFilters && (
-              <div className="flex items-end">
+            <div className="flex items-end gap-3">
+              {hasActiveFilters && (
                 <button
                   onClick={clearFilters}
                   className="h-[52px] px-6 rounded-xl border border-mokogo-gray bg-white/80 hover:bg-white transition-colors text-gray-700 font-medium whitespace-nowrap"
                 >
                   Clear Filters
                 </button>
-              </div>
-            )}
+              )}
+              <button
+                type="button"
+                onClick={() => setIsFilterOpen(true)}
+                className="h-[52px] px-5 rounded-xl border border-orange-300 bg-white text-xs font-semibold text-orange-600 shadow-sm hover:bg-orange-50 flex items-center gap-2"
+              >
+                <span>Filter</span>
+                <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-orange-500 text-[11px] text-white">
+                  {advancedFilterCount}
+                </span>
+              </button>
+            </div>
           </div>
             {renderMikoTags()}
           </div>
@@ -626,6 +804,16 @@ const ExploreContent = ({
           )}
         </div>
       </section>
+
+      {!hideFilters && (
+        <ListingFilters
+          open={isFilterOpen}
+          onClose={() => setIsFilterOpen(false)}
+          onApply={handleAdvancedApply}
+          onClear={handleAdvancedClear}
+          initialValues={advancedFilters ?? undefined}
+        />
+      )}
     </div>
   )
 }

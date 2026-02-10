@@ -70,6 +70,7 @@ export interface Listing {
   createdAt: string
   updatedAt: string
   mikoTags?: VibeTagId[]
+  lgbtqFriendly?: boolean
 }
 
 export interface Request {

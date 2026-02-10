@@ -168,6 +168,37 @@ const Step5Preferences = ({ data, onChange, error, onClearError }: Step5Preferen
           </div>
         </div>
 
+        {/* LGBTQ+ Friendly */}
+        <div>
+          <label className="block text-sm font-medium text-stone-700 mb-3">
+            LGBTQ+ Friendly? <span className="text-gray-400 text-xs">(shown in filters)</span>
+          </label>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={() => handleChange('lgbtqFriendly', true)}
+              className={`flex-1 px-4 py-3 rounded-lg font-medium transition-colors ${
+                data.lgbtqFriendly
+                  ? 'bg-orange-400 text-white border-orange-400'
+                  : 'bg-white/30 text-gray-700 border border-stone-200 hover:border-orange-400 hover:text-orange-500'
+              }`}
+            >
+              Yes
+            </button>
+            <button
+              type="button"
+              onClick={() => handleChange('lgbtqFriendly', false)}
+              className={`flex-1 px-4 py-3 rounded-lg font-medium transition-colors ${
+                data.lgbtqFriendly === false
+                  ? 'bg-orange-400 text-white border-orange-400'
+                  : 'bg-white/30 text-gray-700 border border-stone-200 hover:border-orange-400 hover:text-orange-500'
+              }`}
+            >
+              No
+            </button>
+          </div>
+        </div>
+
         {/* Description */}
         <div className="w-full">
           <label className="block text-sm font-medium text-stone-700 mb-2">

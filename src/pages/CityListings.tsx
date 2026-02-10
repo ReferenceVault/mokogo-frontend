@@ -6,7 +6,9 @@ import { useStore } from '@/store/useStore'
 import CustomSelect from '@/components/CustomSelect'
 import { MoveInDateField } from '@/components/MoveInDateField'
 import { formatRent } from '@/utils/formatters'
-import { placesApi, AutocompletePrediction } from '@/services/api'
+import { placesApi, AutocompletePrediction, listingsApi, ListingResponse } from '@/services/api'
+import { Listing } from '@/types'
+import ListingFilters, { ListingFilterState } from '@/components/ListingFilters'
 
 const CityListings = () => {
   const { cityName } = useParams<{ cityName: string }>()
@@ -18,12 +20,20 @@ const CityListings = () => {
     window.scrollTo(0, 0)
   }, [cityName])
 
-  // Filter state
+  // Filter state (inline / base filters)
   const [filters, setFilters] = useState({
     area: '',
     moveInDate: '',
     genderPreference: ''
   })
+
+  // Advanced filter popup state
+  const [isFilterOpen, setIsFilterOpen] = useState(false)
+  const [advancedFilters, setAdvancedFilters] = useState<ListingFilterState | null>(null)
+
+  // City listings from server (already filtered by advanced filters if applied)
+  const [cityListingsBase, setCityListingsBase] = useState<Listing[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
   // Area autocomplete state
   const [areaInputValue, setAreaInputValue] = useState('')
@@ -38,10 +48,61 @@ const CityListings = () => {
   // Decode the city name from URL
   const decodedCityName = cityName ? decodeURIComponent(cityName) : ''
   
-  // Get all listings for the city first
-  const cityListingsBase = allListings.filter(
-    listing => listing.city === decodedCityName && listing.status === 'live'
-  )
+  // Get all listings for the city from backend (server-side filtering)
+  useEffect(() => {
+    const fetchCityListings = async () => {
+      if (!decodedCityName) {
+        setCityListingsBase([])
+        setIsLoading(false)
+        return
+      }
+      setIsLoading(true)
+      try {
+        const backendFilters: any = { city: decodedCityName }
+        const listings = await listingsApi.getAllPublic('live', backendFilters)
+        const mapped: Listing[] = listings.map((listing: ListingResponse) => ({
+          id: listing._id || listing.id,
+          title: listing.title,
+          city: listing.city || '',
+          locality: listing.locality || '',
+          placeId: listing.placeId,
+          latitude: listing.latitude,
+          longitude: listing.longitude,
+          formattedAddress: listing.formattedAddress,
+          societyName: listing.societyName,
+          bhkType: listing.bhkType || '',
+          roomType: listing.roomType || '',
+          rent: listing.rent || 0,
+          deposit: listing.deposit || 0,
+          moveInDate: listing.moveInDate || '',
+          furnishingLevel: listing.furnishingLevel || '',
+          bathroomType: listing.bathroomType,
+          flatAmenities: listing.flatAmenities || [],
+          societyAmenities: listing.societyAmenities || [],
+          preferredGender: listing.preferredGender || '',
+          foodPreference: listing.foodPreference,
+          petPolicy: listing.petPolicy,
+          smokingPolicy: listing.smokingPolicy,
+          drinkingPolicy: listing.drinkingPolicy,
+          description: listing.description,
+          photos: listing.photos || [],
+          status: listing.status,
+          createdAt: listing.createdAt,
+          updatedAt: listing.updatedAt,
+          mikoTags: listing.mikoTags,
+          lgbtqFriendly: (listing as any).lgbtqFriendly,
+        }))
+        setCityListingsBase(mapped)
+      } catch (error) {
+        console.error('Error fetching city listings:', error)
+        setCityListingsBase([])
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchCityListings()
+  }, [decodedCityName])
 
   // Apply filters to listings
   const cityListings = useMemo(() => {
@@ -80,6 +141,17 @@ const CityListings = () => {
 
   const handleFilterChange = (key: string, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }))
+
+    // If advanced filters are active and gender changes inline,
+    // re-apply advanced filters with the new gender so results update
+    if (key === 'genderPreference' && advancedFilters) {
+      const nextState: ListingFilterState = {
+        ...advancedFilters,
+        preferredGender: value || undefined,
+      }
+      setAdvancedFilters(nextState)
+      void handleAdvancedApply(nextState)
+    }
   }
 
   const clearFilters = () => {
@@ -94,6 +166,153 @@ const CityListings = () => {
   }
 
   const hasActiveFilters = filters.area || filters.moveInDate || filters.genderPreference
+
+  const cityFilterCount = useMemo(() => {
+    if (!advancedFilters) return 0
+    const DEFAULT_MIN_RENT = 0
+    const DEFAULT_MAX_RENT = 0
+    const {
+      minRent,
+      maxRent,
+      roomTypes,
+      furnishingLevels,
+      preferredGender,
+      bhkTypes,
+      bathroomTypes,
+      lgbtqFriendly,
+    } = advancedFilters
+    return (
+      (minRent !== undefined && minRent !== DEFAULT_MIN_RENT ? 1 : 0) +
+      (maxRent !== undefined && maxRent !== DEFAULT_MAX_RENT ? 1 : 0) +
+      (roomTypes && roomTypes.length ? 1 : 0) +
+      (furnishingLevels && furnishingLevels.length ? 1 : 0) +
+      (preferredGender ? 1 : 0) +
+      (bhkTypes && bhkTypes.length ? 1 : 0) +
+      (bathroomTypes && bathroomTypes.length ? 1 : 0) +
+      (lgbtqFriendly ? 1 : 0)
+    )
+  }, [advancedFilters])
+
+  const handleAdvancedApply = async (state: ListingFilterState) => {
+    if (!decodedCityName) return
+    setIsFilterOpen(false)
+    setIsLoading(true)
+    try {
+      setAdvancedFilters(state)
+      const backendFilters: any = { city: decodedCityName }
+
+      // keep inline/base filters as server filters where it makes sense
+      if (filters.area) backendFilters.area = filters.area
+      if (filters.moveInDate) backendFilters.moveInDate = filters.moveInDate
+      // Gender: popup selection overrides inline selection for consistency
+      if (state.preferredGender) {
+        setFilters(prev => ({ ...prev, genderPreference: state.preferredGender! }))
+      }
+      const effectiveGender = state.preferredGender || filters.genderPreference
+      if (effectiveGender) {
+        backendFilters.preferredGender = effectiveGender
+      }
+
+      if (state.minRent != null && state.minRent > 0) backendFilters.minRent = state.minRent
+      if (state.maxRent != null && state.maxRent > 0) backendFilters.maxRent = state.maxRent
+      if (state.roomTypes.length) backendFilters.roomTypes = state.roomTypes
+      if (state.bhkTypes.length) backendFilters.bhkTypes = state.bhkTypes
+      if (state.furnishingLevels.length) backendFilters.furnishingLevels = state.furnishingLevels
+      if (state.bathroomTypes.length) backendFilters.bathroomTypes = state.bathroomTypes
+      if (state.lgbtqFriendly) backendFilters.lgbtqFriendly = true
+
+      const listings = await listingsApi.getAllPublic('live', backendFilters)
+      const mapped: Listing[] = listings.map((listing: ListingResponse) => ({
+        id: listing._id || listing.id,
+        title: listing.title,
+        city: listing.city || '',
+        locality: listing.locality || '',
+        placeId: listing.placeId,
+        latitude: listing.latitude,
+        longitude: listing.longitude,
+        formattedAddress: listing.formattedAddress,
+        societyName: listing.societyName,
+        bhkType: listing.bhkType || '',
+        roomType: listing.roomType || '',
+        rent: listing.rent || 0,
+        deposit: listing.deposit || 0,
+        moveInDate: listing.moveInDate || '',
+        furnishingLevel: listing.furnishingLevel || '',
+        bathroomType: listing.bathroomType,
+        flatAmenities: listing.flatAmenities || [],
+        societyAmenities: listing.societyAmenities || [],
+        preferredGender: listing.preferredGender || '',
+        foodPreference: listing.foodPreference,
+        petPolicy: listing.petPolicy,
+        smokingPolicy: listing.smokingPolicy,
+        drinkingPolicy: listing.drinkingPolicy,
+        description: listing.description,
+        photos: listing.photos || [],
+        status: listing.status,
+        createdAt: listing.createdAt,
+        updatedAt: listing.updatedAt,
+        mikoTags: listing.mikoTags,
+        lgbtqFriendly: (listing as any).lgbtqFriendly,
+      }))
+      setCityListingsBase(mapped)
+    } catch (error) {
+      console.error('Error applying city filters:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleAdvancedClear = async () => {
+    if (!decodedCityName) return
+    setAdvancedFilters(null)
+    setIsFilterOpen(false)
+    setIsLoading(true)
+    try {
+      const backendFilters: any = { city: decodedCityName }
+      if (filters.area) backendFilters.area = filters.area
+      if (filters.moveInDate) backendFilters.moveInDate = filters.moveInDate
+      // Do NOT send gender here so inline gender becomes a pure client-side filter again
+
+      const listings = await listingsApi.getAllPublic('live', backendFilters)
+      const mapped: Listing[] = listings.map((listing: ListingResponse) => ({
+        id: listing._id || listing.id,
+        title: listing.title,
+        city: listing.city || '',
+        locality: listing.locality || '',
+        placeId: listing.placeId,
+        latitude: listing.latitude,
+        longitude: listing.longitude,
+        formattedAddress: listing.formattedAddress,
+        societyName: listing.societyName,
+        bhkType: listing.bhkType || '',
+        roomType: listing.roomType || '',
+        rent: listing.rent || 0,
+        deposit: listing.deposit || 0,
+        moveInDate: listing.moveInDate || '',
+        furnishingLevel: listing.furnishingLevel || '',
+        bathroomType: listing.bathroomType,
+        flatAmenities: listing.flatAmenities || [],
+        societyAmenities: listing.societyAmenities || [],
+        preferredGender: listing.preferredGender || '',
+        foodPreference: listing.foodPreference,
+        petPolicy: listing.petPolicy,
+        smokingPolicy: listing.smokingPolicy,
+        drinkingPolicy: listing.drinkingPolicy,
+        description: listing.description,
+        photos: listing.photos || [],
+        status: listing.status,
+        createdAt: listing.createdAt,
+        updatedAt: listing.updatedAt,
+        mikoTags: listing.mikoTags,
+        lgbtqFriendly: (listing as any).lgbtqFriendly,
+      }))
+      setCityListingsBase(mapped)
+    } catch (error) {
+      console.error('Error clearing city filters:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   // Fetch area suggestions when user types
   useEffect(() => {
@@ -281,26 +500,47 @@ const CityListings = () => {
                   ]}
                 />
               </div>
-              {hasActiveFilters && (
+              <div className="flex items-end gap-3">
+                {hasActiveFilters && (
+                  <div>
+                    <label className="block text-sm font-medium text-stone-700 mb-2 opacity-0">
+                      Clear
+                    </label>
+                    <button
+                      onClick={clearFilters}
+                      className="h-[52px] px-6 rounded-xl border border-mokogo-gray bg-white/80 hover:bg-white transition-colors text-gray-700 font-medium whitespace-nowrap"
+                    >
+                      Clear Filters
+                    </button>
+                  </div>
+                )}
                 <div>
                   <label className="block text-sm font-medium text-stone-700 mb-2 opacity-0">
-                    Clear
+                    Filters
                   </label>
                   <button
-                    onClick={clearFilters}
-                    className="h-[52px] px-6 rounded-xl border border-mokogo-gray bg-white/80 hover:bg-white transition-colors text-gray-700 font-medium whitespace-nowrap"
+                    type="button"
+                    onClick={() => setIsFilterOpen(true)}
+                    className="inline-flex items-center gap-2 h-[52px] px-4 rounded-xl border border-orange-300 bg-white text-xs font-semibold text-orange-600 shadow-sm hover:bg-orange-50"
                   >
-                    Clear Filters
+                    <span>Filter</span>
+                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-orange-500 text-[11px] text-white">
+                      {cityFilterCount}
+                    </span>
                   </button>
                 </div>
-              )}
+              </div>
             </div>
           </div>
         </section>
 
         <div className="py-8 px-6 md:px-12">
           <div className="max-w-7xl mx-auto">
-            {cityListings.length > 0 ? (
+            {isLoading ? (
+              <div className="text-center py-16 text-gray-600">
+                Loading listings...
+              </div>
+            ) : cityListings.length > 0 ? (
               <>
                 {/* Listings Grid */}
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -403,6 +643,14 @@ const CityListings = () => {
       </main>
 
       <Footer />
+
+      <ListingFilters
+        open={isFilterOpen}
+        onClose={() => setIsFilterOpen(false)}
+        onApply={handleAdvancedApply}
+        onClear={handleAdvancedClear}
+        initialValues={advancedFilters ?? undefined}
+      />
     </div>
   )
 }

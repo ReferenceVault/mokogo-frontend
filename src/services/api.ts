@@ -291,6 +291,7 @@ export interface CreateListingRequest {
   photos?: string[]
   mikoTags?: VibeTagId[]
   status?: 'draft' | 'live' | 'archived' | 'fulfilled'
+  lgbtqFriendly?: boolean
 }
 
 export interface UpdateListingRequest extends Partial<CreateListingRequest> {}
@@ -328,6 +329,7 @@ export interface ListingResponse {
   listingVersion?: number
   createdAt: string
   updatedAt: string
+  lgbtqFriendly?: boolean
 }
 
 export const listingsApi = {
@@ -380,29 +382,49 @@ export const listingsApi = {
       areaLat?: number
       areaLng?: number
       maxRent?: number
+      minRent?: number
       moveInDate?: string
       roomType?: string
+      roomTypes?: string[]
+      bhkTypes?: string[]
+      furnishingLevels?: string[]
+      bathroomTypes?: string[]
+      preferredGender?: string
+      lgbtqFriendly?: boolean
       radiusKm?: number
     }
   ): Promise<ListingResponse[]> => {
-    const params: any = {}
-    if (status) params.status = status
+    const searchParams = new URLSearchParams()
+    if (status) searchParams.set('status', status)
     if (filters) {
-      if (filters.city) params.city = filters.city
-      if (filters.area) params.area = filters.area
-      if (filters.areaLat != null) params.areaLat = filters.areaLat
-      if (filters.areaLng != null) params.areaLng = filters.areaLng
-      if (filters.maxRent != null) params.maxRent = filters.maxRent
-      if (filters.moveInDate) params.moveInDate = filters.moveInDate
-      if (filters.roomType) params.roomType = filters.roomType
-      if (filters.radiusKm != null) params.radiusKm = filters.radiusKm
+      if (filters.city) searchParams.set('city', filters.city)
+      if (filters.area) searchParams.set('area', filters.area)
+      if (filters.areaLat != null) searchParams.set('areaLat', String(filters.areaLat))
+      if (filters.areaLng != null) searchParams.set('areaLng', String(filters.areaLng))
+      if (filters.maxRent != null) searchParams.set('maxRent', String(filters.maxRent))
+      if (filters.minRent != null) searchParams.set('minRent', String(filters.minRent))
+      if (filters.moveInDate) searchParams.set('moveInDate', filters.moveInDate)
+      if (filters.roomType) searchParams.set('roomType', filters.roomType)
+      if (filters.roomTypes && filters.roomTypes.length > 0) {
+        filters.roomTypes.forEach(value => searchParams.append('roomTypes', value))
+      }
+      if (filters.bhkTypes && filters.bhkTypes.length > 0) {
+        filters.bhkTypes.forEach(value => searchParams.append('bhkTypes', value))
+      }
+      if (filters.furnishingLevels && filters.furnishingLevels.length > 0) {
+        filters.furnishingLevels.forEach(value => searchParams.append('furnishingLevels', value))
+      }
+      if (filters.bathroomTypes && filters.bathroomTypes.length > 0) {
+        filters.bathroomTypes.forEach(value => searchParams.append('bathroomTypes', value))
+      }
+      if (filters.preferredGender) searchParams.set('preferredGender', filters.preferredGender)
+      if (filters.lgbtqFriendly) searchParams.set('lgbtqFriendly', 'true')
+      if (filters.radiusKm != null) searchParams.set('radiusKm', String(filters.radiusKm))
     }
     try {
       // Use axios directly for public endpoint (no auth token needed)
-      const response = await axios.get<ListingResponse[]>(`${API_BASE_URL}/listings/public`, { 
-        params,
-        timeout: 10000,
-      })
+      const url = `${API_BASE_URL}/listings/public${searchParams.toString() ? `?${searchParams.toString()}` : ''}`
+      const response = await axios.get<ListingResponse[]>(url, { timeout: 10000 })
       return response.data || []
     } catch (error: any) {
       console.error('Error in getAllPublic API call:', error)

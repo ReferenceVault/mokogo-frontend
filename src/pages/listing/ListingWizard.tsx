@@ -1026,6 +1026,7 @@ const ListingWizard = () => {
         preferredGender: dataToSave.preferredGender || '',
         description: dataToSave.description,
         photos: dataToSave.photos || [],
+        lgbtqFriendly: dataToSave.lgbtqFriendly,
         status: shouldSaveAsDraft ? 'draft' : 'live',
       }
       
@@ -1052,10 +1053,11 @@ const ListingWizard = () => {
         preferredGender: savedListing.preferredGender,
         description: savedListing.description,
         photos: savedListing.photos,
-          mikoTags: savedListing.mikoTags || listingData.mikoTags,
+        mikoTags: savedListing.mikoTags || listingData.mikoTags,
         status: savedListing.status,
         createdAt: savedListing.createdAt,
         updatedAt: savedListing.updatedAt,
+        lgbtqFriendly: (savedListing as any).lgbtqFriendly,
       }
 
       setCurrentListing(publishedListing)

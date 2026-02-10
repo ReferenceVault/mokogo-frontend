@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useEffect, useMemo, useState } from 'react'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
@@ -9,12 +9,15 @@ import { listingsApi, ListingResponse } from '@/services/api'
 import { Listing, VibeTagId } from '@/types'
 import { formatRent } from '@/utils/formatters'
 import { getListingMikoTags } from '@/utils/miko'
+import ListingFilters, { ListingFilterState } from '@/components/ListingFilters'
 
 const ExploreProperties = () => {
   const location = useLocation()
+  const navigate = useNavigate()
   const { allListings } = useStore()
   const [exploreListings, setExploreListings] = useState<Listing[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isFilterOpen, setIsFilterOpen] = useState(false)
 
   // Scroll to top when component mounts
   useEffect(() => {
@@ -28,8 +31,15 @@ const ExploreProperties = () => {
     areaPlaceId: searchParams.get('areaPlaceId') || '',
     areaLat: searchParams.get('areaLat') ? parseFloat(searchParams.get('areaLat')!) : null,
     areaLng: searchParams.get('areaLng') ? parseFloat(searchParams.get('areaLng')!) : null,
+    minRent: searchParams.get('minRent') || '',
     maxRent: searchParams.get('maxRent') || '',
     moveInDate: searchParams.get('moveInDate') || '',
+    preferredGender: searchParams.get('preferredGender') || '',
+    roomTypes: searchParams.get('roomTypes') ? searchParams.get('roomTypes')!.split(',').filter(Boolean) : [],
+    bhkTypes: searchParams.get('bhkTypes') ? searchParams.get('bhkTypes')!.split(',').filter(Boolean) : [],
+    furnishingLevels: searchParams.get('furnishingLevels') ? searchParams.get('furnishingLevels')!.split(',').filter(Boolean) : [],
+    bathroomTypes: searchParams.get('bathroomTypes') ? searchParams.get('bathroomTypes')!.split(',').filter(Boolean) : [],
+    lgbtqFriendly: searchParams.get('lgbtqFriendly') === '1',
   }), [searchParams])
   const roomTypePreference = useMemo(() => {
     const value = searchParams.get('roomType')
@@ -47,6 +57,13 @@ const ExploreProperties = () => {
   }, [searchParams])
 
   useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    if (params.get('openFilter') === '1') {
+      setIsFilterOpen(true)
+    }
+  }, [location.search])
+
+  useEffect(() => {
     const fetchListings = async () => {
       setIsLoading(true)
       try {
@@ -56,9 +73,16 @@ const ExploreProperties = () => {
         if (filters.area) backendFilters.area = filters.area
         if (filters.areaLat != null) backendFilters.areaLat = filters.areaLat
         if (filters.areaLng != null) backendFilters.areaLng = filters.areaLng
+        if (filters.minRent) backendFilters.minRent = parseInt(filters.minRent)
         if (filters.maxRent) backendFilters.maxRent = parseInt(filters.maxRent)
         if (filters.moveInDate) backendFilters.moveInDate = filters.moveInDate
         if (roomTypePreference) backendFilters.roomType = roomTypePreference
+        if (filters.preferredGender) backendFilters.preferredGender = filters.preferredGender
+        if (filters.roomTypes.length) backendFilters.roomTypes = filters.roomTypes
+        if (filters.bhkTypes.length) backendFilters.bhkTypes = filters.bhkTypes
+        if (filters.furnishingLevels.length) backendFilters.furnishingLevels = filters.furnishingLevels
+        if (filters.bathroomTypes.length) backendFilters.bathroomTypes = filters.bathroomTypes
+        if (filters.lgbtqFriendly) backendFilters.lgbtqFriendly = true
 
         const listings = await listingsApi.getAllPublic('live', backendFilters)
         const mappedListings: Listing[] = listings.map((listing: ListingResponse) => ({
@@ -102,7 +126,72 @@ const ExploreProperties = () => {
     }
 
     fetchListings()
-  }, [filters.city, filters.area, filters.areaLat, filters.areaLng, filters.maxRent, filters.moveInDate, roomTypePreference])
+  }, [
+    filters.city,
+    filters.area,
+    filters.areaLat,
+    filters.areaLng,
+    filters.minRent,
+    filters.maxRent,
+    filters.moveInDate,
+    filters.preferredGender,
+    filters.roomTypes.join(','),
+    filters.bhkTypes.join(','),
+    filters.furnishingLevels.join(','),
+    filters.bathroomTypes.join(','),
+    filters.lgbtqFriendly,
+    roomTypePreference,
+  ])
+  const handleApplyFilters = (state: ListingFilterState) => {
+    const params = new URLSearchParams(location.search)
+    if (state.minRent != null && state.minRent > 0) {
+      params.set('minRent', String(state.minRent))
+    } else {
+      params.delete('minRent')
+    }
+    if (state.maxRent != null && state.maxRent > 0) {
+      params.set('maxRent', String(state.maxRent))
+    } else {
+      params.delete('maxRent')
+    }
+    if (state.preferredGender) {
+      params.set('preferredGender', state.preferredGender)
+    } else {
+      params.delete('preferredGender')
+    }
+    if (state.roomTypes.length) {
+      params.set('roomTypes', state.roomTypes.join(','))
+    } else {
+      params.delete('roomTypes')
+    }
+    if (state.bhkTypes.length) {
+      params.set('bhkTypes', state.bhkTypes.join(','))
+    } else {
+      params.delete('bhkTypes')
+    }
+    if (state.furnishingLevels.length) {
+      params.set('furnishingLevels', state.furnishingLevels.join(','))
+    } else {
+      params.delete('furnishingLevels')
+    }
+    if (state.bathroomTypes.length) {
+      params.set('bathroomTypes', state.bathroomTypes.join(','))
+    } else {
+      params.delete('bathroomTypes')
+    }
+    if (state.lgbtqFriendly) {
+      params.set('lgbtqFriendly', '1')
+    } else {
+      params.delete('lgbtqFriendly')
+    }
+    navigate(`${location.pathname}?${params.toString()}`, { replace: true })
+  }
+
+  const handleClearFilterParams = () => {
+    const params = new URLSearchParams(location.search)
+    ;['minRent','maxRent','preferredGender','roomTypes','bhkTypes','furnishingLevels','bathroomTypes','lgbtqFriendly'].forEach(key => params.delete(key))
+    navigate(`${location.pathname}?${params.toString()}`, { replace: true })
+  }
 
   // Backend already handles filtering and sorting, but we still need to filter by Miko tags on client side
   const filteredListings = useMemo(() => {
@@ -212,15 +301,18 @@ const ExploreProperties = () => {
           <div className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-[#fef4f1] via-transparent to-transparent" />
           
           <div className="relative mx-auto max-w-7xl">
-            {/* Cities Grid */}
+            {/* Cities Grid + Filter CTA */}
             <div className="mb-16">
               <div className="text-center space-y-3 mb-10">
                 <span className="inline-flex items-center gap-2 rounded-full border border-orange-300/50 bg-orange-200/30 px-3 py-0.5 text-[10px] font-semibold uppercase tracking-[0.35em] text-orange-800/80">
                   Browse by City
                 </span>
+                <div className="flex flex-col items-center gap-3 md:flex-row md:justify-between">
                 <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900">
                   Browse properties in active cities
                 </h2>
+                  
+                </div>
                 <p className="text-gray-700 text-base max-w-2xl mx-auto">
                   Starting with Pune. More cities coming soon.
                 </p>
@@ -329,6 +421,25 @@ const ExploreProperties = () => {
                 <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
                   {isLoading ? 'Loading...' : `${filteredListings.length}+ Available Properties`}
                 </h2>
+                <button
+                    type="button"
+                    onClick={() => setIsFilterOpen(true)}
+                    className="inline-flex items-center gap-2 rounded-full border border-orange-300 bg-white px-4 py-2 text-xs font-semibold text-orange-600 shadow-sm hover:bg-orange-50"
+                  >
+                    <span>Filter</span>
+                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-orange-500 text-[11px] text-white">
+                      {[
+                        filters.maxRent,
+                        filters.minRent,
+                        filters.preferredGender,
+                        filters.roomTypes.length,
+                        filters.bhkTypes.length,
+                        filters.furnishingLevels.length,
+                        filters.bathroomTypes.length,
+                        filters.lgbtqFriendly,
+                      ].filter(Boolean).length}
+                    </span>
+                  </button>     
               </div>
 
               {isLoading ? (
@@ -431,6 +542,23 @@ const ExploreProperties = () => {
       </main>
 
       <Footer />
+
+      <ListingFilters
+        open={isFilterOpen}
+        onClose={() => setIsFilterOpen(false)}
+        onApply={handleApplyFilters}
+        onClear={handleClearFilterParams}
+        initialValues={{
+          minRent: filters.minRent ? parseInt(filters.minRent) : undefined,
+          maxRent: filters.maxRent ? parseInt(filters.maxRent) : undefined,
+          preferredGender: filters.preferredGender || undefined,
+          roomTypes: filters.roomTypes,
+          bhkTypes: filters.bhkTypes,
+          furnishingLevels: filters.furnishingLevels,
+          bathroomTypes: filters.bathroomTypes,
+          lgbtqFriendly: filters.lgbtqFriendly,
+        }}
+      />
     </div>
   )
 }
