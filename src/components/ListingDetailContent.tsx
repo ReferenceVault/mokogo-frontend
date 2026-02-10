@@ -151,6 +151,10 @@ const ListingDetailContent = ({ listingId, onBack, onExplore }: ListingDetailCon
             flatAmenities: response.flatAmenities || [],
             societyAmenities: response.societyAmenities || [],
             preferredGender: response.preferredGender || '',
+            foodPreference: response.foodPreference,
+            petPolicy: response.petPolicy,
+            smokingPolicy: response.smokingPolicy,
+            drinkingPolicy: response.drinkingPolicy,
             description: response.description,
             photos: response.photos || [],
             status: response.status,
@@ -574,10 +578,30 @@ const ListingDetailContent = ({ listingId, onBack, onExplore }: ListingDetailCon
                   <span>{listing.locality}, {listing.city}</span>
                 </div>
               </div>
-              <div className="flex items-center space-x-4 flex-wrap">
+              <div className="flex items-center gap-x-4 gap-y-3 flex-wrap">
                 {listing.preferredGender && (
                   <span className="bg-pink-100 text-pink-800 px-3 py-1 rounded-full text-sm font-medium">
                     {listing.preferredGender === 'Male' ? 'Male Preferred' : listing.preferredGender === 'Female' ? 'Female Preferred' : 'Any Gender'}
+                  </span>
+                )}
+                {listing.foodPreference && (
+                  <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+                    🥗 {listing.foodPreference === 'Vegetarian only' ? 'Vegetarian only' : listing.foodPreference === 'Non-veg allowed' ? 'Non-veg allowed' : 'Open'}
+                  </span>
+                )}
+                {listing.petPolicy && (
+                  <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-medium">
+                    {listing.petPolicy === 'Pets allowed' ? '🐾 Pet friendly' : '🚫 No pets'}
+                  </span>
+                )}
+                {listing.smokingPolicy && (
+                  <span className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-medium">
+                    {listing.smokingPolicy === 'Not allowed' ? '🚭 No smoking' : listing.smokingPolicy === 'Allowed' ? '💨 Smoking allowed' : '🚬 No issues'}
+                  </span>
+                )}
+                {listing.drinkingPolicy && (
+                  <span className="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm font-medium">
+                    {listing.drinkingPolicy === 'Not allowed' ? '🚫 Alcohol restricted' : listing.drinkingPolicy === 'Allowed' ? '🍷 Drinking allowed' : '🥂 No issues'}
                   </span>
                 )}
                 <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">

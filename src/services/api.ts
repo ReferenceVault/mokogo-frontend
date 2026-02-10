@@ -283,6 +283,10 @@ export interface CreateListingRequest {
   flatAmenities?: string[]
   societyAmenities?: string[]
   preferredGender?: string
+  foodPreference?: string
+  petPolicy?: string
+  smokingPolicy?: string
+  drinkingPolicy?: string
   description?: string
   photos?: string[]
   mikoTags?: VibeTagId[]
@@ -313,6 +317,10 @@ export interface ListingResponse {
   flatAmenities: string[]
   societyAmenities: string[]
   preferredGender: string
+  foodPreference?: string
+  petPolicy?: string
+  smokingPolicy?: string
+  drinkingPolicy?: string
   description?: string
   photos: string[]
   mikoTags?: VibeTagId[]

@@ -213,6 +213,10 @@ const ListingWizard = () => {
         flatAmenities: [],
         societyAmenities: [],
         preferredGender: '',
+        foodPreference: '',
+        petPolicy: '',
+        smokingPolicy: '',
+        drinkingPolicy: '',
         description: '',
         photos: [],
         status: 'draft' as const,
@@ -311,6 +315,18 @@ const ListingWizard = () => {
         if (dataToSave.preferredGender && dataToSave.preferredGender.trim()) {
           draftData.preferredGender = dataToSave.preferredGender
         }
+        if (dataToSave.foodPreference && dataToSave.foodPreference.trim()) {
+          draftData.foodPreference = dataToSave.foodPreference
+        }
+        if (dataToSave.petPolicy && dataToSave.petPolicy.trim()) {
+          draftData.petPolicy = dataToSave.petPolicy
+        }
+        if (dataToSave.smokingPolicy && dataToSave.smokingPolicy.trim()) {
+          draftData.smokingPolicy = dataToSave.smokingPolicy
+        }
+        if (dataToSave.drinkingPolicy && dataToSave.drinkingPolicy.trim()) {
+          draftData.drinkingPolicy = dataToSave.drinkingPolicy
+        }
         if (dataToSave.description && dataToSave.description.trim()) {
           draftData.description = dataToSave.description
         }
@@ -359,6 +375,18 @@ const ListingWizard = () => {
           }
           if (dataToSave.preferredGender && dataToSave.preferredGender.trim()) {
             draftData.preferredGender = dataToSave.preferredGender
+          }
+          if (dataToSave.foodPreference && dataToSave.foodPreference.trim()) {
+            draftData.foodPreference = dataToSave.foodPreference
+          }
+          if (dataToSave.petPolicy && dataToSave.petPolicy.trim()) {
+            draftData.petPolicy = dataToSave.petPolicy
+          }
+          if (dataToSave.smokingPolicy && dataToSave.smokingPolicy.trim()) {
+            draftData.smokingPolicy = dataToSave.smokingPolicy
+          }
+          if (dataToSave.drinkingPolicy && dataToSave.drinkingPolicy.trim()) {
+            draftData.drinkingPolicy = dataToSave.drinkingPolicy
           }
           if (dataToSave.description && dataToSave.description.trim()) {
             draftData.description = dataToSave.description
@@ -425,6 +453,18 @@ const ListingWizard = () => {
             if (dataToSave.preferredGender && dataToSave.preferredGender.trim()) {
               draftData.preferredGender = dataToSave.preferredGender
             }
+            if (dataToSave.foodPreference && dataToSave.foodPreference.trim()) {
+              draftData.foodPreference = dataToSave.foodPreference
+            }
+            if (dataToSave.petPolicy && dataToSave.petPolicy.trim()) {
+              draftData.petPolicy = dataToSave.petPolicy
+            }
+            if (dataToSave.smokingPolicy && dataToSave.smokingPolicy.trim()) {
+              draftData.smokingPolicy = dataToSave.smokingPolicy
+            }
+            if (dataToSave.drinkingPolicy && dataToSave.drinkingPolicy.trim()) {
+              draftData.drinkingPolicy = dataToSave.drinkingPolicy
+            }
           }
 
           // Description can be included if provided (not step-specific)
@@ -465,6 +505,10 @@ const ListingWizard = () => {
         flatAmenities: savedListing.flatAmenities,
         societyAmenities: savedListing.societyAmenities,
         preferredGender: savedListing.preferredGender,
+        foodPreference: savedListing.foodPreference,
+        petPolicy: savedListing.petPolicy,
+        smokingPolicy: savedListing.smokingPolicy,
+        drinkingPolicy: savedListing.drinkingPolicy,
         description: savedListing.description,
         photos: savedListing.photos,
           mikoTags: savedListing.mikoTags || dataToSave.mikoTags,
@@ -566,6 +610,22 @@ const ListingWizard = () => {
         if (!dataToValidate.preferredGender || dataToValidate.preferredGender.trim() === '') {
           stepErrors.preferredGender = 'Gender preference is required'
           newErrors[stepId] = 'Gender preference is required'
+        }
+        if (!dataToValidate.foodPreference || dataToValidate.foodPreference.trim() === '') {
+          stepErrors.foodPreference = 'Food preference is required'
+          newErrors[stepId] = newErrors[stepId] || 'Food preference is required'
+        }
+        if (!dataToValidate.petPolicy || dataToValidate.petPolicy.trim() === '') {
+          stepErrors.petPolicy = 'Pet policy is required'
+          newErrors[stepId] = newErrors[stepId] || 'Pet policy is required'
+        }
+        if (!dataToValidate.smokingPolicy || dataToValidate.smokingPolicy.trim() === '') {
+          stepErrors.smokingPolicy = 'Smoking policy is required'
+          newErrors[stepId] = newErrors[stepId] || 'Smoking policy is required'
+        }
+        if (!dataToValidate.drinkingPolicy || dataToValidate.drinkingPolicy.trim() === '') {
+          stepErrors.drinkingPolicy = 'Drinking policy is required'
+          newErrors[stepId] = newErrors[stepId] || 'Drinking policy is required'
         }
         break
       case 'miko':
@@ -673,6 +733,10 @@ const ListingWizard = () => {
         // Include preferences fields if preferences step (step 4) is validated
         if (updatedValidatedSteps.has(4)) {
           if (dataToSave.preferredGender && dataToSave.preferredGender.trim()) updateData.preferredGender = dataToSave.preferredGender
+          if (dataToSave.foodPreference && dataToSave.foodPreference.trim()) updateData.foodPreference = dataToSave.foodPreference
+          if (dataToSave.petPolicy && dataToSave.petPolicy.trim()) updateData.petPolicy = dataToSave.petPolicy
+          if (dataToSave.smokingPolicy && dataToSave.smokingPolicy.trim()) updateData.smokingPolicy = dataToSave.smokingPolicy
+          if (dataToSave.drinkingPolicy && dataToSave.drinkingPolicy.trim()) updateData.drinkingPolicy = dataToSave.drinkingPolicy
         }
 
         // MIKO tags are not sent to API - backend doesn't accept mikoTags property
@@ -705,6 +769,10 @@ const ListingWizard = () => {
           flatAmenities: savedListing.flatAmenities || dataToSave.flatAmenities || [],
           societyAmenities: savedListing.societyAmenities || dataToSave.societyAmenities || [],
           preferredGender: savedListing.preferredGender || dataToSave.preferredGender || '',
+          foodPreference: savedListing.foodPreference || dataToSave.foodPreference,
+          petPolicy: savedListing.petPolicy || dataToSave.petPolicy,
+          smokingPolicy: savedListing.smokingPolicy || dataToSave.smokingPolicy,
+          drinkingPolicy: savedListing.drinkingPolicy || dataToSave.drinkingPolicy,
           description: savedListing.description || dataToSave.description,
           photos: savedListing.photos || dataToSave.photos || [],
           mikoTags: savedListing.mikoTags || dataToSave.mikoTags || [],
