@@ -55,7 +55,7 @@ const AmenitiesSection = ({ listing, className = '', compact = false }: Amenitie
   if (compact) {
     return (
       <div className={`${containerClass} ${className}`}>
-        <h2 className={titleClass}>Amenities & Features</h2>
+        <h2 className={titleClass}>Amenities</h2>
         <div className={gridClass}>
           {allAmenities.map((amenity, idx) => {
             const Icon = amenityIconMap[amenity] || CheckCircle
@@ -76,7 +76,7 @@ const AmenitiesSection = ({ listing, className = '', compact = false }: Amenitie
 
   return (
     <div className={`${containerClass} ${className}`}>
-      <h2 className={titleClass}>Amenities & Features</h2>
+      <h2 className={titleClass}>Amenities</h2>
       <div className={gridClass}>
         <div>
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Room Amenities</h3>
