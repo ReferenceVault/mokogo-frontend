@@ -6,6 +6,12 @@ import Logo from '@/components/Logo'
 import UserAvatar from '@/components/UserAvatar'
 import ProfileCompletionModal from '@/components/ProfileCompletionModal'
 import Toast from '@/components/Toast'
+import ListingHeading from '@/components/ListingHeading'
+import ListingPhotos from '@/components/ListingPhotos'
+import RoomDetails from '@/components/RoomDetails'
+import AmenitiesSection from '@/components/AmenitiesSection'
+import MeetYourHost from '@/components/MeetYourHost'
+import ContactHostSection from '@/components/ContactHostSection'
 import { useStore } from '@/store/useStore'
 
 import { formatPrice, formatDate } from '@/utils/formatters'
@@ -40,7 +46,6 @@ const ListingDetail = () => {
   const navigate = useNavigate()
   const { allListings, user, setUser, toggleSavedListing, isListingSaved, savedListings, setSavedListings } = useStore()
   const [isSaved, setIsSaved] = useState(false)
-  const [activePhotoIndex, setActivePhotoIndex] = useState(0)
   const [loading, setLoading] = useState(true)
   const [listing, setListing] = useState<Listing | null>(null)
   const [isListingLoading, setIsListingLoading] = useState(true)
@@ -236,11 +241,6 @@ const ListingDetail = () => {
   }, [listingId, user, savedListings, isListingSaved])
 
   const [expandedFAQ, setExpandedFAQ] = useState<string | null>(null)
-  const [moveInDate, setMoveInDate] = useState('')
-  const [duration, setDuration] = useState('6 months')
-  const [message, setMessage] = useState('')
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [messageError, setMessageError] = useState<string | null>(null)
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [listingOwnerId, setListingOwnerId] = useState<string | null>(null)
   const [conversationId, setConversationId] = useState<string | null>(null)
@@ -565,94 +565,21 @@ const ListingDetail = () => {
     alert('Report functionality will be implemented')
   }
 
-  const handlePhotoNav = (direction: 'prev' | 'next') => {
-    if (!listing?.photos || listing.photos.length === 0) return
-    setActivePhotoIndex((prev) => {
-      const lastIndex = listing.photos.length - 1
-      if (direction === 'prev') {
-        return prev === 0 ? lastIndex : prev - 1
-      }
-      return prev === lastIndex ? 0 : prev + 1
-    })
+  const handleContactHostSuccess = () => {
+    setShowSuccessToast(true)
   }
-  const handleContactHost = async () => {
-  // Check if user is logged in
-  if (!user) {
-    if (listingId) {
-      sessionStorage.setItem(
-        'mokogo-auth-redirect',
-        JSON.stringify({ path: '/dashboard', listingId, focus: 'contact' })
-      )
+
+  const handleContactHostStatusUpdate = (status: { status: 'pending' | 'approved' | 'rejected' | null; requestId?: string }) => {
+    setRequestStatus(status)
+  }
+
+  const handleContactHostError = (errorMessage: string) => {
+    if (errorMessage.includes('profile') || errorMessage.includes('complete')) {
+      setShowProfileModal(true)
+    } else {
+      alert(errorMessage)
     }
-    navigate(`/auth?redirect=/dashboard&listing=${listingId}&focus=contact`)
-    return
   }
-
-  // Check if profile is complete
-  if (!isProfileComplete(user)) {
-    setShowProfileModal(true)
-    return
-  }
-
-  if (!listing) return
-
-    // Validate message is required
-    if (!message || message.trim() === '') {
-      setMessageError('Message is required')
-      return
-    }
-    
-    setMessageError(null)
-    setIsSubmitting(true)
-    try {
-      const newRequest = await requestsApi.create({
-        listingId: listing.id,
-        message: message.trim(),
-        moveInDate: moveInDate || undefined,
-      })
-
-      // Update request status
-      setRequestStatus({
-        status: 'pending',
-        requestId: newRequest._id || newRequest.id
-      })
-
-      // Clear form
-      setMessage('')
-      setMoveInDate('')
-      setDuration('6 months')
-
-      // Show success toast
-      setShowSuccessToast(true)
-  } catch (error: any) {
-    console.error('Error sending request:', error)
-    const errorMessage = error.response?.data?.message || 'Failed to send request. Please try again.'
-    alert(errorMessage)
-    
-    // If error is about existing request, refresh status
-    if (errorMessage.includes('already') || errorMessage.includes('pending') || errorMessage.includes('approved')) {
-      // Refetch request status
-      try {
-        const request = await requestsApi.getStatusByListing(listing.id)
-        if (request) {
-          const status = request.status === 'approved' 
-            ? 'approved' 
-            : request.status === 'rejected'
-            ? 'rejected'
-            : 'pending'
-          setRequestStatus({
-            status,
-            requestId: request._id || request.id
-          })
-        }
-      } catch (refreshError) {
-        console.error('Error refreshing request status:', refreshError)
-      }
-    }
-  } finally {
-    setIsSubmitting(false)
-  }
-}
 
   const toggleFAQ = (faqId: string) => {
     setExpandedFAQ(expandedFAQ === faqId ? null : faqId)
@@ -814,145 +741,19 @@ const ListingDetail = () => {
       </section>
 
       {/* Listing Header Section */}
-      <section className="py-8 bg-white">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6">
-            <div className="flex-1">
-              <div className="flex items-center mb-4 flex-wrap gap-3">
-                <h1 className="text-3xl lg:text-4xl font-bold text-gray-900">{listing.title}</h1>
-                <div className="flex items-center space-x-2">
-                  <span className="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-semibold">Verified</span>
-                </div>
-              </div>
-              <div className="flex flex-wrap items-center gap-4 text-gray-600 mb-4">
-                <div className="flex items-center">
-                  <MapPin className="w-4 h-4 text-orange-400 mr-2" />
-                  <span>{listing.locality}, {listing.city}</span>
-                </div>
-                <div className="flex items-center">
-                  <Shield className="w-4 h-4 text-green-500 mr-1" />
-                  <span>ID Verified Host</span>
-                </div>
-              </div>
-              <div className="flex items-center gap-x-4 gap-y-3 flex-wrap">
-                {listing.preferredGender && (
-                  <span className="bg-pink-100 text-pink-800 px-3 py-1 rounded-full text-sm font-medium">
-                    {listing.preferredGender === 'Male' ? 'Male Preferred' : listing.preferredGender === 'Female' ? 'Female Preferred' : 'Any Gender'}
-                  </span>
-                )}
-                {listing.foodPreference && (
-                  <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
-                    🥗 {listing.foodPreference === 'Vegetarian only' ? 'Vegetarian only' : listing.foodPreference === 'Non-veg allowed' ? 'Non-veg allowed' : 'Open'}
-                  </span>
-                )}
-                {listing.petPolicy && (
-                  <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-medium">
-                    {listing.petPolicy === 'Pets allowed' ? '🐾 Pet friendly' : '🚫 No pets'}
-                  </span>
-                )}
-                {listing.smokingPolicy && (
-                  <span className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-medium">
-                    {listing.smokingPolicy === 'Not allowed' ? '🚭 No smoking' : listing.smokingPolicy === 'Allowed' ? '💨 Smoking allowed' : '🚬 No issues'}
-                  </span>
-                )}
-                {listing.drinkingPolicy && (
-                  <span className="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm font-medium">
-                    {listing.drinkingPolicy === 'Not allowed' ? '🚫 Alcohol restricted' : listing.drinkingPolicy === 'Allowed' ? '🍷 Drinking allowed' : '🥂 No issues'}
-                  </span>
-                )}
-                <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
-                  Available {formatDate(listing.moveInDate)}
-                </span>
-                <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
-                  {listing.furnishingLevel}
-                </span>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4 mt-6 lg:mt-0">
-              <button 
-                onClick={handleShare}
-                className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <Share2 className="w-4 h-4 text-gray-600" />
-                <span>Share</span>
-              </button>
-              <button 
-                onClick={handleSave}
-                className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <Heart className={`w-4 h-4 ${isSaved ? 'text-red-500 fill-red-500' : 'text-gray-600'}`} />
-                <span>Save</span>
-              </button>
-              <button 
-                onClick={handleReport}
-                disabled={!user}
-                className="flex items-center space-x-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Flag className="w-4 h-4" />
-                <span>Report</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
+      <ListingHeading
+        listing={listing}
+        isSaved={isSaved}
+        isOwner={isOwner}
+        onSave={handleSave}
+        onShare={handleShare}
+        onReport={handleReport}
+        showVerified={true}
+        showActions={true}
+      />
 
       {/* Photo Gallery Section */}
-      <section className="py-8 bg-white">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 rounded-2xl overflow-hidden">
-            <div className="relative">
-              {listing.photos && listing.photos.length > 0 ? (
-                <img 
-                  className="w-full h-[400px] lg:h-[500px] object-cover" 
-                  src={listing.photos[activePhotoIndex]} 
-                  alt={`${listing.title} photo ${activePhotoIndex + 1}`} 
-                />
-              ) : (
-                <div className="w-full h-[400px] lg:h-[500px] bg-gray-200 flex items-center justify-center">
-                  <Home className="w-16 h-16 text-gray-400" />
-                </div>
-              )}
-              {listing.photos && listing.photos.length > 1 && (
-                <>
-                  <button
-                    onClick={() => handlePhotoNav('prev')}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-sm w-9 h-9 rounded-full flex items-center justify-center text-gray-700 hover:bg-white transition-colors"
-                    type="button"
-                    aria-label="Previous photo"
-                  >
-                    ‹
-                  </button>
-                  <button
-                    onClick={() => handlePhotoNav('next')}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-sm w-9 h-9 rounded-full flex items-center justify-center text-gray-700 hover:bg-white transition-colors"
-                    type="button"
-                    aria-label="Next photo"
-                  >
-                    ›
-                  </button>
-                </>
-              )}
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              {listing.photos?.slice(1, 5).map((photo, idx) => (
-                <div key={idx} className="relative">
-                  <img 
-                    className="w-full h-[120px] lg:h-[160px] object-cover rounded-lg" 
-                    src={photo} 
-                    alt={`${listing.title} ${idx + 2}`} 
-                  />
-                  {idx === 3 && listing.photos && listing.photos.length > 5 && (
-                    <button className="absolute inset-0 bg-black/40 flex items-center justify-center text-white font-semibold rounded-lg hover:bg-black/50 transition-colors">
-                      <Images className="w-4 h-4 mr-2" />
-                      View All {listing.photos.length} Photos
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
+      <ListingPhotos listing={listing} />
 
       {/* Main Content Section */}
       <section className="py-8">
@@ -963,123 +764,13 @@ const ListingDetail = () => {
             <div className={`space-y-8 ${!isOwner ? 'lg:col-span-2' : 'lg:col-span-1'}`}>
               
               {/* Room Details */}
-              <div className="bg-white/70 backdrop-blur-md rounded-2xl shadow-lg border border-white/35 p-8">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900">Room Details</h2>
-                  <div className="text-right">
-                    <div className="text-3xl font-bold text-gray-900">₹{formatPrice(listing.rent)}</div>
-                    <div className="text-gray-600">per month</div>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                  <div className="text-center p-4 bg-stone-50 rounded-xl">
-                    <Bed className="w-8 h-8 text-orange-400 mx-auto mb-2" />
-                    <div className="font-semibold text-gray-900">{listing.bhkType}</div>
-                    <div className="text-sm text-gray-600">{listing.roomType}</div>
-                  </div>
-                  <div className="text-center p-4 bg-stone-50 rounded-xl">
-                    <Bath className="w-8 h-8 text-orange-400 mx-auto mb-2" />
-                    <div className="font-semibold text-gray-900">1 Bathroom</div>
-                    <div className="text-sm text-gray-600">Dedicated</div>
-                  </div>
-                  <div className="text-center p-4 bg-stone-50 rounded-xl">
-                    <Calendar className="w-8 h-8 text-orange-400 mx-auto mb-2" />
-                    <div className="font-semibold text-gray-900">Available</div>
-                    <div className="text-sm text-gray-600">{formatDate(listing.moveInDate)}</div>
-                  </div>
-                </div>
-                
-                <div className="border-t border-stone-200 pt-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Description</h3>
-                  <p className="text-gray-700 leading-relaxed mb-4">
-                    {listing.description || 'Welcome to this beautiful, spacious room in a premium apartment. Perfect for working professionals, this fully furnished room offers a comfortable living experience with modern amenities and excellent connectivity.'}
-                  </p>
-                </div>
-              </div>
-              
+              <RoomDetails listing={listing} />
+
               {/* Amenities Section */}
-              <div className="bg-white/70 backdrop-blur-md rounded-2xl shadow-lg border border-white/35 p-8">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">Amenities & Features</h2>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Room Amenities</h3>
-                    <div className="space-y-3">
-                      {listing.flatAmenities.slice(0, 6).map((amenity, idx) => (
-                        <div key={idx} className="flex items-center">
-                          <CheckCircle className="w-5 h-5 text-green-500 mr-3" />
-                          <span className="text-gray-700">{amenity}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Common Areas</h3>
-                    <div className="space-y-3">
-                      {listing.societyAmenities.slice(0, 6).map((amenity, idx) => (
-                        <div key={idx} className="flex items-center">
-                          <CheckCircle className="w-5 h-5 text-green-500 mr-3" />
-                          <span className="text-gray-700">{amenity}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
+              <AmenitiesSection listing={listing} />
+
               {/* Host Information Section */}
-              <div className="bg-white/70 backdrop-blur-md rounded-2xl shadow-lg border border-white/35 p-8">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">Meet Your Host</h2>
-                
-                <div className="flex items-start space-x-6">
-                  <div className="flex-shrink-0">
-                    <UserAvatar 
-                      user={{ 
-                        name: hostInfo?.name, 
-                        profileImageUrl: hostInfo?.profileImageUrl 
-                      }}
-                      size="xl"
-                      showBorder={true}
-                      className="bg-orange-400 border-orange-400/20"
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-4 mb-3">
-                      <h3 className="text-xl font-bold text-gray-900">{hostInfo?.name || 'Host'}</h3>
-                      <div className="flex items-center space-x-2">
-                        <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-semibold">Verified Host</span>
-                        <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-semibold">Superhost</span>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center space-x-6 text-sm text-gray-600 mb-4">
-                      <div className="flex items-center">
-                        <MessageCircle className="w-4 h-4 text-orange-400 mr-1" />
-                        <span>12 reviews</span>
-                      </div>
-                      <div className="flex items-center">
-                        <Calendar className="w-4 h-4 text-orange-400 mr-1" />
-                        <span>Hosting since 2022</span>
-                      </div>
-                    </div>
-                    
-                    <p className="text-gray-700 mb-4">
-                      {hostAbout}
-                    </p>
-                    
-                    <div className="flex items-center space-x-4">
-                      <div className="text-sm text-gray-600">
-                        <span className="font-semibold">Languages:</span> Hindi, English
-                      </div>
-                      <div className="text-sm text-gray-600">
-                        <span className="font-semibold">Response time:</span> Within 2 hours
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <MeetYourHost listing={listing} hostInfo={hostInfo} compact={false} />
               
             </div>
             
@@ -1087,161 +778,17 @@ const ListingDetail = () => {
             {!isOwner && (
             <div className="lg:col-span-1">
               <div className="sticky top-24 space-y-6">
-                
-                {/* Contact Card */}
-                <div className="bg-white/70 backdrop-blur-md rounded-2xl shadow-lg border border-white/35 p-6">
-                  <div className="text-center mb-6">
-                    <div className="text-3xl font-bold text-gray-900 mb-1">₹{formatPrice(listing.rent)}</div>
-                    <div className="text-gray-600">per month</div>
-                    <div className="text-sm text-gray-500 mt-1">+ ₹500 maintenance</div>
-                  </div>
-                  
-                  <div className="space-y-4 mb-6">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="border border-stone-300 rounded-lg p-3">
-                        <div className="text-xs font-semibold text-gray-700 uppercase mb-1">Move-in Date</div>
-                        <input 
-                          type="date" 
-                          value={moveInDate}
-                          onChange={(e) => setMoveInDate(e.target.value)}
-                          min={new Date().toISOString().split('T')[0]}
-                          className="w-full border-0 p-0 text-sm focus:ring-0 bg-transparent" 
-                        />
-                      </div>
-                      <div className="border border-stone-300 rounded-lg p-3">
-                        <div className="text-xs font-semibold text-gray-700 uppercase mb-1">Duration</div>
-                        <select 
-                          value={duration}
-                          onChange={(e) => setDuration(e.target.value)}
-                          className="w-full border-0 p-0 text-sm focus:ring-0 bg-transparent"
-                        >
-                          <option>6 months</option>
-                          <option>12 months</option>
-                          <option>Flexible</option>
-                        </select>
-                      </div>
-                    </div>
-                    
-                    <div className="border border-stone-300 rounded-lg p-3">
-                      <div className="text-xs font-semibold text-gray-700 uppercase mb-2">Your Message</div>
-                      <textarea 
-                        value={message}
-                        onChange={(e) => {
-                          setMessage(e.target.value)
-                          if (messageError && e.target.value.trim() !== '') {
-                            setMessageError(null)
-                          }
-                        }}
-                        className={`w-full border-0 p-0 text-sm focus:ring-0 resize-none bg-transparent ${messageError ? 'text-red-600' : ''}`}
-                        rows={3} 
-                        placeholder="Tell the host about yourself..."
-                        required
-                      />
-                      {messageError && (
-                        <p className="text-xs text-red-500 mt-1">{messageError}</p>
-                      )}
-                    </div>
-                  </div>
-                  
-                  {/* Contact Host Button - Single button that changes based on request status */}
-                  {loadingRequestStatus ? (
-                    <button 
-                      disabled
-                      className="w-full bg-gray-200 text-gray-500 font-bold py-4 rounded-xl cursor-not-allowed mb-4"
-                    >
-                      <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin inline-block mr-2"></div>
-                      Loading...
-                    </button>
-                  ) : requestStatus.status === 'pending' ? (
-                    <button 
-                      disabled
-                      className="w-full bg-gray-300 text-gray-600 font-bold py-4 rounded-xl cursor-not-allowed mb-4"
-                    >
-                      <Clock className="w-5 h-5 inline mr-2" />
-                      Request Sent
-                    </button>
-                  ) : requestStatus.status === 'approved' ? (
-                    <button 
-                      onClick={handleStartConversation}
-                      className="w-full bg-green-500 text-white font-bold py-4 rounded-xl hover:bg-green-600 hover:shadow-lg transition-all transform hover:scale-105 mb-4"
-                    >
-                      <MessageCircle className="w-5 h-5 inline mr-2" />
-                      Start Conversation
-                    </button>
-                  ) : (
-                    <>
-                      <button 
-                        onClick={handleContactHost}
-                        disabled={isSubmitting}
-                        className="w-full bg-orange-400 text-white font-bold py-4 rounded-xl hover:bg-orange-500 hover:shadow-lg transition-all transform hover:scale-105 mb-4 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {isSubmitting ? (
-                          <>
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin inline-block mr-2"></div>
-                            Sending...
-                          </>
-                        ) : (
-                          <>
-                            <MessageCircle className="w-5 h-5 inline mr-2" />
-                            Contact Host
-                          </>
-                        )}
-                      </button>
-                      
-                      <div className="text-center text-sm text-gray-600 mb-4">
-                        You won't be charged yet
-                      </div>
-                    </>
-                  )}
-                  
-                  <div className="border-t border-stone-200 pt-4">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-gray-700">Monthly rent</span>
-                      <span className="text-gray-900">₹{formatPrice(listing.rent)}</span>
-                    </div>
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-gray-700">Maintenance</span>
-                      <span className="text-gray-900">₹500</span>
-                    </div>
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-gray-700">Security deposit</span>
-                      <span className="text-gray-900">₹{formatPrice(listing.deposit)}</span>
-                    </div>
-                    <div className="border-t border-stone-200 pt-2 mt-2">
-                      <div className="flex justify-between items-center font-bold">
-                        <span className="text-gray-900">Total upfront</span>
-                        <span className="text-gray-900">₹{formatPrice(listing.rent + 500 + listing.deposit)}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Safety Tips */}
-                <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-2xl p-6">
-                  <div className="flex items-center mb-4">
-                    <Shield className="w-6 h-6 text-orange-400 mr-3" />
-                    <h3 className="text-lg font-semibold text-gray-900">Safety First</h3>
-                  </div>
-                  <div className="space-y-3 text-sm text-gray-700">
-                    <div className="flex items-start">
-                      <CheckCircle className="w-5 h-5 text-green-500 mr-2 mt-0.5" />
-                      <span>Always meet in person before committing</span>
-                    </div>
-                    <div className="flex items-start">
-                      <CheckCircle className="w-5 h-5 text-green-500 mr-2 mt-0.5" />
-                      <span>Verify host identity and documents</span>
-                    </div>
-                    <div className="flex items-start">
-                      <CheckCircle className="w-5 h-5 text-green-500 mr-2 mt-0.5" />
-                      <span>Never transfer money without visiting</span>
-                    </div>
-                    <div className="flex items-start">
-                      <CheckCircle className="w-5 h-5 text-green-500 mr-2 mt-0.5" />
-                      <span>Use MOKOGO messaging for initial contact</span>
-                    </div>
-                  </div>
-                </div>
-                
+                <ContactHostSection
+                  listing={listing}
+                  user={user}
+                  isOwner={isOwner}
+                  requestStatus={requestStatus}
+                  loadingRequestStatus={loadingRequestStatus}
+                  conversationId={conversationId}
+                  onRequestSent={handleContactHostSuccess}
+                  onRequestStatusUpdate={handleContactHostStatusUpdate}
+                  onError={handleContactHostError}
+                />
               </div>
             </div>
             )}
