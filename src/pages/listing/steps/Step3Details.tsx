@@ -13,6 +13,12 @@ interface Step3DetailsProps {
 const Step3Details = ({ data, onChange, error, onClearError }: Step3DetailsProps) => {
   // Clear errors when fields become valid
   useEffect(() => {
+    if (data.buildingType && data.buildingType.trim() && error && onClearError) {
+      onClearError('buildingType')
+    }
+  }, [data.buildingType, error, onClearError])
+
+  useEffect(() => {
     if (data.bhkType && data.bhkType.trim() && error && onClearError) {
       onClearError('bhkType')
     }
@@ -32,7 +38,8 @@ const Step3Details = ({ data, onChange, error, onClearError }: Step3DetailsProps
 
   // Clear step error when all required fields are filled
   useEffect(() => {
-    if (data.bhkType && data.bhkType.trim() && 
+    if (data.buildingType && data.buildingType.trim() &&
+        data.bhkType && data.bhkType.trim() && 
         data.roomType && data.roomType.trim() && 
         data.furnishingLevel && data.furnishingLevel.trim() && 
         error && onClearError) {
@@ -79,52 +86,74 @@ const Step3Details = ({ data, onChange, error, onClearError }: Step3DetailsProps
           </div>
         </div>
 
-        {/* Apartment Type, Furnishing, and Bathroom Type - Single Line */}
-        <div className="flex flex-wrap gap-4">
-          {/* BHK Type */}
-          <div className="flex-1 min-w-[200px]">
-            <CustomSelect
-              label="Apartment Type"
-              value={data.bhkType || ''}
-              onValueChange={(value) => handleChange('bhkType', value)}
-              placeholder="Select BHK type"
-              options={[
-                { value: '1BHK', label: '1 BHK' },
-                { value: '2BHK', label: '2 BHK' },
-                { value: '3BHK', label: '3 BHK' },
-                { value: '4BHK+', label: '4 BHK or more' }
-              ]}
-              error={error}
-            />
+        {/* Building Type, Apartment Type, Furnishing, and Bathroom Type - Two Rows (2 fields per row) */}
+        <div className="space-y-4">
+          {/* Row 1: Building Type + Apartment Type */}
+          <div className="flex flex-wrap gap-4">
+            {/* Building Type */}
+            <div className="flex-1 min-w-[200px]">
+              <CustomSelect
+                label="Building Type"
+                value={data.buildingType || ''}
+                onValueChange={(value) => handleChange('buildingType', value)}
+                placeholder="Select building type"
+                options={[
+                  { value: 'Gated Society', label: 'Gated Society' },
+                  { value: 'Standalone Apartment', label: 'Standalone Apartment' },
+                  { value: 'Independent House', label: 'Independent House' }
+                ]}
+                error={error}
+              />
+            </div>
+
+            {/* BHK Type */}
+            <div className="flex-1 min-w-[200px]">
+              <CustomSelect
+                label="Apartment Type"
+                value={data.bhkType || ''}
+                onValueChange={(value) => handleChange('bhkType', value)}
+                placeholder="Select BHK type"
+                options={[
+                  { value: '1BHK', label: '1 BHK' },
+                  { value: '2BHK', label: '2 BHK' },
+                  { value: '3BHK', label: '3 BHK' },
+                  { value: '4BHK+', label: '4 BHK or more' }
+                ]}
+                error={error}
+              />
+            </div>
           </div>
 
-          {/* Furnishing */}
-          <div className="flex-1 min-w-[200px]">
-            <CustomSelect
-              label="Furnishing"
-              value={data.furnishingLevel || ''}
-              onValueChange={(value) => handleChange('furnishingLevel', value)}
-              placeholder="Select furnishing status"
-              options={[
-                { value: 'Fully Furnished', label: 'Fully Furnished' },
-                { value: 'Semi-furnished', label: 'Semi Furnished' },
-                { value: 'Unfurnished', label: 'Unfurnished' }
-              ]}
-            />
-          </div>
+          {/* Row 2: Furnishing + Bathroom Type */}
+          <div className="flex flex-wrap gap-4">
+            {/* Furnishing */}
+            <div className="flex-1 min-w-[200px]">
+              <CustomSelect
+                label="Furnishing"
+                value={data.furnishingLevel || ''}
+                onValueChange={(value) => handleChange('furnishingLevel', value)}
+                placeholder="Select furnishing status"
+                options={[
+                  { value: 'Fully Furnished', label: 'Fully Furnished' },
+                  { value: 'Semi-furnished', label: 'Semi Furnished' },
+                  { value: 'Unfurnished', label: 'Unfurnished' }
+                ]}
+              />
+            </div>
 
-          {/* Bathroom Type */}
-          <div className="flex-1 min-w-[200px]">
-            <CustomSelect
-              label="Bathroom Type"
-              value={data.bathroomType || ''}
-              onValueChange={(value) => handleChange('bathroomType', value)}
-              placeholder="Select bathroom type"
-              options={[
-                { value: 'Attached', label: 'Attached Bathroom' },
-                { value: 'Common', label: 'Common Bathroom' }
-              ]}
-            />
+            {/* Bathroom Type */}
+            <div className="flex-1 min-w-[200px]">
+              <CustomSelect
+                label="Bathroom Type"
+                value={data.bathroomType || ''}
+                onValueChange={(value) => handleChange('bathroomType', value)}
+                placeholder="Select bathroom type"
+                options={[
+                  { value: 'Attached', label: 'Attached Bathroom' },
+                  { value: 'Common', label: 'Common Bathroom' }
+                ]}
+              />
+            </div>
           </div>
         </div>
 

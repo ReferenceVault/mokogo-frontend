@@ -49,6 +49,7 @@ export interface Listing {
   longitude?: number
   formattedAddress?: string
   societyName?: string
+  buildingType?: string
   bhkType: string
   roomType: string
   rent: number
