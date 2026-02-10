@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
@@ -6,6 +6,7 @@ import { useStore } from '@/store/useStore'
 import CustomSelect from '@/components/CustomSelect'
 import { MoveInDateField } from '@/components/MoveInDateField'
 import { formatRent } from '@/utils/formatters'
+import { placesApi, AutocompletePrediction } from '@/services/api'
 
 const CityListings = () => {
   const { cityName } = useParams<{ cityName: string }>()
@@ -20,10 +21,19 @@ const CityListings = () => {
   // Filter state
   const [filters, setFilters] = useState({
     area: '',
-    maxRent: '',
     moveInDate: '',
     genderPreference: ''
   })
+
+  // Area autocomplete state
+  const [areaInputValue, setAreaInputValue] = useState('')
+  const [areaSuggestions, setAreaSuggestions] = useState<AutocompletePrediction[]>([])
+  const [showAreaSuggestions, setShowAreaSuggestions] = useState(false)
+  const [isLoadingArea, setIsLoadingArea] = useState(false)
+  const areaInputRef = useRef<HTMLInputElement | null>(null)
+  const areaSuggestionsRef = useRef<HTMLDivElement | null>(null)
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const skipNextAreaFetchRef = useRef(false)
 
   // Decode the city name from URL
   const decodedCityName = cityName ? decodeURIComponent(cityName) : ''
@@ -33,26 +43,12 @@ const CityListings = () => {
     listing => listing.city === decodedCityName && listing.status === 'live'
   )
 
-  // Get unique areas from city listings
-  const availableAreas = useMemo(() => {
-    const areas = new Set(cityListingsBase.map(listing => listing.locality))
-    return Array.from(areas).sort().map(area => ({ value: area, label: area }))
-  }, [cityListingsBase])
-
   // Apply filters to listings
   const cityListings = useMemo(() => {
     return cityListingsBase.filter(listing => {
       // Area filter
       if (filters.area && listing.locality !== filters.area) {
         return false
-      }
-      
-      // Max Rent filter
-      if (filters.maxRent) {
-        const maxRent = parseInt(filters.maxRent)
-        if (listing.rent > maxRent) {
-          return false
-        }
       }
       
       // Move-in Date filter
@@ -89,13 +85,91 @@ const CityListings = () => {
   const clearFilters = () => {
     setFilters({
       area: '',
-      maxRent: '',
       moveInDate: '',
       genderPreference: ''
     })
+    setAreaInputValue('')
+    setAreaSuggestions([])
+    setShowAreaSuggestions(false)
   }
 
-  const hasActiveFilters = filters.area || filters.maxRent || filters.moveInDate || filters.genderPreference
+  const hasActiveFilters = filters.area || filters.moveInDate || filters.genderPreference
+
+  // Fetch area suggestions when user types
+  useEffect(() => {
+    // Skip one fetch if we just selected a suggestion
+    if (skipNextAreaFetchRef.current) {
+      skipNextAreaFetchRef.current = false
+      return
+    }
+
+    if (!decodedCityName) {
+      setAreaSuggestions([])
+      setShowAreaSuggestions(false)
+      return
+    }
+
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current)
+    }
+
+    if (!areaInputValue || areaInputValue.trim().length < 2) {
+      setAreaSuggestions([])
+      setShowAreaSuggestions(false)
+      return
+    }
+
+    debounceTimerRef.current = setTimeout(async () => {
+      setIsLoadingArea(true)
+      try {
+        const results = await placesApi.getAutocomplete(areaInputValue.trim(), decodedCityName)
+        setAreaSuggestions(results)
+        setShowAreaSuggestions(results.length > 0)
+      } catch (error) {
+        console.error('Error fetching area suggestions:', error)
+        setAreaSuggestions([])
+        setShowAreaSuggestions(false)
+      } finally {
+        setIsLoadingArea(false)
+      }
+    }, 300)
+
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current)
+      }
+    }
+  }, [areaInputValue, decodedCityName])
+
+  const handleAreaSuggestionSelect = (prediction: AutocompletePrediction) => {
+    skipNextAreaFetchRef.current = true
+    setAreaInputValue(prediction.structured_formatting.main_text)
+    setShowAreaSuggestions(false)
+    setAreaSuggestions([])
+    setFilters(prev => ({
+      ...prev,
+      area: prediction.structured_formatting.main_text,
+    }))
+  }
+
+  // Close suggestions on outside click
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        areaSuggestionsRef.current &&
+        !areaSuggestionsRef.current.contains(event.target as Node) &&
+        areaInputRef.current &&
+        !areaInputRef.current.contains(event.target as Node)
+      ) {
+        setShowAreaSuggestions(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [])
 
 
   return (
@@ -139,28 +213,48 @@ const CityListings = () => {
           <div className="max-w-7xl mx-auto px-6 md:px-12">
             <div className="flex flex-col md:flex-row md:items-end gap-4">
               <div className="flex-1 relative z-20">
-                <CustomSelect
-                  label="Area"
-                  value={filters.area}
-                  onValueChange={(value) => handleFilterChange('area', value)}
-                  placeholder="All Areas"
-                  options={[
-                    { value: '', label: 'All Areas' },
-                    ...availableAreas
-                  ]}
-                />
-              </div>
-              <div className="flex-1 relative z-20">
                 <label className="block text-sm font-medium text-stone-700 mb-2">
-                  Max Rent (₹)
+                  Area
                 </label>
-                <input
-                  type="number"
-                  placeholder="e.g., 20000"
-                  value={filters.maxRent}
-                  onChange={(e) => handleFilterChange('maxRent', e.target.value)}
-                  className="w-full h-[52px] px-4 rounded-xl border border-mokogo-gray focus:outline-none focus:ring-2 focus:ring-mokogo-primary bg-white/80 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                />
+                <div className="relative">
+                  <input
+                    ref={areaInputRef}
+                    type="text"
+                    value={areaInputValue}
+                    onChange={(e) => {
+                      setAreaInputValue(e.target.value)
+                      setFilters(prev => ({ ...prev, area: '' }))
+                    }}
+                    placeholder="Search area (e.g., Baner, Wakad)"
+                    className="w-full h-[52px] px-4 rounded-xl border border-mokogo-gray focus:outline-none focus:ring-2 focus:ring-mokogo-primary bg-white/80"
+                  />
+                  {showAreaSuggestions && (
+                    <div
+                      ref={areaSuggestionsRef}
+                      className="absolute mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg z-30 max-height-60 overflow-auto"
+                    >
+                      {isLoadingArea ? (
+                        <div className="px-4 py-3 text-sm text-gray-500">Searching areas...</div>
+                      ) : (
+                        areaSuggestions.map(prediction => (
+                          <button
+                            key={prediction.place_id}
+                            type="button"
+                            onClick={() => handleAreaSuggestionSelect(prediction)}
+                            className="w-full text-left px-4 py-2 hover:bg-orange-50 text-sm text-gray-700"
+                          >
+                            <div className="font-medium">
+                              {prediction.structured_formatting.main_text}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {prediction.structured_formatting.secondary_text}
+                            </div>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
               <div className="flex-1 relative z-20 [&_button]:h-[52px] [&_button]:py-0">
                 <label className="block text-sm font-medium text-stone-700 mb-2">

@@ -23,7 +23,6 @@ const LandingPage = () => {
     areaLat: 0,
     areaLng: 0,
     moveInDate: '',
-    maxRent: '',
   })
   const [areaSuggestions, setAreaSuggestions] = useState<AutocompletePrediction[]>([])
   const [showAreaSuggestions, setShowAreaSuggestions] = useState(false)
@@ -286,7 +285,6 @@ const LandingPage = () => {
       if (searchFilters.areaLat) params.set('areaLat', searchFilters.areaLat.toString())
       if (searchFilters.areaLng) params.set('areaLng', searchFilters.areaLng.toString())
     }
-    if (searchFilters.maxRent) params.set('maxRent', searchFilters.maxRent)
     if (searchFilters.moveInDate) params.set('moveInDate', searchFilters.moveInDate)
 
     navigate(`/explore?${params.toString()}`)
@@ -306,7 +304,6 @@ const LandingPage = () => {
     } else if (searchFilters.city) {
       params.set('city', searchFilters.city)
     }
-    if (searchFilters.maxRent) params.set('maxRent', searchFilters.maxRent)
     if (searchFilters.moveInDate) params.set('moveInDate', searchFilters.moveInDate)
     if (searchFilters.area && searchFilters.areaPlaceId) {
       params.set('area', searchFilters.area)
@@ -629,18 +626,6 @@ const LandingPage = () => {
                           min={new Date().toISOString().split('T')[0]}
                           hideLabel={true}
                           className="!h-[50px] !rounded-lg !border-2 !border-gray-200 hover:!border-orange-300 focus:!ring-2 focus:!ring-orange-400 focus:!border-orange-400"
-                        />
-                      </div>
-                      <div className="[&_button]:h-[50px] [&_button]:py-0 group">
-                        <label className="block text-sm font-medium text-stone-700 mb-2">
-                          Max Rent (₹)
-                        </label>
-                        <input
-                          type="number"
-                          placeholder="e.g., 20000"
-                          value={searchFilters.maxRent}
-                          onChange={(e) => setSearchFilters({ ...searchFilters, maxRent: e.target.value })}
-                          className="w-full h-[50px] px-3.5 rounded-lg border-2 border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400 bg-white transition-all duration-300 hover:border-orange-300 text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         />
                       </div>
                       <div>
