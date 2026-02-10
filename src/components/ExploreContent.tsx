@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import CustomSelect from '@/components/CustomSelect'
 import { MoveInDateField } from '@/components/MoveInDateField'
@@ -6,7 +6,7 @@ import { MapPin, Home, Heart } from 'lucide-react'
 import { Listing, VibeTagId } from '@/types'
 import { getListingMikoTags, getMikoMatchPercent, getMikoMatchScore } from '@/utils/miko'
 import MikoTagPills from '@/components/MikoTagPills'
-import { listingsApi, ListingResponse } from '@/services/api'
+import { listingsApi, ListingResponse, placesApi, AutocompletePrediction } from '@/services/api'
 import { useStore } from '@/store/useStore'
 import { sortListingsByDistance, isListingWithinRadius } from '@/utils/distance'
 
@@ -32,6 +32,13 @@ const ExploreContent = ({
   const [isLoading, setIsLoading] = useState(true)
   const { toggleSavedListing, isListingSaved } = useStore()
 
+  // Area autocomplete state
+  const [areaInputValue, setAreaInputValue] = useState('')
+  const [areaSuggestions, setAreaSuggestions] = useState<AutocompletePrediction[]>([])
+  const [showAreaSuggestions, setShowAreaSuggestions] = useState(false)
+  const [isLoadingArea, setIsLoadingArea] = useState(false)
+  const skipNextAreaFetchRef = useRef(false)
+
   // Filter state
   const [filters, setFilters] = useState(() => {
     const params = new URLSearchParams(location.search)
@@ -41,8 +48,8 @@ const ExploreContent = ({
       areaPlaceId: params.get('areaPlaceId') || '',
       areaLat: params.get('areaLat') ? parseFloat(params.get('areaLat')!) : null,
       areaLng: params.get('areaLng') ? parseFloat(params.get('areaLng')!) : null,
-      maxRent: params.get('maxRent') || '',
       moveInDate: params.get('moveInDate') || '',
+      preferredGender: params.get('preferredGender') || '',
     }
   })
 
@@ -127,9 +134,10 @@ const ExploreContent = ({
       areaPlaceId: params.get('areaPlaceId') || '',
       areaLat: params.get('areaLat') ? parseFloat(params.get('areaLat')!) : null,
       areaLng: params.get('areaLng') ? parseFloat(params.get('areaLng')!) : null,
-      maxRent: params.get('maxRent') || '',
       moveInDate: params.get('moveInDate') || '',
+      preferredGender: params.get('preferredGender') || '',
     })
+    setAreaInputValue(params.get('area') || '')
     setIsMikoMode(params.get('miko') === '1')
     const tags = params.get('tags') || ''
     setMikoTags(
@@ -146,19 +154,11 @@ const ExploreContent = ({
     }
   }, [location.search])
 
-  // Get unique areas based on selected city
-  const availableAreas = useMemo(() => {
-    if (!filters.city) return []
-    const cityListings = allLiveListings.filter(listing => listing.city === filters.city)
-    const areas = new Set(cityListings.map(listing => listing.locality))
-    return Array.from(areas).sort().map(area => ({ value: area, label: area }))
-  }, [allLiveListings, filters.city])
-
   // Apply filters to listings
   const filteredListings = useMemo(() => {
     const filtered = allLiveListings.filter(listing => {
       const hasMikoFilters =
-        Boolean(filters.city || filters.area || filters.maxRent || filters.moveInDate) ||
+        Boolean(filters.city || filters.area || filters.moveInDate || filters.preferredGender) ||
         Boolean(roomTypePreference) ||
         mikoTags.length > 0
 
@@ -180,10 +180,15 @@ const ExploreContent = ({
           areaMatch = listing.locality === filters.area
         }
       }
-      const maxRentMatch = filters.maxRent
-        ? listing.rent <= parseInt(filters.maxRent)
-        : false
       const moveInDateMatch = filters.moveInDate
+      const genderMatch = filters.preferredGender
+        ? (() => {
+            if (filters.preferredGender === 'Any') {
+              return true
+            }
+            return listing.preferredGender === filters.preferredGender
+          })()
+        : false
         ? (() => {
             const filterDate = new Date(filters.moveInDate)
             filterDate.setHours(0, 0, 0, 0)
@@ -217,7 +222,7 @@ const ExploreContent = ({
         if (filters.city && !cityMatch) return false
 
         const hasOtherFilters =
-          Boolean(filters.area || filters.maxRent || filters.moveInDate) ||
+          Boolean(filters.area || filters.moveInDate || filters.preferredGender) ||
           Boolean(roomTypePreference) ||
           mikoTags.length > 0
 
@@ -227,8 +232,8 @@ const ExploreContent = ({
 
         return (
           areaMatch ||
-          maxRentMatch ||
           moveInDateMatch ||
+          genderMatch ||
           roomTypeMatch ||
           mikoTagsMatch
         )
@@ -237,8 +242,8 @@ const ExploreContent = ({
       // Standard search: all selected filters must match
       if (filters.city && !cityMatch) return false
       if (filters.area && !areaMatch) return false
-      if (filters.maxRent && !maxRentMatch) return false
       if (filters.moveInDate && !moveInDateMatch) return false
+      if (filters.preferredGender && !genderMatch) return false
       if (roomTypePreference && !roomTypeMatch) return false
 
       return true
@@ -276,7 +281,15 @@ const ExploreContent = ({
     setFilters(prev => ({ ...prev, [key]: value }))
     // Clear area filter if city changes
     if (key === 'city') {
-      setFilters(prev => ({ ...prev, city: value, area: '' }))
+      setFilters(prev => ({
+        ...prev,
+        city: value,
+        area: '',
+        areaPlaceId: '',
+        areaLat: null,
+        areaLng: null,
+      }))
+      setAreaInputValue('')
     }
   }
 
@@ -287,12 +300,79 @@ const ExploreContent = ({
       areaPlaceId: '',
       areaLat: null,
       areaLng: null,
-      maxRent: '',
       moveInDate: '',
+      preferredGender: '',
     })
+    setAreaInputValue('')
+    setAreaSuggestions([])
+    setShowAreaSuggestions(false)
   }
 
-  const hasActiveFilters = filters.city || filters.area || filters.maxRent || filters.moveInDate
+  const hasActiveFilters = filters.city || filters.area || filters.moveInDate || filters.preferredGender
+
+  // Fetch area suggestions when user types
+  useEffect(() => {
+    // If we're programmatically setting the area input after a selection,
+    // skip one autocomplete call to avoid an extra API hit.
+    if (skipNextAreaFetchRef.current) {
+      skipNextAreaFetchRef.current = false
+      return
+    }
+
+    let timeoutId: ReturnType<typeof setTimeout> | undefined
+
+    const fetchSuggestions = async () => {
+      if (!areaInputValue || areaInputValue.trim().length < 2 || !filters.city) {
+        setAreaSuggestions([])
+        setShowAreaSuggestions(false)
+        return
+      }
+      setIsLoadingArea(true)
+      try {
+        const results = await placesApi.getAutocomplete(areaInputValue.trim(), filters.city)
+        setAreaSuggestions(results)
+        setShowAreaSuggestions(results.length > 0)
+      } catch (error) {
+        console.error('Error fetching area suggestions:', error)
+        setAreaSuggestions([])
+        setShowAreaSuggestions(false)
+      } finally {
+        setIsLoadingArea(false)
+      }
+    }
+
+    timeoutId = setTimeout(fetchSuggestions, 300)
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId)
+    }
+  }, [areaInputValue, filters.city])
+
+  const handleAreaSuggestionSelect = async (prediction: AutocompletePrediction) => {
+    // Prevent the next useEffect run from firing autocomplete again
+    skipNextAreaFetchRef.current = true
+    setAreaInputValue(prediction.structured_formatting.main_text)
+    setShowAreaSuggestions(false)
+    setAreaSuggestions([])
+
+    try {
+      const placeDetails = await placesApi.getPlaceDetails(prediction.place_id)
+      setFilters(prev => ({
+        ...prev,
+        area: prediction.structured_formatting.main_text,
+        areaPlaceId: placeDetails.place_id,
+        areaLat: placeDetails.geometry.location.lat,
+        areaLng: placeDetails.geometry.location.lng,
+      }))
+    } catch (error) {
+      console.error('Error fetching area details:', error)
+      setFilters(prev => ({
+        ...prev,
+        area: prediction.structured_formatting.main_text,
+        areaPlaceId: prediction.place_id,
+      }))
+    }
+  }
 
   const formatRent = (amount: number) => {
     return new Intl.NumberFormat('en-IN', {
@@ -345,30 +425,41 @@ const ExploreContent = ({
             </div>
             {filters.city && (
               <div className="flex-1 relative z-20">
-                <CustomSelect
-                  label="Area"
-                  value={filters.area}
-                  onValueChange={(value) => handleFilterChange('area', value)}
-                  placeholder="All Areas"
-                  options={[
-                    { value: '', label: 'All Areas' },
-                    ...availableAreas
-                  ]}
+                <label className="block text-sm font-medium text-stone-700 mb-2">
+                  Area
+                </label>
+                <input
+                  type="text"
+                  value={areaInputValue}
+                  onChange={(e) => setAreaInputValue(e.target.value)}
+                  placeholder="Search area (e.g., Baner, Wakad)"
+                  className="w-full h-[52px] px-4 rounded-xl border border-mokogo-gray focus:outline-none focus:ring-2 focus:ring-mokogo-primary bg-white/80"
                 />
+                {showAreaSuggestions && (
+                  <div className="absolute mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg z-30 max-h-60 overflow-auto">
+                    {isLoadingArea ? (
+                      <div className="px-4 py-3 text-sm text-gray-500">Searching areas...</div>
+                    ) : (
+                      areaSuggestions.map(prediction => (
+                        <button
+                          key={prediction.place_id}
+                          type="button"
+                          onClick={() => handleAreaSuggestionSelect(prediction)}
+                          className="w-full text-left px-4 py-2 hover:bg-orange-50 text-sm text-gray-700"
+                        >
+                          <div className="font-medium">
+                            {prediction.structured_formatting.main_text}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {prediction.structured_formatting.secondary_text}
+                          </div>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
               </div>
             )}
-            <div className="flex-1 relative z-20">
-              <label className="block text-sm font-medium text-stone-700 mb-2">
-                Max Rent (₹)
-              </label>
-              <input
-                type="number"
-                placeholder="e.g., 20000"
-                value={filters.maxRent}
-                onChange={(e) => handleFilterChange('maxRent', e.target.value)}
-                className="w-full h-[52px] px-4 rounded-xl border border-mokogo-gray focus:outline-none focus:ring-2 focus:ring-mokogo-primary bg-white/80 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-              />
-            </div>
             <div className="flex-1 relative z-20 [&_button]:h-[52px] [&_button]:py-0">
               <label className="block text-sm font-medium text-stone-700 mb-2">
                 Move-in Date
@@ -380,6 +471,22 @@ const ExploreContent = ({
                 hideLabel={true}
                 numberOfMonths={2}
                 className="!h-[52px] !rounded-xl !border !border-mokogo-gray"
+              />
+            </div>
+            <div className="flex-1 relative z-20">
+              <label className="block text-sm font-medium text-stone-700 mb-2">
+                Gender Preference
+              </label>
+              <CustomSelect
+                label=""
+                value={filters.preferredGender}
+                onValueChange={(value) => handleFilterChange('preferredGender', value)}
+                placeholder="Select"
+                options={[
+                  { value: 'Male', label: 'Male' },
+                  { value: 'Female', label: 'Female' },
+                  { value: 'Any', label: 'Any' },
+                ]}
               />
             </div>
             {hasActiveFilters && (
