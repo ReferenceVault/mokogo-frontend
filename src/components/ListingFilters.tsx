@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 
 export interface ListingFilterState {
   minRent?: number
@@ -42,6 +42,10 @@ export const ListingFilters = ({
   const [bhkTypes, setBhkTypes] = useState<string[]>(initialValues?.bhkTypes ?? [])
   const [bathroomTypes, setBathroomTypes] = useState<string[]>(initialValues?.bathroomTypes ?? [])
   const [lgbtqFriendly, setLgbtqFriendly] = useState<boolean>(initialValues?.lgbtqFriendly ?? false)
+  
+  // Dual-handle slider state
+  const [isDragging, setIsDragging] = useState<'min' | 'max' | null>(null)
+  const sliderRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!open) return
@@ -106,6 +110,101 @@ export const ListingFilters = ({
       maximumFractionDigits: 0,
     }).format(value)
 
+  const MIN_RENT = 0
+  const MAX_RENT = 60000
+  const STEP = 1000
+
+  const getPercentage = (value: number) => {
+    return ((value - MIN_RENT) / (MAX_RENT - MIN_RENT)) * 100
+  }
+
+  const getValueFromPosition = (clientX: number) => {
+    if (!sliderRef.current) return MIN_RENT
+    const rect = sliderRef.current.getBoundingClientRect()
+    const percentage = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width))
+    const value = Math.round((percentage * (MAX_RENT - MIN_RENT) + MIN_RENT) / STEP) * STEP
+    return Math.max(MIN_RENT, Math.min(MAX_RENT, value))
+  }
+
+  const handleMouseDown = (handle: 'min' | 'max') => (e: React.MouseEvent) => {
+    e.preventDefault()
+    setIsDragging(handle)
+  }
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!isDragging || !sliderRef.current) return
+    
+    const newValue = getValueFromPosition(e.clientX)
+    
+    if (isDragging === 'min') {
+      setMinRent(() => {
+        const clampedValue = Math.min(newValue, maxRent)
+        return Math.max(MIN_RENT, clampedValue)
+      })
+    } else {
+      setMaxRent(() => {
+        const clampedValue = Math.max(newValue, minRent)
+        return Math.min(MAX_RENT, clampedValue)
+      })
+    }
+  }, [isDragging, minRent, maxRent])
+
+  const handleMouseUp = useCallback(() => {
+    setIsDragging(null)
+  }, [])
+
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove)
+      document.addEventListener('mouseup', handleMouseUp)
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove)
+        document.removeEventListener('mouseup', handleMouseUp)
+      }
+    }
+  }, [isDragging, handleMouseMove, handleMouseUp])
+
+  const handleTouchStart = (handle: 'min' | 'max') => (e: React.TouchEvent) => {
+    e.preventDefault()
+    setIsDragging(handle)
+  }
+
+  const handleTouchMove = useCallback((e: TouchEvent) => {
+    if (!isDragging || !sliderRef.current) return
+    
+    const touch = e.touches[0]
+    if (!touch) return
+    
+    const newValue = getValueFromPosition(touch.clientX)
+    
+    if (isDragging === 'min') {
+      setMinRent(() => {
+        const clampedValue = Math.min(newValue, maxRent)
+        return Math.max(MIN_RENT, clampedValue)
+      })
+    } else {
+      setMaxRent(() => {
+        const clampedValue = Math.max(newValue, minRent)
+        return Math.min(MAX_RENT, clampedValue)
+      })
+    }
+  }, [isDragging, minRent, maxRent])
+
+  const handleTouchEnd = useCallback(() => {
+    setIsDragging(null)
+  }, [])
+
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('touchmove', handleTouchMove, { passive: false })
+      document.addEventListener('touchend', handleTouchEnd)
+      return () => {
+        document.removeEventListener('touchmove', handleTouchMove)
+        document.removeEventListener('touchend', handleTouchEnd)
+      }
+    }
+  }, [isDragging, handleTouchMove, handleTouchEnd])
+
   if (!open) return null
 
   return (
@@ -144,43 +243,50 @@ export const ListingFilters = ({
                 Reset
               </button>
             </div>
-            <div className="mb-2">
+            <div className="mb-3">
               <span className="text-sm font-semibold text-gray-900">
                 {formatCurrency(minRent)} – {formatCurrency(maxRent)}
               </span>
             </div>
-            <div className="space-y-2 mb-3">
-              <div className="flex items-center gap-3">
-                <span className="text-[11px] text-gray-500 w-10">Min</span>
-                <input
-                  type="range"
-                  min={0}
-                  max={60000}
-                  step={1000}
-                  value={minRent}
-                  onChange={e => {
-                    const value = Number(e.target.value) || 0
-                    setMinRent(value > maxRent ? maxRent : value)
+            
+            {/* Dual-handle range slider */}
+            <div className="relative mb-3" ref={sliderRef}>
+              {/* Track */}
+              <div className="relative h-2 bg-gray-200 rounded-full">
+                {/* Active range */}
+                <div
+                  className="absolute h-2 bg-mokogo-primary rounded-full"
+                  style={{
+                    left: `${getPercentage(minRent)}%`,
+                    width: `${getPercentage(maxRent) - getPercentage(minRent)}%`,
                   }}
-                  className="flex-1 accent-mokogo-primary"
+                />
+                
+                {/* Min handle */}
+                <div
+                  className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-5 h-5 bg-white border-2 border-mokogo-primary rounded-full shadow-md cursor-grab active:cursor-grabbing hover:scale-110 transition-transform z-10"
+                  style={{ left: `${getPercentage(minRent)}%` }}
+                  onMouseDown={handleMouseDown('min')}
+                  onTouchStart={handleTouchStart('min')}
+                />
+                
+                {/* Max handle */}
+                <div
+                  className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-5 h-5 bg-white border-2 border-mokogo-primary rounded-full shadow-md cursor-grab active:cursor-grabbing hover:scale-110 transition-transform z-10"
+                  style={{ left: `${getPercentage(maxRent)}%` }}
+                  onMouseDown={handleMouseDown('max')}
+                  onTouchStart={handleTouchStart('max')}
                 />
               </div>
-              <div className="flex items-center gap-3">
-                <span className="text-[11px] text-gray-500 w-10">Max</span>
-                <input
-                  type="range"
-                  min={0}
-                  max={60000}
-                  step={1000}
-                  value={maxRent}
-                  onChange={e => {
-                    const value = Number(e.target.value) || 0
-                    setMaxRent(value < minRent ? minRent : value)
-                  }}
-                  className="flex-1 accent-mokogo-primary"
-                />
+              
+              {/* Labels */}
+              <div className="flex justify-between mt-2 text-[10px] text-gray-500">
+                <span>{formatCurrency(MIN_RENT)}</span>
+                <span>{formatCurrency(MAX_RENT)}</span>
               </div>
             </div>
+            
+            {/* Quick preset buttons */}
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
@@ -207,7 +313,7 @@ export const ListingFilters = ({
                 className="px-3 py-1.5 rounded-full border text-xs font-medium text-gray-700 hover:border-mokogo-primary hover:text-mokogo-primary"
                 onClick={() => {
                   setMinRent(25000)
-                  setMaxRent(DEFAULT_MAX_RENT)
+                  setMaxRent(MAX_RENT)
                 }}
               >
                 ₹25k+

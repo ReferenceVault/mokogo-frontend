@@ -747,7 +747,7 @@ const ExploreContent = ({
                   </div>
                 </div>
               </div>
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-stretch">
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 items-stretch">
               {sortedListings.map((listing) => {
                 const listingTags = getListingMikoTags(listing)
                 const matchPercent = isMikoMode ? getMikoMatchPercent(mikoTags, listingTags) : 0

@@ -76,6 +76,11 @@ const ListingHeading = ({
                   {listing.drinkingPolicy === 'Not allowed' ? '🚫 Alcohol restricted' : listing.drinkingPolicy === 'Allowed' ? '🍷 Drinking allowed' : '🥂 No issues'}
                 </span>
               )}
+              {listing.lgbtqFriendly && (
+                <span className="bg-violet-100 text-violet-800 px-3 py-1 rounded-full text-sm font-medium">
+                  🏳️‍🌈 LGBTQ+ Friendly
+                </span>
+              )}
               <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
                 Available {formatDate(listing.moveInDate)}
               </span>

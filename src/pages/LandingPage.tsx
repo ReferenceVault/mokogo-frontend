@@ -633,7 +633,7 @@ const LandingPage = () => {
                   </div>
 
                   {searchMode === 'standard' ? (
-                    <div className="grid md:grid-cols-5 gap-3.5 items-end">
+                    <div className="grid md:grid-cols-4 gap-3.5 items-end">
                       <div className="[&_button]:h-[50px] [&_button]:py-0 group">
                         <CustomSelect
                           label="Select City"

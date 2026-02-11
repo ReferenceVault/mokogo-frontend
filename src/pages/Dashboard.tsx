@@ -132,6 +132,7 @@ const Dashboard = () => {
           status: listing.status,
           createdAt: listing.createdAt,
           updatedAt: listing.updatedAt,
+          lgbtqFriendly: (listing as any).lgbtqFriendly,
         }))
         
         console.log('Mapped listings:', mappedListings)
@@ -449,6 +450,7 @@ const Dashboard = () => {
           createdAt: listing.createdAt,
           updatedAt: listing.updatedAt,
           mikoTags: listing.mikoTags,
+          lgbtqFriendly: (listing as any).lgbtqFriendly,
         }))
         setSavedPublicListings(mappedListings)
       } catch (error) {

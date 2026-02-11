@@ -52,6 +52,11 @@ const AmenitiesSection = ({ listing, className = '', compact = false }: Amenitie
 
   const allAmenities = [...(listing.flatAmenities || []), ...(listing.societyAmenities || [])]
 
+  // Don't render if there are no amenities
+  if (allAmenities.length === 0) {
+    return null
+  }
+
   if (compact) {
     return (
       <div className={`${containerClass} ${className}`}>
