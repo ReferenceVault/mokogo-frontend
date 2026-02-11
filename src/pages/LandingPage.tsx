@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { createPortal } from 'react-dom'
-import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import SocialSidebar from '@/components/SocialSidebar'
@@ -16,7 +16,6 @@ import ListingFilters, { ListingFilterState } from '@/components/ListingFilters'
 
 const LandingPage = () => {
   const navigate = useNavigate()
-  const location = useLocation()
   const { allListings, setAllListings, user } = useStore()
   const [searchFilters, setSearchFilters] = useState({
     city: '',

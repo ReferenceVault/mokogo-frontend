@@ -2,7 +2,6 @@ import { useState, useMemo, useEffect, useRef } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
-import { useStore } from '@/store/useStore'
 import CustomSelect from '@/components/CustomSelect'
 import { MoveInDateField } from '@/components/MoveInDateField'
 import { formatRent } from '@/utils/formatters'
@@ -13,7 +12,6 @@ import ListingFilters, { ListingFilterState } from '@/components/ListingFilters'
 const CityListings = () => {
   const { cityName } = useParams<{ cityName: string }>()
   const navigate = useNavigate()
-  const { allListings } = useStore()
 
   // Scroll to top when component mounts or city changes
   useEffect(() => {
