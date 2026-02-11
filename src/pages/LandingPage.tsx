@@ -51,7 +51,6 @@ const LandingPage = () => {
     'Pune'
   ]
 
-  console.log('getListingBadgeLabel', getListingBadgeLabel)
   // Fetch all live listings from API
   useEffect(() => {
     const fetchListings = async () => {

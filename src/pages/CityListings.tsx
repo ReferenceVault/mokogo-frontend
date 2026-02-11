@@ -9,10 +9,13 @@ import { placesApi, AutocompletePrediction, listingsApi, ListingResponse } from 
 import { Listing } from '@/types'
 import { getListingBadgeLabel } from '@/utils/listingTags'
 import ListingFilters, { ListingFilterState } from '@/components/ListingFilters'
+import { useStore } from '@/store/useStore'
+import { Heart } from 'lucide-react'
 
 const CityListings = () => {
   const { cityName } = useParams<{ cityName: string }>()
   const navigate = useNavigate()
+  const { user, toggleSavedListing, isListingSaved } = useStore()
 
   // Scroll to top when component mounts or city changes
   useEffect(() => {
@@ -546,8 +549,10 @@ const CityListings = () => {
               <>
                 {/* Listings Grid */}
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {cityListings.map((listing) => (
-                    <Link
+                  {cityListings.map((listing) => {
+                  const saved = isListingSaved(listing.id)
+                  return (
+                  <Link
                       key={listing.id}
                       to={`/listings/${listing.id}`}
                       className="bg-white/50 backdrop-blur-md rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all group border border-white/60 block"
@@ -564,19 +569,23 @@ const CityListings = () => {
                           <div className="w-full h-full bg-mokogo-gray" />
                         )}
                         <button 
+                          type="button"
                           onClick={(e) => {
                             e.preventDefault()
                             e.stopPropagation()
-                            // Handle save/favorite
+                            if (!user) {
+                              navigate('/login')
+                              return
+                            }
+                            toggleSavedListing(listing.id)
                           }}
-                          className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center hover:bg-white transition-colors"
+                          className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center hover:bg-white transition-colors z-20"
+                          aria-label={saved ? 'Unsave property' : 'Save property'}
                         >
-                          <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                          </svg>
+                          <Heart className={`w-5 h-5 ${saved ? 'text-red-500 fill-red-500' : 'text-gray-600'}`} />
                         </button>
                         {getListingBadgeLabel(listing) && (
-                          <span className="absolute top-3 left-3 px-3 py-1 bg-mokogo-primary text-white rounded-full text-xs font-medium shadow-md">
+                          <span className="absolute top-3 left-3 max-w-[70%] px-3 py-1 bg-mokogo-primary text-white rounded-full text-xs font-medium shadow-md z-10 truncate">
                             {getListingBadgeLabel(listing)}
                           </span>
                         )}
@@ -615,7 +624,7 @@ const CityListings = () => {
                         </div>
                       </div>
                     </Link>
-                  ))}
+                  )})}
                 </div>
               </>
             ) : (
