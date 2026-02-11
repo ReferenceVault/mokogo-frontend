@@ -17,6 +17,7 @@ import { isProfileComplete as checkProfileComplete } from '@/utils/profileValida
 import { useStore } from '@/store/useStore'
 import { listingsApi, ListingResponse, usersApi, messagesApi, requestsApi } from '@/services/api'
 import { Listing, VibeTagId } from '@/types'
+import { getListingBadgeLabel } from '@/utils/listingTags'
 import { handleLogout as handleLogoutUtil } from '@/utils/auth'
 import { 
   LayoutGrid, 
@@ -113,6 +114,7 @@ const Dashboard = () => {
           city: listing.city,
           locality: listing.locality,
           societyName: listing.societyName,
+          buildingType: listing.buildingType,
           bhkType: listing.bhkType,
           roomType: listing.roomType,
           rent: listing.rent,
@@ -132,7 +134,7 @@ const Dashboard = () => {
           status: listing.status,
           createdAt: listing.createdAt,
           updatedAt: listing.updatedAt,
-          lgbtqFriendly: (listing as any).lgbtqFriendly,
+          lgbtqFriendly: listing.lgbtqFriendly,
         }))
         
         console.log('Mapped listings:', mappedListings)
@@ -430,6 +432,7 @@ const Dashboard = () => {
           city: listing.city || '',
           locality: listing.locality || '',
           societyName: listing.societyName,
+          buildingType: listing.buildingType,
           bhkType: listing.bhkType || '',
           roomType: listing.roomType || '',
           rent: listing.rent || 0,
@@ -450,7 +453,7 @@ const Dashboard = () => {
           createdAt: listing.createdAt,
           updatedAt: listing.updatedAt,
           mikoTags: listing.mikoTags,
-          lgbtqFriendly: (listing as any).lgbtqFriendly,
+          lgbtqFriendly: listing.lgbtqFriendly,
         }))
         setSavedPublicListings(mappedListings)
       } catch (error) {
@@ -699,9 +702,11 @@ const Dashboard = () => {
                             >
                               <Heart className={`w-5 h-5 ${saved ? 'text-red-500 fill-red-500' : 'text-gray-600'}`} />
                             </button>
-                            <span className="absolute top-3 left-3 px-3 py-1 bg-mokogo-primary text-white rounded-full text-xs font-medium shadow-md">
-                              {listing.roomType === 'Private Room' ? 'Private' : listing.roomType === 'Master Room' ? 'Master' : 'Shared'}
-                            </span>
+                            {getListingBadgeLabel(listing) && (
+                              <span className="absolute top-3 left-3 px-3 py-1 bg-mokogo-primary text-white rounded-full text-xs font-medium shadow-md">
+                                {getListingBadgeLabel(listing)}
+                              </span>
+                            )}
                           </div>
 
                           {/* Content */}
@@ -872,7 +877,7 @@ const Dashboard = () => {
                           <div className="p-5 relative">
                             <div className="flex items-start justify-between mb-3">
                               <div>
-                                <h3 className="text-lg font-semibold text-gray-900 mb-1 group-hover:text-orange-600 transition-colors">{listing.title}</h3>
+                                <h3 className="text-lg font-semibold text-gray-900 mb-1 group-hover:text-orange-600 transition-colors">{listing.title.split('·')[0].trim()}</h3>
                                 <p className="text-sm text-gray-600 flex items-center">
                                   <MapPin className="w-3.5 h-3.5 mr-1.5 text-orange-500" />
                                   {listing.locality}, {listing.city}

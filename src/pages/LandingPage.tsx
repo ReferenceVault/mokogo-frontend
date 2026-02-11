@@ -13,6 +13,7 @@ import { MoveInDateField } from '@/components/MoveInDateField'
 import MikoVibeQuiz from '@/components/MikoVibeQuiz'
 import { Quote, Star, ChevronLeft, ChevronRight } from 'lucide-react'
 import ListingFilters, { ListingFilterState } from '@/components/ListingFilters'
+import { getListingBadgeLabel } from '@/utils/listingTags'
 
 const LandingPage = () => {
   const navigate = useNavigate()
@@ -50,6 +51,7 @@ const LandingPage = () => {
     'Pune'
   ]
 
+  console.log('getListingBadgeLabel', getListingBadgeLabel)
   // Fetch all live listings from API
   useEffect(() => {
     const fetchListings = async () => {
@@ -64,6 +66,7 @@ const LandingPage = () => {
           city: listing.city || '',
           locality: listing.locality || '',
           societyName: listing.societyName,
+          buildingType: listing.buildingType,
           bhkType: listing.bhkType || '',
           roomType: listing.roomType || '',
           rent: listing.rent || 0,
@@ -83,7 +86,7 @@ const LandingPage = () => {
           status: listing.status,
           createdAt: listing.createdAt,
           updatedAt: listing.updatedAt,
-          lgbtqFriendly: (listing as any).lgbtqFriendly,
+          lgbtqFriendly: listing.lgbtqFriendly,
         }))
         
         setAllListings(mappedListings)
@@ -818,16 +821,18 @@ const LandingPage = () => {
                     ) : (
                       <div className="w-full h-full bg-mokogo-gray" />
                     )}
-                    <span className="absolute top-3 left-3 px-3 py-1 bg-mokogo-primary text-white rounded-full text-xs font-medium shadow-md">
-                      {listing.roomType === 'Private Room' ? 'Private' : listing.roomType === 'Master Room' ? 'Master' : 'Shared'}
-                    </span>
+                    {getListingBadgeLabel(listing) && (
+                      <span className="absolute top-3 left-3 px-3 py-1 bg-mokogo-primary text-white rounded-full text-xs font-medium shadow-md">
+                        {getListingBadgeLabel(listing)}
+                      </span>
+                    )}
                   </div>
 
                   {/* Content */}
                   <div className="p-4 space-y-3">
                     <div className="flex items-start justify-between gap-2">
                       <h3 className="font-semibold text-gray-900 line-clamp-1 text-sm">
-                        {listing.title}
+                        {listing.title.split('·')[0].trim()}
                       </h3>
                     </div>
 

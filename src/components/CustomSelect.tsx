@@ -103,7 +103,7 @@ const CustomSelect = ({
           {label}
         </label>
       )}
-      <div ref={selectRef} className="relative z-[9999]">
+      <div ref={selectRef} className="relative">
         {/* Select Button */}
         <button
           type="button"
