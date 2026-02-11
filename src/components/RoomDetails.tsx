@@ -53,12 +53,14 @@ const RoomDetails = ({ listing, className = '', compact = false }: RoomDetailsPr
         </div>
       </div>
 
-      <div className={borderClass}>
-        <h3 className={`${descriptionTitleClass} text-gray-900 ${spacingClass}`}>Description</h3>
-        <p className={`${descriptionTextClass} leading-relaxed ${spacingClass}`}>
-          {listing.description || 'Welcome to this beautiful, spacious room in a premium apartment. Perfect for working professionals, this fully furnished room offers a comfortable living experience with modern amenities and excellent connectivity.'}
-        </p>
-      </div>
+      {listing.description && listing.description.trim() && (
+        <div className={borderClass}>
+          <h3 className={`${descriptionTitleClass} text-gray-900 ${spacingClass}`}>Description</h3>
+          <p className={`${descriptionTextClass} leading-relaxed ${spacingClass}`}>
+            {listing.description}
+          </p>
+        </div>
+      )}
     </div>
   )
 }

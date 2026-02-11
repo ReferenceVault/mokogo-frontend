@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { createPortal } from 'react-dom'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import SocialSidebar from '@/components/SocialSidebar'
@@ -12,9 +12,11 @@ import { formatRent } from '@/utils/formatters'
 import { MoveInDateField } from '@/components/MoveInDateField'
 import MikoVibeQuiz from '@/components/MikoVibeQuiz'
 import { Quote, Star, ChevronLeft, ChevronRight } from 'lucide-react'
+import ListingFilters, { ListingFilterState } from '@/components/ListingFilters'
 
 const LandingPage = () => {
   const navigate = useNavigate()
+  const location = useLocation()
   const { allListings, setAllListings, user } = useStore()
   const [searchFilters, setSearchFilters] = useState({
     city: '',
@@ -23,7 +25,6 @@ const LandingPage = () => {
     areaLat: 0,
     areaLng: 0,
     moveInDate: '',
-    maxRent: '',
   })
   const [areaSuggestions, setAreaSuggestions] = useState<AutocompletePrediction[]>([])
   const [showAreaSuggestions, setShowAreaSuggestions] = useState(false)
@@ -42,6 +43,9 @@ const LandingPage = () => {
   const [subscribeError, setSubscribeError] = useState<string | null>(null)
   const [subscribeSuccess, setSubscribeSuccess] = useState<string | null>(null)
   const [isSubscribing, setIsSubscribing] = useState(false)
+  const [isFilterOpen, setIsFilterOpen] = useState(false)
+  const [filteredListings, setFilteredListings] = useState<Listing[] | null>(null)
+  const [activeFilters, setActiveFilters] = useState<ListingFilterState | null>(null)
 
   const searchCities = [
     'Pune'
@@ -80,6 +84,7 @@ const LandingPage = () => {
           status: listing.status,
           createdAt: listing.createdAt,
           updatedAt: listing.updatedAt,
+          lgbtqFriendly: (listing as any).lgbtqFriendly,
         }))
         
         setAllListings(mappedListings)
@@ -286,7 +291,6 @@ const LandingPage = () => {
       if (searchFilters.areaLat) params.set('areaLat', searchFilters.areaLat.toString())
       if (searchFilters.areaLng) params.set('areaLng', searchFilters.areaLng.toString())
     }
-    if (searchFilters.maxRent) params.set('maxRent', searchFilters.maxRent)
     if (searchFilters.moveInDate) params.set('moveInDate', searchFilters.moveInDate)
 
     navigate(`/explore?${params.toString()}`)
@@ -306,7 +310,6 @@ const LandingPage = () => {
     } else if (searchFilters.city) {
       params.set('city', searchFilters.city)
     }
-    if (searchFilters.maxRent) params.set('maxRent', searchFilters.maxRent)
     if (searchFilters.moveInDate) params.set('moveInDate', searchFilters.moveInDate)
     if (searchFilters.area && searchFilters.areaPlaceId) {
       params.set('area', searchFilters.area)
@@ -412,7 +415,34 @@ const LandingPage = () => {
     return { x, y }
   }
 
-  const displayedListings = allListings.filter(l => l.status === 'live').slice(0, 8)
+  const liveListings = allListings.filter(l => l.status === 'live')
+  const displayedListings = (filteredListings ?? liveListings).slice(0, 8)
+
+  const landingFilterCount = useMemo(() => {
+    if (!activeFilters) return 0
+    const DEFAULT_MIN_RENT = 0
+    const DEFAULT_MAX_RENT = 0
+    const {
+      minRent,
+      maxRent,
+      roomTypes,
+      furnishingLevels,
+      preferredGender,
+      bhkTypes,
+      bathroomTypes,
+      lgbtqFriendly,
+    } = activeFilters
+    return (
+      (minRent !== undefined && minRent !== DEFAULT_MIN_RENT ? 1 : 0) +
+      (maxRent !== undefined && maxRent !== DEFAULT_MAX_RENT ? 1 : 0) +
+      (roomTypes && roomTypes.length ? 1 : 0) +
+      (furnishingLevels && furnishingLevels.length ? 1 : 0) +
+      (preferredGender ? 1 : 0) +
+      (bhkTypes && bhkTypes.length ? 1 : 0) +
+      (bathroomTypes && bathroomTypes.length ? 1 : 0) +
+      (lgbtqFriendly ? 1 : 0)
+    )
+  }, [activeFilters])
 
   const validateSubscribeEmail = (email: string) => {
     const trimmed = email.trim()
@@ -472,6 +502,63 @@ const LandingPage = () => {
     } finally {
       setIsSubscribing(false)
     }
+  }
+
+  const handleApplyFilters = async (state: ListingFilterState) => {
+    setIsFilterOpen(false)
+    setIsLoadingListings(true)
+    try {
+    setActiveFilters(state)
+      const backendFilters: any = {}
+    if (state.minRent != null && state.minRent > 0) backendFilters.minRent = state.minRent
+    if (state.maxRent != null && state.maxRent > 0) backendFilters.maxRent = state.maxRent
+      if (state.preferredGender) backendFilters.preferredGender = state.preferredGender
+      if (state.roomTypes.length) backendFilters.roomTypes = state.roomTypes
+      if (state.bhkTypes.length) backendFilters.bhkTypes = state.bhkTypes
+      if (state.furnishingLevels.length) backendFilters.furnishingLevels = state.furnishingLevels
+      if (state.bathroomTypes.length) backendFilters.bathroomTypes = state.bathroomTypes
+      if (state.lgbtqFriendly) backendFilters.lgbtqFriendly = true
+
+      const listings = await listingsApi.getAllPublic('live', backendFilters)
+      const mappedListings: Listing[] = listings.map((listing: ListingResponse) => ({
+        id: listing._id || listing.id,
+        title: listing.title,
+        city: listing.city || '',
+        locality: listing.locality || '',
+        societyName: listing.societyName,
+        bhkType: listing.bhkType || '',
+        roomType: listing.roomType || '',
+        rent: listing.rent || 0,
+        deposit: listing.deposit || 0,
+        moveInDate: listing.moveInDate || '',
+        furnishingLevel: listing.furnishingLevel || '',
+        bathroomType: listing.bathroomType,
+        flatAmenities: listing.flatAmenities || [],
+        societyAmenities: listing.societyAmenities || [],
+        preferredGender: listing.preferredGender || '',
+        foodPreference: listing.foodPreference,
+        petPolicy: listing.petPolicy,
+        smokingPolicy: listing.smokingPolicy,
+        drinkingPolicy: listing.drinkingPolicy,
+        description: listing.description,
+        photos: listing.photos || [],
+        status: listing.status,
+        createdAt: listing.createdAt,
+        updatedAt: listing.updatedAt,
+        lgbtqFriendly: (listing as any).lgbtqFriendly,
+      }))
+      setFilteredListings(mappedListings)
+    } catch (error) {
+      console.error('Error applying filters on landing:', error)
+      setFilteredListings(null)
+    } finally {
+      setIsLoadingListings(false)
+    }
+  }
+
+  const handleClearFilters = () => {
+    setFilteredListings(null)
+  setActiveFilters(null)
   }
 
   return (
@@ -546,7 +633,7 @@ const LandingPage = () => {
                   </div>
 
                   {searchMode === 'standard' ? (
-                    <div className="grid md:grid-cols-5 gap-3.5 items-end">
+                    <div className="grid md:grid-cols-4 gap-3.5 items-end">
                       <div className="[&_button]:h-[50px] [&_button]:py-0 group">
                         <CustomSelect
                           label="Select City"
@@ -631,18 +718,6 @@ const LandingPage = () => {
                           className="!h-[50px] !rounded-lg !border-2 !border-gray-200 hover:!border-orange-300 focus:!ring-2 focus:!ring-orange-400 focus:!border-orange-400"
                         />
                       </div>
-                      <div className="[&_button]:h-[50px] [&_button]:py-0 group">
-                        <label className="block text-sm font-medium text-stone-700 mb-2">
-                          Max Rent (₹)
-                        </label>
-                        <input
-                          type="number"
-                          placeholder="e.g., 20000"
-                          value={searchFilters.maxRent}
-                          onChange={(e) => setSearchFilters({ ...searchFilters, maxRent: e.target.value })}
-                          className="w-full h-[50px] px-3.5 rounded-lg border-2 border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400 bg-white transition-all duration-300 hover:border-orange-300 text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                        />
-                      </div>
                       <div>
                         <label className="block text-xs font-medium text-stone-700 mb-1.5 opacity-0">
                           Search
@@ -687,19 +762,31 @@ const LandingPage = () => {
         <div className="space-y-16 py-12 px-6 md:px-12">
           {/* Listings Grid */}
           <section className="max-w-7xl mx-auto space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-3">
               <h2 className="text-2xl font-bold text-gray-900">
                 {isLoadingListings ? 'Loading...' : `${allListings.filter(l => l.status === 'live').length}+ Available Properties`}
               </h2>
-              <Link 
-                to="/explore"
-                className="text-orange-500 font-semibold flex items-center gap-2 hover:gap-3 transition-all group hover:text-orange-600"
-              >
-                View All
-                <svg className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </Link>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsFilterOpen(true)}
+                  className="inline-flex items-center gap-2 rounded-full border border-orange-300 bg-white px-4 py-2 text-xs font-semibold text-orange-600 shadow-sm hover:bg-orange-50"
+                >
+                  <span>Filter</span>
+                  <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-orange-500 text-[11px] text-white">
+                    {landingFilterCount}
+                  </span>
+                </button>
+                <Link 
+                  to="/explore"
+                  className="text-orange-500 font-semibold flex items-center gap-2 hover:gap-3 transition-all group hover:text-orange-600"
+                >
+                  View All
+                  <svg className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </Link>
+              </div>
             </div>
 
             {isLoadingListings ? (
@@ -1208,6 +1295,14 @@ const LandingPage = () => {
       </main>
 
       <Footer />
+
+      <ListingFilters
+        open={isFilterOpen}
+        onClose={() => setIsFilterOpen(false)}
+        onApply={handleApplyFilters}
+        onClear={handleClearFilters}
+        initialValues={activeFilters ?? undefined}
+      />
 
       <MikoVibeQuiz
         isOpen={isMikoOpen}

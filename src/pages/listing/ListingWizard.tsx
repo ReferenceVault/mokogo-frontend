@@ -264,15 +264,20 @@ const ListingWizard = () => {
         title: dataToSave.title || generateTitle(),
       }
 
+      // Check if we have a real listing ID (from backend, not a temporary one)
+      const hasRealListingId = currentListing?.id && !currentListing.id.startsWith('listing-')
+      
       // When editing, preserve the original status, otherwise use 'draft'
       if (isEditing && currentListing?.status) {
+        draftData.status = currentListing.status
+      } else if (hasRealListingId && currentListing?.status) {
         draftData.status = currentListing.status
       } else {
         draftData.status = 'draft'
       }
 
-      // When editing, include all fields that have values
-      if (isEditing) {
+      // When editing (including drafts with real IDs), include all fields that have values
+      if (isEditing || hasRealListingId) {
         if (dataToSave.photos && dataToSave.photos.length > 0) {
           draftData.photos = dataToSave.photos
         }
@@ -329,6 +334,9 @@ const ListingWizard = () => {
         }
         if (dataToSave.description && dataToSave.description.trim()) {
           draftData.description = dataToSave.description
+        }
+        if (dataToSave.lgbtqFriendly !== undefined) {
+          draftData.lgbtqFriendly = dataToSave.lgbtqFriendly
         }
       } else {
         // When creating, include fields based on skipValidation flag
@@ -390,6 +398,9 @@ const ListingWizard = () => {
           }
           if (dataToSave.description && dataToSave.description.trim()) {
             draftData.description = dataToSave.description
+          }
+          if (dataToSave.lgbtqFriendly !== undefined) {
+            draftData.lgbtqFriendly = dataToSave.lgbtqFriendly
           }
           // mikoTags is not sent to API - backend doesn't accept it
         } else {
@@ -465,6 +476,9 @@ const ListingWizard = () => {
             if (dataToSave.drinkingPolicy && dataToSave.drinkingPolicy.trim()) {
               draftData.drinkingPolicy = dataToSave.drinkingPolicy
             }
+            if (dataToSave.lgbtqFriendly !== undefined) {
+              draftData.lgbtqFriendly = dataToSave.lgbtqFriendly
+            }
           }
 
           // Description can be included if provided (not step-specific)
@@ -488,6 +502,7 @@ const ListingWizard = () => {
         savedListing = await listingsApi.create(draftData)
       }
 
+      
       // Map API response to frontend format
       const mappedListing: Listing = {
         id: savedListing._id || savedListing.id,
@@ -511,7 +526,8 @@ const ListingWizard = () => {
         drinkingPolicy: savedListing.drinkingPolicy,
         description: savedListing.description,
         photos: savedListing.photos,
-          mikoTags: savedListing.mikoTags || dataToSave.mikoTags,
+        mikoTags: savedListing.mikoTags || dataToSave.mikoTags,
+        lgbtqFriendly: (savedListing as any).lgbtqFriendly,
         status: savedListing.status,
         createdAt: savedListing.createdAt,
         updatedAt: savedListing.updatedAt,
@@ -737,6 +753,9 @@ const ListingWizard = () => {
           if (dataToSave.petPolicy && dataToSave.petPolicy.trim()) updateData.petPolicy = dataToSave.petPolicy
           if (dataToSave.smokingPolicy && dataToSave.smokingPolicy.trim()) updateData.smokingPolicy = dataToSave.smokingPolicy
           if (dataToSave.drinkingPolicy && dataToSave.drinkingPolicy.trim()) updateData.drinkingPolicy = dataToSave.drinkingPolicy
+          if (dataToSave.lgbtqFriendly !== undefined) {
+            updateData.lgbtqFriendly = dataToSave.lgbtqFriendly
+          }
         }
 
         // MIKO tags are not sent to API - backend doesn't accept mikoTags property
@@ -776,6 +795,9 @@ const ListingWizard = () => {
           description: savedListing.description || dataToSave.description,
           photos: savedListing.photos || dataToSave.photos || [],
           mikoTags: savedListing.mikoTags || dataToSave.mikoTags || [],
+          lgbtqFriendly: (savedListing as any).lgbtqFriendly !== undefined 
+            ? (savedListing as any).lgbtqFriendly 
+            : dataToSave.lgbtqFriendly,
           status: savedListing.status || dataToSave.status || 'draft',
           createdAt: savedListing.createdAt || dataToSave.createdAt || new Date().toISOString(),
           updatedAt: savedListing.updatedAt || dataToSave.updatedAt || new Date().toISOString(),
@@ -1029,6 +1051,11 @@ const ListingWizard = () => {
         status: shouldSaveAsDraft ? 'draft' : 'live',
       }
       
+      // Only include lgbtqFriendly if it's explicitly set (true or false, not undefined)
+      if (dataToSave.lgbtqFriendly !== undefined) {
+        listingDataToSave.lgbtqFriendly = dataToSave.lgbtqFriendly
+      }
+      
       const savedListing = isUpdating
         ? await listingsApi.update(listingId, listingDataToSave)
         : await listingsApi.create(listingDataToSave)
@@ -1052,10 +1079,11 @@ const ListingWizard = () => {
         preferredGender: savedListing.preferredGender,
         description: savedListing.description,
         photos: savedListing.photos,
-          mikoTags: savedListing.mikoTags || listingData.mikoTags,
+        mikoTags: savedListing.mikoTags || listingData.mikoTags,
         status: savedListing.status,
         createdAt: savedListing.createdAt,
         updatedAt: savedListing.updatedAt,
+        lgbtqFriendly: (savedListing as any).lgbtqFriendly,
       }
 
       setCurrentListing(publishedListing)
@@ -1212,6 +1240,11 @@ const ListingWizard = () => {
           status: 'draft',
         }
         
+        // Only include lgbtqFriendly if it's explicitly set (true or false, not undefined)
+        if (updated.lgbtqFriendly !== undefined) {
+          draftData.lgbtqFriendly = updated.lgbtqFriendly
+        }
+        
         const savedListing = await listingsApi.create(draftData)
         
         // Map API response to frontend format
@@ -1234,6 +1267,9 @@ const ListingWizard = () => {
           description: savedListing.description || updated.description,
           photos: savedListing.photos || updates.photos,
           mikoTags: savedListing.mikoTags || updated.mikoTags || [],
+          lgbtqFriendly: (savedListing as any).lgbtqFriendly !== undefined 
+            ? (savedListing as any).lgbtqFriendly 
+            : updated.lgbtqFriendly,
           status: savedListing.status,
           createdAt: savedListing.createdAt,
           updatedAt: savedListing.updatedAt,

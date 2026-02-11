@@ -52,10 +52,15 @@ const AmenitiesSection = ({ listing, className = '', compact = false }: Amenitie
 
   const allAmenities = [...(listing.flatAmenities || []), ...(listing.societyAmenities || [])]
 
+  // Don't render if there are no amenities
+  if (allAmenities.length === 0) {
+    return null
+  }
+
   if (compact) {
     return (
       <div className={`${containerClass} ${className}`}>
-        <h2 className={titleClass}>Amenities & Features</h2>
+        <h2 className={titleClass}>Amenities</h2>
         <div className={gridClass}>
           {allAmenities.map((amenity, idx) => {
             const Icon = amenityIconMap[amenity] || CheckCircle
@@ -76,30 +81,14 @@ const AmenitiesSection = ({ listing, className = '', compact = false }: Amenitie
 
   return (
     <div className={`${containerClass} ${className}`}>
-      <h2 className={titleClass}>Amenities & Features</h2>
+      <h2 className={titleClass}>Amenities</h2>
       <div className={gridClass}>
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Room Amenities</h3>
-          <div className="space-y-3">
-            {listing.flatAmenities.slice(0, 6).map((amenity, idx) => (
-              <div key={idx} className="flex items-center">
-                <CheckCircle className="w-5 h-5 text-green-500 mr-3" />
-                <span className="text-gray-700">{amenity}</span>
-              </div>
-            ))}
+        {allAmenities.map((amenity, idx) => (
+          <div key={idx} className="flex items-center">
+            <CheckCircle className="w-5 h-5 text-green-500 mr-3" />
+            <span className="text-gray-700">{amenity}</span>
           </div>
-        </div>
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Common Areas</h3>
-          <div className="space-y-3">
-            {listing.societyAmenities.slice(0, 6).map((amenity, idx) => (
-              <div key={idx} className="flex items-center">
-                <CheckCircle className="w-5 h-5 text-green-500 mr-3" />
-                <span className="text-gray-700">{amenity}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+        ))}
       </div>
     </div>
   )

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
@@ -6,6 +6,9 @@ import { useStore } from '@/store/useStore'
 import CustomSelect from '@/components/CustomSelect'
 import { MoveInDateField } from '@/components/MoveInDateField'
 import { formatRent } from '@/utils/formatters'
+import { placesApi, AutocompletePrediction, listingsApi, ListingResponse } from '@/services/api'
+import { Listing } from '@/types'
+import ListingFilters, { ListingFilterState } from '@/components/ListingFilters'
 
 const CityListings = () => {
   const { cityName } = useParams<{ cityName: string }>()
@@ -17,27 +20,89 @@ const CityListings = () => {
     window.scrollTo(0, 0)
   }, [cityName])
 
-  // Filter state
+  // Filter state (inline / base filters)
   const [filters, setFilters] = useState({
     area: '',
-    maxRent: '',
     moveInDate: '',
     genderPreference: ''
   })
 
+  // Advanced filter popup state
+  const [isFilterOpen, setIsFilterOpen] = useState(false)
+  const [advancedFilters, setAdvancedFilters] = useState<ListingFilterState | null>(null)
+
+  // City listings from server (already filtered by advanced filters if applied)
+  const [cityListingsBase, setCityListingsBase] = useState<Listing[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  // Area autocomplete state
+  const [areaInputValue, setAreaInputValue] = useState('')
+  const [areaSuggestions, setAreaSuggestions] = useState<AutocompletePrediction[]>([])
+  const [showAreaSuggestions, setShowAreaSuggestions] = useState(false)
+  const [isLoadingArea, setIsLoadingArea] = useState(false)
+  const areaInputRef = useRef<HTMLInputElement | null>(null)
+  const areaSuggestionsRef = useRef<HTMLDivElement | null>(null)
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const skipNextAreaFetchRef = useRef(false)
+
   // Decode the city name from URL
   const decodedCityName = cityName ? decodeURIComponent(cityName) : ''
   
-  // Get all listings for the city first
-  const cityListingsBase = allListings.filter(
-    listing => listing.city === decodedCityName && listing.status === 'live'
-  )
+  // Get all listings for the city from backend (server-side filtering)
+  useEffect(() => {
+    const fetchCityListings = async () => {
+      if (!decodedCityName) {
+        setCityListingsBase([])
+        setIsLoading(false)
+        return
+      }
+      setIsLoading(true)
+      try {
+        const backendFilters: any = { city: decodedCityName }
+        const listings = await listingsApi.getAllPublic('live', backendFilters)
+        const mapped: Listing[] = listings.map((listing: ListingResponse) => ({
+          id: listing._id || listing.id,
+          title: listing.title,
+          city: listing.city || '',
+          locality: listing.locality || '',
+          placeId: listing.placeId,
+          latitude: listing.latitude,
+          longitude: listing.longitude,
+          formattedAddress: listing.formattedAddress,
+          societyName: listing.societyName,
+          bhkType: listing.bhkType || '',
+          roomType: listing.roomType || '',
+          rent: listing.rent || 0,
+          deposit: listing.deposit || 0,
+          moveInDate: listing.moveInDate || '',
+          furnishingLevel: listing.furnishingLevel || '',
+          bathroomType: listing.bathroomType,
+          flatAmenities: listing.flatAmenities || [],
+          societyAmenities: listing.societyAmenities || [],
+          preferredGender: listing.preferredGender || '',
+          foodPreference: listing.foodPreference,
+          petPolicy: listing.petPolicy,
+          smokingPolicy: listing.smokingPolicy,
+          drinkingPolicy: listing.drinkingPolicy,
+          description: listing.description,
+          photos: listing.photos || [],
+          status: listing.status,
+          createdAt: listing.createdAt,
+          updatedAt: listing.updatedAt,
+          mikoTags: listing.mikoTags,
+          lgbtqFriendly: (listing as any).lgbtqFriendly,
+        }))
+        setCityListingsBase(mapped)
+      } catch (error) {
+        console.error('Error fetching city listings:', error)
+        setCityListingsBase([])
+      } finally {
+        setIsLoading(false)
+      }
+    }
 
-  // Get unique areas from city listings
-  const availableAreas = useMemo(() => {
-    const areas = new Set(cityListingsBase.map(listing => listing.locality))
-    return Array.from(areas).sort().map(area => ({ value: area, label: area }))
-  }, [cityListingsBase])
+    fetchCityListings()
+  }, [decodedCityName])
 
   // Apply filters to listings
   const cityListings = useMemo(() => {
@@ -45,14 +110,6 @@ const CityListings = () => {
       // Area filter
       if (filters.area && listing.locality !== filters.area) {
         return false
-      }
-      
-      // Max Rent filter
-      if (filters.maxRent) {
-        const maxRent = parseInt(filters.maxRent)
-        if (listing.rent > maxRent) {
-          return false
-        }
       }
       
       // Move-in Date filter
@@ -84,18 +141,254 @@ const CityListings = () => {
 
   const handleFilterChange = (key: string, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }))
+
+    // If advanced filters are active and gender changes inline,
+    // re-apply advanced filters with the new gender so results update
+    if (key === 'genderPreference' && advancedFilters) {
+      const nextState: ListingFilterState = {
+        ...advancedFilters,
+        preferredGender: value || undefined,
+      }
+      setAdvancedFilters(nextState)
+      void handleAdvancedApply(nextState)
+    }
   }
 
   const clearFilters = () => {
     setFilters({
       area: '',
-      maxRent: '',
       moveInDate: '',
       genderPreference: ''
     })
+    setAreaInputValue('')
+    setAreaSuggestions([])
+    setShowAreaSuggestions(false)
   }
 
-  const hasActiveFilters = filters.area || filters.maxRent || filters.moveInDate || filters.genderPreference
+  const hasActiveFilters = filters.area || filters.moveInDate || filters.genderPreference
+
+  const cityFilterCount = useMemo(() => {
+    if (!advancedFilters) return 0
+    const DEFAULT_MIN_RENT = 0
+    const DEFAULT_MAX_RENT = 0
+    const {
+      minRent,
+      maxRent,
+      roomTypes,
+      furnishingLevels,
+      preferredGender,
+      bhkTypes,
+      bathroomTypes,
+      lgbtqFriendly,
+    } = advancedFilters
+    return (
+      (minRent !== undefined && minRent !== DEFAULT_MIN_RENT ? 1 : 0) +
+      (maxRent !== undefined && maxRent !== DEFAULT_MAX_RENT ? 1 : 0) +
+      (roomTypes && roomTypes.length ? 1 : 0) +
+      (furnishingLevels && furnishingLevels.length ? 1 : 0) +
+      (preferredGender ? 1 : 0) +
+      (bhkTypes && bhkTypes.length ? 1 : 0) +
+      (bathroomTypes && bathroomTypes.length ? 1 : 0) +
+      (lgbtqFriendly ? 1 : 0)
+    )
+  }, [advancedFilters])
+
+  const handleAdvancedApply = async (state: ListingFilterState) => {
+    if (!decodedCityName) return
+    setIsFilterOpen(false)
+    setIsLoading(true)
+    try {
+      setAdvancedFilters(state)
+      const backendFilters: any = { city: decodedCityName }
+
+      // keep inline/base filters as server filters where it makes sense
+      if (filters.area) backendFilters.area = filters.area
+      if (filters.moveInDate) backendFilters.moveInDate = filters.moveInDate
+      // Gender: popup selection overrides inline selection for consistency
+      if (state.preferredGender) {
+        setFilters(prev => ({ ...prev, genderPreference: state.preferredGender! }))
+      }
+      const effectiveGender = state.preferredGender || filters.genderPreference
+      if (effectiveGender) {
+        backendFilters.preferredGender = effectiveGender
+      }
+
+      if (state.minRent != null && state.minRent > 0) backendFilters.minRent = state.minRent
+      if (state.maxRent != null && state.maxRent > 0) backendFilters.maxRent = state.maxRent
+      if (state.roomTypes.length) backendFilters.roomTypes = state.roomTypes
+      if (state.bhkTypes.length) backendFilters.bhkTypes = state.bhkTypes
+      if (state.furnishingLevels.length) backendFilters.furnishingLevels = state.furnishingLevels
+      if (state.bathroomTypes.length) backendFilters.bathroomTypes = state.bathroomTypes
+      if (state.lgbtqFriendly) backendFilters.lgbtqFriendly = true
+
+      const listings = await listingsApi.getAllPublic('live', backendFilters)
+      const mapped: Listing[] = listings.map((listing: ListingResponse) => ({
+        id: listing._id || listing.id,
+        title: listing.title,
+        city: listing.city || '',
+        locality: listing.locality || '',
+        placeId: listing.placeId,
+        latitude: listing.latitude,
+        longitude: listing.longitude,
+        formattedAddress: listing.formattedAddress,
+        societyName: listing.societyName,
+        bhkType: listing.bhkType || '',
+        roomType: listing.roomType || '',
+        rent: listing.rent || 0,
+        deposit: listing.deposit || 0,
+        moveInDate: listing.moveInDate || '',
+        furnishingLevel: listing.furnishingLevel || '',
+        bathroomType: listing.bathroomType,
+        flatAmenities: listing.flatAmenities || [],
+        societyAmenities: listing.societyAmenities || [],
+        preferredGender: listing.preferredGender || '',
+        foodPreference: listing.foodPreference,
+        petPolicy: listing.petPolicy,
+        smokingPolicy: listing.smokingPolicy,
+        drinkingPolicy: listing.drinkingPolicy,
+        description: listing.description,
+        photos: listing.photos || [],
+        status: listing.status,
+        createdAt: listing.createdAt,
+        updatedAt: listing.updatedAt,
+        mikoTags: listing.mikoTags,
+        lgbtqFriendly: (listing as any).lgbtqFriendly,
+      }))
+      setCityListingsBase(mapped)
+    } catch (error) {
+      console.error('Error applying city filters:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleAdvancedClear = async () => {
+    if (!decodedCityName) return
+    setAdvancedFilters(null)
+    setIsFilterOpen(false)
+    setIsLoading(true)
+    try {
+      const backendFilters: any = { city: decodedCityName }
+      if (filters.area) backendFilters.area = filters.area
+      if (filters.moveInDate) backendFilters.moveInDate = filters.moveInDate
+      // Do NOT send gender here so inline gender becomes a pure client-side filter again
+
+      const listings = await listingsApi.getAllPublic('live', backendFilters)
+      const mapped: Listing[] = listings.map((listing: ListingResponse) => ({
+        id: listing._id || listing.id,
+        title: listing.title,
+        city: listing.city || '',
+        locality: listing.locality || '',
+        placeId: listing.placeId,
+        latitude: listing.latitude,
+        longitude: listing.longitude,
+        formattedAddress: listing.formattedAddress,
+        societyName: listing.societyName,
+        bhkType: listing.bhkType || '',
+        roomType: listing.roomType || '',
+        rent: listing.rent || 0,
+        deposit: listing.deposit || 0,
+        moveInDate: listing.moveInDate || '',
+        furnishingLevel: listing.furnishingLevel || '',
+        bathroomType: listing.bathroomType,
+        flatAmenities: listing.flatAmenities || [],
+        societyAmenities: listing.societyAmenities || [],
+        preferredGender: listing.preferredGender || '',
+        foodPreference: listing.foodPreference,
+        petPolicy: listing.petPolicy,
+        smokingPolicy: listing.smokingPolicy,
+        drinkingPolicy: listing.drinkingPolicy,
+        description: listing.description,
+        photos: listing.photos || [],
+        status: listing.status,
+        createdAt: listing.createdAt,
+        updatedAt: listing.updatedAt,
+        mikoTags: listing.mikoTags,
+        lgbtqFriendly: (listing as any).lgbtqFriendly,
+      }))
+      setCityListingsBase(mapped)
+    } catch (error) {
+      console.error('Error clearing city filters:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Fetch area suggestions when user types
+  useEffect(() => {
+    // Skip one fetch if we just selected a suggestion
+    if (skipNextAreaFetchRef.current) {
+      skipNextAreaFetchRef.current = false
+      return
+    }
+
+    if (!decodedCityName) {
+      setAreaSuggestions([])
+      setShowAreaSuggestions(false)
+      return
+    }
+
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current)
+    }
+
+    if (!areaInputValue || areaInputValue.trim().length < 2) {
+      setAreaSuggestions([])
+      setShowAreaSuggestions(false)
+      return
+    }
+
+    debounceTimerRef.current = setTimeout(async () => {
+      setIsLoadingArea(true)
+      try {
+        const results = await placesApi.getAutocomplete(areaInputValue.trim(), decodedCityName)
+        setAreaSuggestions(results)
+        setShowAreaSuggestions(results.length > 0)
+      } catch (error) {
+        console.error('Error fetching area suggestions:', error)
+        setAreaSuggestions([])
+        setShowAreaSuggestions(false)
+      } finally {
+        setIsLoadingArea(false)
+      }
+    }, 300)
+
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current)
+      }
+    }
+  }, [areaInputValue, decodedCityName])
+
+  const handleAreaSuggestionSelect = (prediction: AutocompletePrediction) => {
+    skipNextAreaFetchRef.current = true
+    setAreaInputValue(prediction.structured_formatting.main_text)
+    setShowAreaSuggestions(false)
+    setAreaSuggestions([])
+    setFilters(prev => ({
+      ...prev,
+      area: prediction.structured_formatting.main_text,
+    }))
+  }
+
+  // Close suggestions on outside click
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        areaSuggestionsRef.current &&
+        !areaSuggestionsRef.current.contains(event.target as Node) &&
+        areaInputRef.current &&
+        !areaInputRef.current.contains(event.target as Node)
+      ) {
+        setShowAreaSuggestions(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [])
 
 
   return (
@@ -139,28 +432,48 @@ const CityListings = () => {
           <div className="max-w-7xl mx-auto px-6 md:px-12">
             <div className="flex flex-col md:flex-row md:items-end gap-4">
               <div className="flex-1 relative z-20">
-                <CustomSelect
-                  label="Area"
-                  value={filters.area}
-                  onValueChange={(value) => handleFilterChange('area', value)}
-                  placeholder="All Areas"
-                  options={[
-                    { value: '', label: 'All Areas' },
-                    ...availableAreas
-                  ]}
-                />
-              </div>
-              <div className="flex-1 relative z-20">
                 <label className="block text-sm font-medium text-stone-700 mb-2">
-                  Max Rent (₹)
+                  Area
                 </label>
-                <input
-                  type="number"
-                  placeholder="e.g., 20000"
-                  value={filters.maxRent}
-                  onChange={(e) => handleFilterChange('maxRent', e.target.value)}
-                  className="w-full h-[52px] px-4 rounded-xl border border-mokogo-gray focus:outline-none focus:ring-2 focus:ring-mokogo-primary bg-white/80 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                />
+                <div className="relative">
+                  <input
+                    ref={areaInputRef}
+                    type="text"
+                    value={areaInputValue}
+                    onChange={(e) => {
+                      setAreaInputValue(e.target.value)
+                      setFilters(prev => ({ ...prev, area: '' }))
+                    }}
+                    placeholder="Search area (e.g., Baner, Wakad)"
+                    className="w-full h-[52px] px-4 rounded-xl border border-mokogo-gray focus:outline-none focus:ring-2 focus:ring-mokogo-primary bg-white/80"
+                  />
+                  {showAreaSuggestions && (
+                    <div
+                      ref={areaSuggestionsRef}
+                      className="absolute mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg z-30 max-height-60 overflow-auto"
+                    >
+                      {isLoadingArea ? (
+                        <div className="px-4 py-3 text-sm text-gray-500">Searching areas...</div>
+                      ) : (
+                        areaSuggestions.map(prediction => (
+                          <button
+                            key={prediction.place_id}
+                            type="button"
+                            onClick={() => handleAreaSuggestionSelect(prediction)}
+                            className="w-full text-left px-4 py-2 hover:bg-orange-50 text-sm text-gray-700"
+                          >
+                            <div className="font-medium">
+                              {prediction.structured_formatting.main_text}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {prediction.structured_formatting.secondary_text}
+                            </div>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
               <div className="flex-1 relative z-20 [&_button]:h-[52px] [&_button]:py-0">
                 <label className="block text-sm font-medium text-stone-700 mb-2">
@@ -187,26 +500,47 @@ const CityListings = () => {
                   ]}
                 />
               </div>
-              {hasActiveFilters && (
+              <div className="flex items-end gap-3">
+                {hasActiveFilters && (
+                  <div>
+                    <label className="block text-sm font-medium text-stone-700 mb-2 opacity-0">
+                      Clear
+                    </label>
+                    <button
+                      onClick={clearFilters}
+                      className="h-[52px] px-6 rounded-xl border border-mokogo-gray bg-white/80 hover:bg-white transition-colors text-gray-700 font-medium whitespace-nowrap"
+                    >
+                      Clear Filters
+                    </button>
+                  </div>
+                )}
                 <div>
                   <label className="block text-sm font-medium text-stone-700 mb-2 opacity-0">
-                    Clear
+                    Filters
                   </label>
                   <button
-                    onClick={clearFilters}
-                    className="h-[52px] px-6 rounded-xl border border-mokogo-gray bg-white/80 hover:bg-white transition-colors text-gray-700 font-medium whitespace-nowrap"
+                    type="button"
+                    onClick={() => setIsFilterOpen(true)}
+                    className="inline-flex items-center gap-2 h-[52px] px-4 rounded-xl border border-orange-300 bg-white text-xs font-semibold text-orange-600 shadow-sm hover:bg-orange-50"
                   >
-                    Clear Filters
+                    <span>Filter</span>
+                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-orange-500 text-[11px] text-white">
+                      {cityFilterCount}
+                    </span>
                   </button>
                 </div>
-              )}
+              </div>
             </div>
           </div>
         </section>
 
         <div className="py-8 px-6 md:px-12">
           <div className="max-w-7xl mx-auto">
-            {cityListings.length > 0 ? (
+            {isLoading ? (
+              <div className="text-center py-16 text-gray-600">
+                Loading listings...
+              </div>
+            ) : cityListings.length > 0 ? (
               <>
                 {/* Listings Grid */}
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -309,6 +643,14 @@ const CityListings = () => {
       </main>
 
       <Footer />
+
+      <ListingFilters
+        open={isFilterOpen}
+        onClose={() => setIsFilterOpen(false)}
+        onApply={handleAdvancedApply}
+        onClear={handleAdvancedClear}
+        initialValues={advancedFilters ?? undefined}
+      />
     </div>
   )
 }

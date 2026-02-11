@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import CustomSelect from '@/components/CustomSelect'
 import { MoveInDateField } from '@/components/MoveInDateField'
@@ -6,9 +6,10 @@ import { MapPin, Home, Heart } from 'lucide-react'
 import { Listing, VibeTagId } from '@/types'
 import { getListingMikoTags, getMikoMatchPercent, getMikoMatchScore } from '@/utils/miko'
 import MikoTagPills from '@/components/MikoTagPills'
-import { listingsApi, ListingResponse } from '@/services/api'
+import { listingsApi, ListingResponse, placesApi, AutocompletePrediction } from '@/services/api'
 import { useStore } from '@/store/useStore'
 import { sortListingsByDistance, isListingWithinRadius } from '@/utils/distance'
+import ListingFilters, { ListingFilterState } from '@/components/ListingFilters'
 
 interface ExploreContentProps {
   onListingClick: (listingId: string) => void
@@ -32,6 +33,13 @@ const ExploreContent = ({
   const [isLoading, setIsLoading] = useState(true)
   const { toggleSavedListing, isListingSaved } = useStore()
 
+  // Area autocomplete state
+  const [areaInputValue, setAreaInputValue] = useState('')
+  const [areaSuggestions, setAreaSuggestions] = useState<AutocompletePrediction[]>([])
+  const [showAreaSuggestions, setShowAreaSuggestions] = useState(false)
+  const [isLoadingArea, setIsLoadingArea] = useState(false)
+  const skipNextAreaFetchRef = useRef(false)
+
   // Filter state
   const [filters, setFilters] = useState(() => {
     const params = new URLSearchParams(location.search)
@@ -41,8 +49,8 @@ const ExploreContent = ({
       areaPlaceId: params.get('areaPlaceId') || '',
       areaLat: params.get('areaLat') ? parseFloat(params.get('areaLat')!) : null,
       areaLng: params.get('areaLng') ? parseFloat(params.get('areaLng')!) : null,
-      maxRent: params.get('maxRent') || '',
       moveInDate: params.get('moveInDate') || '',
+      preferredGender: params.get('preferredGender') || '',
     }
   })
 
@@ -67,6 +75,10 @@ const ExploreContent = ({
     }
     return null
   })
+
+  const [isFilterOpen, setIsFilterOpen] = useState(false)
+  const [advancedFilters, setAdvancedFilters] = useState<ListingFilterState | null>(null)
+  const [sortOption, setSortOption] = useState<'rent_low_high' | 'rent_high_low' | 'newest'>('newest')
 
   useEffect(() => {
     const fetchListings = async () => {
@@ -103,6 +115,7 @@ const ExploreContent = ({
           createdAt: listing.createdAt,
           updatedAt: listing.updatedAt,
           mikoTags: listing.mikoTags,
+          lgbtqFriendly: (listing as any).lgbtqFriendly,
         }))
         setExploreListings(mappedListings)
       } catch (error) {
@@ -127,9 +140,10 @@ const ExploreContent = ({
       areaPlaceId: params.get('areaPlaceId') || '',
       areaLat: params.get('areaLat') ? parseFloat(params.get('areaLat')!) : null,
       areaLng: params.get('areaLng') ? parseFloat(params.get('areaLng')!) : null,
-      maxRent: params.get('maxRent') || '',
       moveInDate: params.get('moveInDate') || '',
+      preferredGender: params.get('preferredGender') || '',
     })
+    setAreaInputValue(params.get('area') || '')
     setIsMikoMode(params.get('miko') === '1')
     const tags = params.get('tags') || ''
     setMikoTags(
@@ -146,19 +160,11 @@ const ExploreContent = ({
     }
   }, [location.search])
 
-  // Get unique areas based on selected city
-  const availableAreas = useMemo(() => {
-    if (!filters.city) return []
-    const cityListings = allLiveListings.filter(listing => listing.city === filters.city)
-    const areas = new Set(cityListings.map(listing => listing.locality))
-    return Array.from(areas).sort().map(area => ({ value: area, label: area }))
-  }, [allLiveListings, filters.city])
-
   // Apply filters to listings
   const filteredListings = useMemo(() => {
     const filtered = allLiveListings.filter(listing => {
       const hasMikoFilters =
-        Boolean(filters.city || filters.area || filters.maxRent || filters.moveInDate) ||
+        Boolean(filters.city || filters.area || filters.moveInDate || filters.preferredGender) ||
         Boolean(roomTypePreference) ||
         mikoTags.length > 0
 
@@ -180,10 +186,15 @@ const ExploreContent = ({
           areaMatch = listing.locality === filters.area
         }
       }
-      const maxRentMatch = filters.maxRent
-        ? listing.rent <= parseInt(filters.maxRent)
-        : false
       const moveInDateMatch = filters.moveInDate
+      const genderMatch = filters.preferredGender
+        ? (() => {
+            if (filters.preferredGender === 'Any') {
+              return true
+            }
+            return listing.preferredGender === filters.preferredGender
+          })()
+        : false
         ? (() => {
             const filterDate = new Date(filters.moveInDate)
             filterDate.setHours(0, 0, 0, 0)
@@ -217,7 +228,7 @@ const ExploreContent = ({
         if (filters.city && !cityMatch) return false
 
         const hasOtherFilters =
-          Boolean(filters.area || filters.maxRent || filters.moveInDate) ||
+          Boolean(filters.area || filters.moveInDate || filters.preferredGender) ||
           Boolean(roomTypePreference) ||
           mikoTags.length > 0
 
@@ -227,8 +238,8 @@ const ExploreContent = ({
 
         return (
           areaMatch ||
-          maxRentMatch ||
           moveInDateMatch ||
+          genderMatch ||
           roomTypeMatch ||
           mikoTagsMatch
         )
@@ -237,8 +248,8 @@ const ExploreContent = ({
       // Standard search: all selected filters must match
       if (filters.city && !cityMatch) return false
       if (filters.area && !areaMatch) return false
-      if (filters.maxRent && !maxRentMatch) return false
       if (filters.moveInDate && !moveInDateMatch) return false
+      if (filters.preferredGender && !genderMatch) return false
       if (roomTypePreference && !roomTypeMatch) return false
 
       return true
@@ -272,11 +283,75 @@ const ExploreContent = ({
       .map(item => item.listing)
   }, [filteredListings, isMikoMode, mikoTags])
 
+  const sortedListings = useMemo(() => {
+    const base = [...rankedListings]
+
+    if (sortOption === 'rent_low_high') {
+      return base.sort((a, b) => (a.rent || 0) - (b.rent || 0))
+    }
+
+    if (sortOption === 'rent_high_low') {
+      return base.sort((a, b) => (b.rent || 0) - (a.rent || 0))
+    }
+
+    // Newest to oldest
+    return base.sort(
+      (a, b) => new Date(b.createdAt || '').getTime() - new Date(a.createdAt || '').getTime()
+    )
+  }, [rankedListings, sortOption])
+
+  const advancedFilterCount = useMemo(() => {
+    if (!advancedFilters) return 0
+    const DEFAULT_MIN_RENT = 0
+    const DEFAULT_MAX_RENT = 0
+    const {
+      minRent,
+      maxRent,
+      roomTypes,
+      furnishingLevels,
+      preferredGender,
+      bhkTypes,
+      bathroomTypes,
+      lgbtqFriendly,
+    } = advancedFilters
+    return (
+      (minRent !== undefined && minRent !== DEFAULT_MIN_RENT ? 1 : 0) +
+      (maxRent !== undefined && maxRent !== DEFAULT_MAX_RENT ? 1 : 0) +
+      (roomTypes && roomTypes.length ? 1 : 0) +
+      (furnishingLevels && furnishingLevels.length ? 1 : 0) +
+      (preferredGender ? 1 : 0) +
+      (bhkTypes && bhkTypes.length ? 1 : 0) +
+      (bathroomTypes && bathroomTypes.length ? 1 : 0) +
+      (lgbtqFriendly ? 1 : 0)
+    )
+  }, [advancedFilters])
+
   const handleFilterChange = (key: string, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }))
+
+    // If advanced filters are active and gender changes inline,
+    // re-apply advanced filters with the new gender so results update
+    if (key === 'preferredGender' && advancedFilters) {
+      const nextState: ListingFilterState = {
+        ...advancedFilters,
+        preferredGender: value || undefined,
+      }
+      setAdvancedFilters(nextState)
+      // Fire and forget; this will call the backend with updated gender
+      void handleAdvancedApply(nextState)
+    }
+
     // Clear area filter if city changes
     if (key === 'city') {
-      setFilters(prev => ({ ...prev, city: value, area: '' }))
+      setFilters(prev => ({
+        ...prev,
+        city: value,
+        area: '',
+        areaPlaceId: '',
+        areaLat: null,
+        areaLng: null,
+      }))
+      setAreaInputValue('')
     }
   }
 
@@ -287,12 +362,203 @@ const ExploreContent = ({
       areaPlaceId: '',
       areaLat: null,
       areaLng: null,
-      maxRent: '',
       moveInDate: '',
+      preferredGender: '',
     })
+    setAreaInputValue('')
+    setAreaSuggestions([])
+    setShowAreaSuggestions(false)
   }
 
-  const hasActiveFilters = filters.city || filters.area || filters.maxRent || filters.moveInDate
+  const hasActiveFilters = filters.city || filters.area || filters.moveInDate || filters.preferredGender
+
+  const handleAdvancedApply = async (state: ListingFilterState) => {
+    setIsFilterOpen(false)
+    setIsLoading(true)
+    try {
+      setAdvancedFilters(state)
+      const backendFilters: any = {}
+
+      // Include basic explore filters (city/area/date/gender) where relevant
+      if (filters.city) backendFilters.city = filters.city
+      if (filters.area) backendFilters.area = filters.area
+      if (filters.areaLat != null) backendFilters.areaLat = filters.areaLat
+      if (filters.areaLng != null) backendFilters.areaLng = filters.areaLng
+      if (filters.moveInDate) backendFilters.moveInDate = filters.moveInDate
+
+      // Gender: popup selection overrides inline selection for consistency
+      if (state.preferredGender) {
+        handleFilterChange('preferredGender', state.preferredGender)
+      }
+      const effectiveGender = state.preferredGender || filters.preferredGender
+      if (effectiveGender) {
+        backendFilters.preferredGender = effectiveGender
+      }
+
+      if (state.minRent != null && state.minRent > 0) backendFilters.minRent = state.minRent
+      if (state.maxRent != null && state.maxRent > 0) backendFilters.maxRent = state.maxRent
+      if (state.roomTypes.length) backendFilters.roomTypes = state.roomTypes
+      if (state.bhkTypes.length) backendFilters.bhkTypes = state.bhkTypes
+      if (state.furnishingLevels.length) backendFilters.furnishingLevels = state.furnishingLevels
+      if (state.bathroomTypes.length) backendFilters.bathroomTypes = state.bathroomTypes
+      if (state.lgbtqFriendly) backendFilters.lgbtqFriendly = true
+
+      const listings = await listingsApi.getAllPublic('live', backendFilters)
+      const mappedListings: Listing[] = listings.map((listing: ListingResponse) => ({
+        id: listing._id || listing.id,
+        title: listing.title,
+        city: listing.city || '',
+        locality: listing.locality || '',
+        placeId: listing.placeId,
+        latitude: listing.latitude,
+        longitude: listing.longitude,
+        formattedAddress: listing.formattedAddress,
+        societyName: listing.societyName,
+        bhkType: listing.bhkType || '',
+        roomType: listing.roomType || '',
+        rent: listing.rent || 0,
+        deposit: listing.deposit || 0,
+        moveInDate: listing.moveInDate || '',
+        furnishingLevel: listing.furnishingLevel || '',
+        bathroomType: listing.bathroomType,
+        flatAmenities: listing.flatAmenities || [],
+        societyAmenities: listing.societyAmenities || [],
+        preferredGender: listing.preferredGender || '',
+        foodPreference: listing.foodPreference,
+        petPolicy: listing.petPolicy,
+        smokingPolicy: listing.smokingPolicy,
+        drinkingPolicy: listing.drinkingPolicy,
+        description: listing.description,
+        photos: listing.photos || [],
+        status: listing.status,
+        createdAt: listing.createdAt,
+        updatedAt: listing.updatedAt,
+        mikoTags: listing.mikoTags,
+      }))
+      setExploreListings(mappedListings)
+    } catch (error) {
+      console.error('Error applying advanced filters in dashboard explore:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleAdvancedClear = async () => {
+    setAdvancedFilters(null)
+    setIsFilterOpen(false)
+    setIsLoading(true)
+    try {
+      const backendFilters: any = {}
+      if (filters.city) backendFilters.city = filters.city
+      if (filters.area) backendFilters.area = filters.area
+      if (filters.areaLat != null) backendFilters.areaLat = filters.areaLat
+      if (filters.areaLng != null) backendFilters.areaLng = filters.areaLng
+      if (filters.moveInDate) backendFilters.moveInDate = filters.moveInDate
+      // Do NOT send preferredGender here so inline gender becomes a pure client-side filter again
+
+      const listings = await listingsApi.getAllPublic('live', backendFilters)
+      const mappedListings: Listing[] = listings.map((listing: ListingResponse) => ({
+        id: listing._id || listing.id,
+        title: listing.title,
+        city: listing.city || '',
+        locality: listing.locality || '',
+        placeId: listing.placeId,
+        latitude: listing.latitude,
+        longitude: listing.longitude,
+        formattedAddress: listing.formattedAddress,
+        societyName: listing.societyName,
+        bhkType: listing.bhkType || '',
+        roomType: listing.roomType || '',
+        rent: listing.rent || 0,
+        deposit: listing.deposit || 0,
+        moveInDate: listing.moveInDate || '',
+        furnishingLevel: listing.furnishingLevel || '',
+        bathroomType: listing.bathroomType,
+        flatAmenities: listing.flatAmenities || [],
+        societyAmenities: listing.societyAmenities || [],
+        preferredGender: listing.preferredGender || '',
+        foodPreference: listing.foodPreference,
+        petPolicy: listing.petPolicy,
+        smokingPolicy: listing.smokingPolicy,
+        drinkingPolicy: listing.drinkingPolicy,
+        description: listing.description,
+        photos: listing.photos || [],
+        status: listing.status,
+        createdAt: listing.createdAt,
+        updatedAt: listing.updatedAt,
+        mikoTags: listing.mikoTags,
+      }))
+      setExploreListings(mappedListings)
+    } catch (error) {
+      console.error('Error clearing advanced filters in dashboard explore:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Fetch area suggestions when user types
+  useEffect(() => {
+    // If we're programmatically setting the area input after a selection,
+    // skip one autocomplete call to avoid an extra API hit.
+    if (skipNextAreaFetchRef.current) {
+      skipNextAreaFetchRef.current = false
+      return
+    }
+
+    let timeoutId: ReturnType<typeof setTimeout> | undefined
+
+    const fetchSuggestions = async () => {
+      if (!areaInputValue || areaInputValue.trim().length < 2 || !filters.city) {
+        setAreaSuggestions([])
+        setShowAreaSuggestions(false)
+        return
+      }
+      setIsLoadingArea(true)
+      try {
+        const results = await placesApi.getAutocomplete(areaInputValue.trim(), filters.city)
+        setAreaSuggestions(results)
+        setShowAreaSuggestions(results.length > 0)
+      } catch (error) {
+        console.error('Error fetching area suggestions:', error)
+        setAreaSuggestions([])
+        setShowAreaSuggestions(false)
+      } finally {
+        setIsLoadingArea(false)
+      }
+    }
+
+    timeoutId = setTimeout(fetchSuggestions, 300)
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId)
+    }
+  }, [areaInputValue, filters.city])
+
+  const handleAreaSuggestionSelect = async (prediction: AutocompletePrediction) => {
+    // Prevent the next useEffect run from firing autocomplete again
+    skipNextAreaFetchRef.current = true
+    setAreaInputValue(prediction.structured_formatting.main_text)
+    setShowAreaSuggestions(false)
+    setAreaSuggestions([])
+
+    try {
+      const placeDetails = await placesApi.getPlaceDetails(prediction.place_id)
+      setFilters(prev => ({
+        ...prev,
+        area: prediction.structured_formatting.main_text,
+        areaPlaceId: placeDetails.place_id,
+        areaLat: placeDetails.geometry.location.lat,
+        areaLng: placeDetails.geometry.location.lng,
+      }))
+    } catch (error) {
+      console.error('Error fetching area details:', error)
+      setFilters(prev => ({
+        ...prev,
+        area: prediction.structured_formatting.main_text,
+        areaPlaceId: prediction.place_id,
+      }))
+    }
+  }
 
   const formatRent = (amount: number) => {
     return new Intl.NumberFormat('en-IN', {
@@ -345,30 +611,41 @@ const ExploreContent = ({
             </div>
             {filters.city && (
               <div className="flex-1 relative z-20">
-                <CustomSelect
-                  label="Area"
-                  value={filters.area}
-                  onValueChange={(value) => handleFilterChange('area', value)}
-                  placeholder="All Areas"
-                  options={[
-                    { value: '', label: 'All Areas' },
-                    ...availableAreas
-                  ]}
+                <label className="block text-sm font-medium text-stone-700 mb-2">
+                  Area
+                </label>
+                <input
+                  type="text"
+                  value={areaInputValue}
+                  onChange={(e) => setAreaInputValue(e.target.value)}
+                  placeholder="Search area (e.g., Baner, Wakad)"
+                  className="w-full h-[52px] px-4 rounded-xl border border-mokogo-gray focus:outline-none focus:ring-2 focus:ring-mokogo-primary bg-white/80"
                 />
+                {showAreaSuggestions && (
+                  <div className="absolute mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg z-30 max-h-60 overflow-auto">
+                    {isLoadingArea ? (
+                      <div className="px-4 py-3 text-sm text-gray-500">Searching areas...</div>
+                    ) : (
+                      areaSuggestions.map(prediction => (
+                        <button
+                          key={prediction.place_id}
+                          type="button"
+                          onClick={() => handleAreaSuggestionSelect(prediction)}
+                          className="w-full text-left px-4 py-2 hover:bg-orange-50 text-sm text-gray-700"
+                        >
+                          <div className="font-medium">
+                            {prediction.structured_formatting.main_text}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {prediction.structured_formatting.secondary_text}
+                          </div>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
               </div>
             )}
-            <div className="flex-1 relative z-20">
-              <label className="block text-sm font-medium text-stone-700 mb-2">
-                Max Rent (₹)
-              </label>
-              <input
-                type="number"
-                placeholder="e.g., 20000"
-                value={filters.maxRent}
-                onChange={(e) => handleFilterChange('maxRent', e.target.value)}
-                className="w-full h-[52px] px-4 rounded-xl border border-mokogo-gray focus:outline-none focus:ring-2 focus:ring-mokogo-primary bg-white/80 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-              />
-            </div>
             <div className="flex-1 relative z-20 [&_button]:h-[52px] [&_button]:py-0">
               <label className="block text-sm font-medium text-stone-700 mb-2">
                 Move-in Date
@@ -382,16 +659,42 @@ const ExploreContent = ({
                 className="!h-[52px] !rounded-xl !border !border-mokogo-gray"
               />
             </div>
-            {hasActiveFilters && (
-              <div className="flex items-end">
+            <div className="flex-1 relative z-20">
+              <label className="block text-sm font-medium text-stone-700 mb-2">
+                Gender Preference
+              </label>
+              <CustomSelect
+                label=""
+                value={filters.preferredGender}
+                onValueChange={(value) => handleFilterChange('preferredGender', value)}
+                placeholder="Select"
+                options={[
+                  { value: 'Male', label: 'Male' },
+                  { value: 'Female', label: 'Female' },
+                  { value: 'Any', label: 'Any' },
+                ]}
+              />
+            </div>
+            <div className="flex items-end gap-3">
+              {hasActiveFilters && (
                 <button
                   onClick={clearFilters}
                   className="h-[52px] px-6 rounded-xl border border-mokogo-gray bg-white/80 hover:bg-white transition-colors text-gray-700 font-medium whitespace-nowrap"
                 >
                   Clear Filters
                 </button>
-              </div>
-            )}
+              )}
+              <button
+                type="button"
+                onClick={() => setIsFilterOpen(true)}
+                className="h-[52px] px-5 rounded-xl border border-orange-300 bg-white text-xs font-semibold text-orange-600 shadow-sm hover:bg-orange-50 flex items-center gap-2"
+              >
+                <span>Filter</span>
+                <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-orange-500 text-[11px] text-white">
+                  {advancedFilterCount}
+                </span>
+              </button>
+            </div>
           </div>
             {renderMikoTags()}
           </div>
@@ -419,9 +722,33 @@ const ExploreContent = ({
             <div className="text-center py-16 text-gray-600">
               Loading listings...
             </div>
-          ) : rankedListings.length > 0 ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-stretch">
-              {rankedListings.map((listing) => {
+          ) : sortedListings.length > 0 ? (
+            <>
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-sm text-gray-700">
+                  {sortedListings.length} {sortedListings.length === 1 ? 'place' : 'places'} found
+                </p>
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="text-gray-600">Sort by</span>
+                  <div className="w-44">
+                    <CustomSelect
+                      label=""
+                      value={sortOption}
+                      onValueChange={(value) =>
+                        setSortOption(value as 'rent_low_high' | 'rent_high_low' | 'newest')
+                      }
+                      placeholder="Select"
+                      options={[
+                        { value: 'rent_low_high', label: 'Rent: Low to High' },
+                        { value: 'rent_high_low', label: 'Rent: High to Low' },
+                        { value: 'newest', label: 'Newest Listings' },
+                      ]}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 items-stretch">
+              {sortedListings.map((listing) => {
                 const listingTags = getListingMikoTags(listing)
                 const matchPercent = isMikoMode ? getMikoMatchPercent(mikoTags, listingTags) : 0
                 const saved = isListingSaved(listing.id)
@@ -498,6 +825,7 @@ const ExploreContent = ({
                 </button>
               )})}
             </div>
+            </>
           ) : (
             <div className="text-center py-16 space-y-4">
               <div className="w-24 h-24 mx-auto bg-mokogo-primary/10 rounded-full flex items-center justify-center">
@@ -519,6 +847,16 @@ const ExploreContent = ({
           )}
         </div>
       </section>
+
+      {!hideFilters && (
+        <ListingFilters
+          open={isFilterOpen}
+          onClose={() => setIsFilterOpen(false)}
+          onApply={handleAdvancedApply}
+          onClear={handleAdvancedClear}
+          initialValues={advancedFilters ?? undefined}
+        />
+      )}
     </div>
   )
 }

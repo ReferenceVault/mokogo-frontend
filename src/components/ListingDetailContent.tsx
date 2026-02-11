@@ -19,6 +19,7 @@ import {
   ChevronRight,
   Home,
   Search,
+  Heart,
 } from 'lucide-react'
 
 interface ListingDetailContentProps {
@@ -134,6 +135,7 @@ const ListingDetailContent = ({ listingId, onBack, onExplore }: ListingDetailCon
             createdAt: response.createdAt,
             updatedAt: response.updatedAt,
             mikoTags: response.mikoTags,
+            lgbtqFriendly: (response as any).lgbtqFriendly,
           }
           setListing(mappedListing)
           
@@ -183,6 +185,7 @@ const ListingDetailContent = ({ listingId, onBack, onExplore }: ListingDetailCon
               createdAt: found.createdAt,
               updatedAt: found.updatedAt,
               mikoTags: found.mikoTags,
+              lgbtqFriendly: (found as any).lgbtqFriendly,
             }
             setListing(mappedListing)
 

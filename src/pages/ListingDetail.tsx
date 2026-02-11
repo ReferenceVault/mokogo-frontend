@@ -322,6 +322,7 @@ const ListingDetail = () => {
           createdAt: response.createdAt,
           updatedAt: response.updatedAt,
           mikoTags: response.mikoTags,
+          lgbtqFriendly: (response as any).lgbtqFriendly,
         }
         setListing(mappedListing)
       } catch (error) {
@@ -748,7 +749,7 @@ const ListingDetail = () => {
         onSave={handleSave}
         onShare={handleShare}
         onReport={handleReport}
-        showVerified={true}
+        showVerified={false}
         showActions={true}
       />
 
