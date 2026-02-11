@@ -474,13 +474,13 @@ const ListingDetailContent = ({ listingId, onBack, onExplore }: ListingDetailCon
             <div className={`space-y-4 ${!isOwner ? 'lg:col-span-2' : 'lg:col-span-1'}`}>
               
               {/* Room Details */}
-              <RoomDetails listing={listing} compact={true} />
+              <RoomDetails listing={listing} />
 
               {/* Amenities Section */}
-              <AmenitiesSection listing={listing} compact={true} />
+              <AmenitiesSection listing={listing} />
 
               {/* Host Information Section */}
-              <MeetYourHost listing={listing} hostInfo={hostInfo} compact={true} />
+              <MeetYourHost listing={listing} hostInfo={hostInfo} />
               
             </div>
             
@@ -498,7 +498,6 @@ const ListingDetailContent = ({ listingId, onBack, onExplore }: ListingDetailCon
                   onRequestSent={handleContactHostSuccess}
                   onRequestStatusUpdate={handleContactHostStatusUpdate}
                   onError={handleContactHostError}
-                  compact={true}
                 />
               </div>
             </div>

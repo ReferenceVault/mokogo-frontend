@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { MessageCircle, Clock, Shield, CheckCircle, CheckCircle2 } from 'lucide-react'
+import { MessageCircle, Clock, CheckCircle2 } from 'lucide-react'
 import { MoveInDateField } from './MoveInDateField'
 import { Listing } from '@/types'
 import { formatPrice } from '@/utils/formatters'
@@ -21,7 +21,6 @@ interface ContactHostSectionProps {
   onRequestStatusUpdate?: (status: { status: 'pending' | 'approved' | 'rejected' | null; requestId?: string }) => void
   onError?: (error: string) => void
   className?: string
-  compact?: boolean
 }
 
 const ContactHostSection = ({
@@ -35,7 +34,6 @@ const ContactHostSection = ({
   onRequestStatusUpdate,
   onError,
   className = '',
-  compact = false,
 }: ContactHostSectionProps) => {
   const navigate = useNavigate()
   const location = useLocation()
@@ -57,18 +55,13 @@ const ContactHostSection = ({
     }
   }, [location.search, listing?.id])
 
-  const containerClass = compact
-    ? 'bg-white/70 backdrop-blur-md rounded-xl shadow-lg border border-white/35 p-4'
-    : 'bg-white/70 backdrop-blur-md rounded-2xl shadow-lg border border-white/35 p-6'
-  
-  const priceClass = compact ? 'text-xl font-bold mb-1' : 'text-3xl font-bold mb-1'
-  const priceSubtextClass = compact ? 'text-sm text-gray-600' : 'text-gray-600'
-  const buttonClass = compact
-    ? 'w-full bg-orange-400 text-white font-semibold py-2.5 rounded-lg hover:bg-orange-500 hover:shadow-lg transition-all transform hover:scale-105 mb-3 disabled:opacity-50 disabled:cursor-not-allowed text-sm'
-    : 'w-full bg-orange-400 text-white font-bold py-4 rounded-xl hover:bg-orange-500 hover:shadow-lg transition-all transform hover:scale-105 mb-4 disabled:opacity-50 disabled:cursor-not-allowed'
-  const textClass = compact ? 'text-xs' : 'text-sm'
-  const inputClass = compact ? 'p-2' : 'p-3'
-  const borderClass = compact ? 'border border-stone-300 rounded-lg' : 'border border-stone-300 rounded-lg'
+  const containerClass = 'bg-white/70 backdrop-blur-md rounded-xl shadow-lg border border-white/35 p-4'
+  const priceClass = 'text-xl font-bold mb-1'
+  const priceSubtextClass = 'text-sm text-gray-600'
+  const buttonClass = 'w-full bg-orange-400 text-white font-semibold py-2.5 rounded-lg hover:bg-orange-500 hover:shadow-lg transition-all transform hover:scale-105 mb-3 disabled:opacity-50 disabled:cursor-not-allowed text-sm'
+  const textClass = 'text-xs'
+  const inputClass = 'p-2'
+  const borderClass = 'border border-stone-300 rounded-lg'
 
   const handleStartConversation = () => {
     if (conversationId) {
@@ -178,11 +171,11 @@ const ContactHostSection = ({
     return (
       <div ref={contactCardRef} className={`${containerClass} ${className}`}>
         <div className="text-center py-6">
-          <CheckCircle2 className={`${compact ? 'w-10 h-10' : 'w-12 h-12'} text-green-500 mx-auto mb-3`} />
-          <h3 className={`${compact ? 'text-base' : 'text-lg'} font-semibold text-gray-900 mb-2`}>
+          <CheckCircle2 className="w-10 h-10 text-green-500 mx-auto mb-3" />
+          <h3 className="text-base font-semibold text-gray-900 mb-2">
             This Property is Fulfilled
           </h3>
-          <p className={`${compact ? 'text-xs' : 'text-sm'} text-gray-600`}>
+          <p className="text-xs text-gray-600">
             This listing is no longer available on the market.
           </p>
         </div>
@@ -195,50 +188,26 @@ const ContactHostSection = ({
       <div className="text-center mb-4">
         <div className={priceClass}>₹{formatPrice(listing.rent)}</div>
         <div className={priceSubtextClass}>per month</div>
-        {!compact && <div className="text-sm text-gray-500 mt-1">+ ₹500 maintenance</div>}
       </div>
 
-      <div className={`space-y-${compact ? '3' : '4'} mb-4`}>
+      <div className="space-y-3 mb-4">
         <div className="grid grid-cols-2 gap-4">
           <div className={`${borderClass} ${inputClass}`}>
             <div className={`${textClass} font-semibold text-gray-700 uppercase mb-1`}>Move-in Date</div>
-            {compact ? (
-              <div className="[&_button]:!h-auto [&_button]:!py-0 [&_button]:!px-0 [&_button]:!border-0 [&_button]:!bg-transparent [&_button]:!shadow-none [&_button]:!min-w-0 [&_button]:!w-full [&_button]:text-xs">
-                <MoveInDateField
-                  value={moveInDate}
-                  onChange={(date) => setMoveInDate(date)}
-                  min={new Date().toISOString().split('T')[0]}
-                  hideLabel={true}
-                  numberOfMonths={1}
-                />
-              </div>
-            ) : (
-              <input
-                type="date"
+            <div className="[&_button]:!h-auto [&_button]:!py-0 [&_button]:!px-0 [&_button]:!border-0 [&_button]:!bg-transparent [&_button]:!shadow-none [&_button]:!min-w-0 [&_button]:!w-full [&_button]:text-xs">
+              <MoveInDateField
                 value={moveInDate}
-                onChange={(e) => setMoveInDate(e.target.value)}
+                onChange={(date) => setMoveInDate(date)}
                 min={new Date().toISOString().split('T')[0]}
-                className="w-full border-0 p-0 text-sm focus:ring-0 bg-transparent"
+                hideLabel={true}
+                numberOfMonths={1}
               />
-            )}
-          </div>
-          {!compact && (
-            <div className={`${borderClass} ${inputClass}`}>
-              <div className={`${textClass} font-semibold text-gray-700 uppercase mb-1`}>Duration</div>
-              <select
-                className="w-full border-0 p-0 text-sm focus:ring-0 bg-transparent"
-                defaultValue="6 months"
-              >
-                <option>6 months</option>
-                <option>12 months</option>
-                <option>Flexible</option>
-              </select>
             </div>
-          )}
+          </div>
         </div>
 
         <div className={`${borderClass} ${inputClass}`}>
-          <div className={`${textClass} font-semibold text-gray-700 uppercase ${compact ? 'mb-1.5' : 'mb-2'}`}>
+          <div className={`${textClass} font-semibold text-gray-700 uppercase mb-1.5`}>
             Your Message
           </div>
           <textarea
@@ -266,33 +235,25 @@ const ContactHostSection = ({
       {loadingRequestStatus ? (
         <button
           disabled
-          className={`w-full bg-gray-200 text-gray-500 font-${compact ? 'semibold' : 'bold'} ${
-            compact ? 'py-2.5 rounded-lg' : 'py-4 rounded-xl'
-          } cursor-not-allowed mb-${compact ? '3' : '4'} ${textClass}`}
+          className={`w-full bg-gray-200 text-gray-500 font-semibold py-2.5 rounded-lg cursor-not-allowed mb-3 ${textClass}`}
         >
-          <div
-            className={`${compact ? 'w-3.5 h-3.5' : 'w-4 h-4'} border-2 border-gray-400 border-t-transparent rounded-full animate-spin inline-block mr-2`}
-          ></div>
+          <div className="w-3.5 h-3.5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin inline-block mr-2"></div>
           Loading...
         </button>
       ) : requestStatus.status === 'pending' ? (
         <button
           disabled
-          className={`w-full bg-gray-300 text-gray-600 font-${compact ? 'semibold' : 'bold'} ${
-            compact ? 'py-2.5 rounded-lg' : 'py-4 rounded-xl'
-          } cursor-not-allowed mb-${compact ? '3' : '4'} ${textClass}`}
+          className={`w-full bg-gray-300 text-gray-600 font-semibold py-2.5 rounded-lg cursor-not-allowed mb-3 ${textClass}`}
         >
-          <Clock className={`${compact ? 'w-4 h-4' : 'w-5 h-5'} inline mr-2`} />
+          <Clock className="w-4 h-4 inline mr-2" />
           Request Sent
         </button>
       ) : requestStatus.status === 'approved' ? (
         <button
           onClick={handleStartConversation}
-          className={`w-full bg-green-500 text-white font-${compact ? 'semibold' : 'bold'} ${
-            compact ? 'py-2.5 rounded-lg' : 'py-4 rounded-xl'
-          } hover:bg-green-600 hover:shadow-lg transition-all transform hover:scale-105 mb-${compact ? '3' : '4'}`}
+          className="w-full bg-green-500 text-white font-semibold py-2.5 rounded-lg hover:bg-green-600 hover:shadow-lg transition-all transform hover:scale-105 mb-3"
         >
-          <MessageCircle className={`${compact ? 'w-4 h-4' : 'w-5 h-5'} inline mr-2`} />
+          <MessageCircle className="w-4 h-4 inline mr-2" />
           Start Conversation
         </button>
       ) : (
@@ -305,77 +266,41 @@ const ContactHostSection = ({
           >
             {isSubmitting ? (
               <>
-                <div
-                  className={`${compact ? 'w-3.5 h-3.5' : 'w-4 h-4'} border-2 border-white border-t-transparent rounded-full animate-spin inline-block mr-2`}
-                ></div>
+                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin inline-block mr-2"></div>
                 Sending...
               </>
             ) : (
               <>
-                <MessageCircle className={`${compact ? 'w-4 h-4' : 'w-5 h-5'} inline mr-2`} />
+                <MessageCircle className="w-4 h-4 inline mr-2" />
                 Contact Host
               </>
             )}
           </button>
 
-          <div className={`text-center ${textClass} text-gray-600 mb-${compact ? '3' : '4'}`}>
+          <div className={`text-center ${textClass} text-gray-600 mb-3`}>
             You won't be charged yet
           </div>
         </>
       )}
 
-      <div className={`border-t border-stone-200 pt-${compact ? '3' : '4'}`}>
-        <div className={`flex justify-between items-center mb-${compact ? '1.5' : '2'}`}>
+      <div className="border-t border-stone-200 pt-3">
+        <div className="flex justify-between items-center mb-1.5">
           <span className={`${textClass} text-gray-700`}>Monthly rent</span>
           <span className={`${textClass} text-gray-900`}>₹{formatPrice(listing.rent)}</span>
         </div>
-        {!compact && (
-          <div className={`flex justify-between items-center mb-${compact ? '1.5' : '2'}`}>
-            <span className={`${textClass} text-gray-700`}>Maintenance</span>
-            <span className={`${textClass} text-gray-900`}>₹500</span>
-          </div>
-        )}
-        <div className={`flex justify-between items-center mb-${compact ? '1.5' : '2'}`}>
+        <div className="flex justify-between items-center mb-1.5">
           <span className={`${textClass} text-gray-700`}>Security deposit</span>
           <span className={`${textClass} text-gray-900`}>₹{formatPrice(listing.deposit)}</span>
         </div>
-        <div className={`border-t border-stone-200 pt-${compact ? '1.5' : '2'} mt-${compact ? '1.5' : '2'}`}>
+        <div className="border-t border-stone-200 pt-1.5 mt-1.5">
           <div className="flex justify-between items-center font-bold">
-            <span className={`${compact ? 'text-sm' : 'text-base'} text-gray-900`}>Total upfront</span>
-            <span className={`${compact ? 'text-sm' : 'text-base'} text-gray-900`}>
-              ₹{formatPrice(listing.rent + (compact ? 0 : 500) + listing.deposit)}
+            <span className="text-sm text-gray-900">Total upfront</span>
+            <span className="text-sm text-gray-900">
+              ₹{formatPrice(listing.rent + listing.deposit)}
             </span>
           </div>
         </div>
       </div>
-
-      {/* Safety Tips */}
-      {!compact && (
-        <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-2xl p-6 mt-6">
-          <div className="flex items-center mb-4">
-            <Shield className="w-6 h-6 text-orange-400 mr-3" />
-            <h3 className="text-lg font-semibold text-gray-900">Safety First</h3>
-          </div>
-          <div className="space-y-3 text-sm text-gray-700">
-            <div className="flex items-start">
-              <CheckCircle className="w-5 h-5 text-green-500 mr-2 mt-0.5" />
-              <span>Always meet in person before committing</span>
-            </div>
-            <div className="flex items-start">
-              <CheckCircle className="w-5 h-5 text-green-500 mr-2 mt-0.5" />
-              <span>Verify host identity and documents</span>
-            </div>
-            <div className="flex items-start">
-              <CheckCircle className="w-5 h-5 text-green-500 mr-2 mt-0.5" />
-              <span>Never transfer money without visiting</span>
-            </div>
-            <div className="flex items-start">
-              <CheckCircle className="w-5 h-5 text-green-500 mr-2 mt-0.5" />
-              <span>Use MOKOGO messaging for initial contact</span>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

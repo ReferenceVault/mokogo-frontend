@@ -9,19 +9,15 @@ interface MeetYourHostProps {
     about?: string
   }
   className?: string
-  compact?: boolean
 }
 
-const MeetYourHost = ({ listing, hostInfo, className = '', compact = false }: MeetYourHostProps) => {
-  const containerClass = compact
-    ? 'bg-white/70 backdrop-blur-md rounded-xl shadow-lg border border-white/35 p-5'
-    : 'bg-white/70 backdrop-blur-md rounded-xl shadow-lg border border-white/35 p-5'
-  
-  const titleClass = compact ? 'text-lg font-bold mb-4' : 'text-lg font-bold mb-4'
-  const hostNameClass = compact ? 'text-base font-bold' : 'text-base font-bold'
-  const hostAboutClass = compact ? 'text-sm text-gray-700 mb-3' : 'text-sm text-gray-700 mb-3'
-  const infoTextClass = compact ? 'text-xs text-gray-600' : 'text-xs text-gray-600'
-  const spacingClass = compact ? 'space-x-4' : 'space-x-4'
+const MeetYourHost = ({ listing, hostInfo, className = '' }: MeetYourHostProps) => {
+  const containerClass = 'bg-white/70 backdrop-blur-md rounded-xl shadow-lg border border-white/35 p-5'
+  const titleClass = 'text-lg font-bold mb-4'
+  const hostNameClass = 'text-base font-bold'
+  const hostAboutClass = 'text-sm text-gray-700 mb-3'
+  const infoTextClass = 'text-xs text-gray-600'
+  const spacingClass = 'space-x-4'
 
   const hostAbout =
     hostInfo?.about?.trim() ||

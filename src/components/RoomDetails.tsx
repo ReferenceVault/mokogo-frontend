@@ -5,25 +5,21 @@ import { formatPrice, formatDate } from '@/utils/formatters'
 interface RoomDetailsProps {
   listing: Listing
   className?: string
-  compact?: boolean
 }
 
-const RoomDetails = ({ listing, className = '', compact = false }: RoomDetailsProps) => {
-  const containerClass = compact
-    ? 'bg-white/70 backdrop-blur-md rounded-xl shadow-lg border border-white/35 p-5'
-    : 'bg-white/70 backdrop-blur-md rounded-2xl shadow-lg border border-white/35 p-8'
-  
-  const titleClass = compact ? 'text-lg font-bold' : 'text-2xl font-bold'
-  const priceClass = compact ? 'text-xl font-bold' : 'text-3xl font-bold'
-  const gridClass = compact ? 'grid grid-cols-2 lg:grid-cols-3 gap-4 mb-4' : 'grid grid-cols-2 lg:grid-cols-3 gap-6 mb-8'
-  const cardClass = compact ? 'text-center p-3 bg-stone-50 rounded-lg' : 'text-center p-4 bg-stone-50 rounded-xl'
-  const iconClass = compact ? 'w-6 h-6' : 'w-8 h-8'
-  const textClass = compact ? 'text-sm font-semibold' : 'font-semibold'
-  const subtextClass = compact ? 'text-xs text-gray-600' : 'text-sm text-gray-600'
-  const descriptionTitleClass = compact ? 'text-base font-semibold' : 'text-lg font-semibold'
-  const descriptionTextClass = compact ? 'text-sm text-gray-700' : 'text-gray-700'
-  const borderClass = compact ? 'border-t border-stone-200 pt-4' : 'border-t border-stone-200 pt-6'
-  const spacingClass = compact ? 'mb-3' : 'mb-4'
+const RoomDetails = ({ listing, className = '' }: RoomDetailsProps) => {
+  const containerClass = 'bg-white/70 backdrop-blur-md rounded-xl shadow-lg border border-white/35 p-5'
+  const titleClass = 'text-lg font-bold'
+  const priceClass = 'text-xl font-bold'
+  const gridClass = 'grid grid-cols-2 lg:grid-cols-3 gap-4 mb-4'
+  const cardClass = 'text-center p-3 bg-stone-50 rounded-lg'
+  const iconClass = 'w-6 h-6'
+  const textClass = 'text-sm font-semibold'
+  const subtextClass = 'text-xs text-gray-600'
+  const descriptionTitleClass = 'text-base font-semibold'
+  const descriptionTextClass = 'text-sm text-gray-700'
+  const borderClass = 'border-t border-stone-200 pt-4'
+  const spacingClass = 'mb-3'
 
   return (
     <div className={`${containerClass} ${className}`}>
@@ -31,7 +27,7 @@ const RoomDetails = ({ listing, className = '', compact = false }: RoomDetailsPr
         <h2 className={titleClass}>Room Details</h2>
         <div className="text-right">
           <div className={priceClass}>₹{formatPrice(listing.rent)}</div>
-          <div className={compact ? 'text-sm text-gray-600' : 'text-gray-600'}>per month</div>
+          <div className="text-sm text-gray-600">per month</div>
         </div>
       </div>
 

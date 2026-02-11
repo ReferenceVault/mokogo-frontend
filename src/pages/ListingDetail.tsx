@@ -741,7 +741,7 @@ const ListingDetail = () => {
               <AmenitiesSection listing={listing} />
 
               {/* Host Information Section */}
-              <MeetYourHost listing={listing} hostInfo={hostInfo} compact={false} />
+              <MeetYourHost listing={listing} hostInfo={hostInfo} />
               
             </div>
             
