@@ -14,28 +14,17 @@ import MeetYourHost from '@/components/MeetYourHost'
 import ContactHostSection from '@/components/ContactHostSection'
 import { useStore } from '@/store/useStore'
 
-import { formatPrice, formatDate } from '@/utils/formatters'
+import { formatPrice } from '@/utils/formatters'
 import { handleLogout as handleLogoutUtil } from '@/utils/auth'
-import { isProfileComplete } from '@/utils/profileValidation'
 import { requestsApi, listingsApi, messagesApi, usersApi, UserProfile } from '@/services/api'
 import { Listing } from '@/types'
 
 import {
   MapPin,
-  Shield,
-  Share2,
   Heart,
-  Flag,
-  Images,
-  Bed,
-  Bath,
-  Calendar,
-  CheckCircle,
-  MessageCircle,
   ChevronDown,
   ChevronRight,
   Home,
-  Clock,
   Search,
   Bell,
   Heart as HeartIcon
@@ -344,9 +333,6 @@ const ListingDetail = () => {
 
   // Get host information - use listing owner if available, otherwise fallback to current user
   const hostInfo = listingOwner || (user as any)
-  const hostAbout =
-    hostInfo?.about?.trim() ||
-    `Hi! I'm ${hostInfo?.name || 'a professional'} working in ${listing?.city || 'this city'}. I love meeting new people and creating a comfortable, friendly environment for my flatmates. I'm clean, organized, and respect personal space while being approachable for any questions or concerns.`
 
   // Fetch request status on mount and when listingId/user changes
   useEffect(() => {
@@ -443,22 +429,6 @@ const ListingDetail = () => {
     }
   }, [user, listingId, requestStatus.status])
 
-  // Handle navigation to messages
-  // If request is approved, conversation should exist (created by backend)
-  // Navigate to messages - user can find the conversation there
-  const handleStartConversation = () => {
-    // If we have conversationId, navigate directly to it
-    if (conversationId) {
-      navigate(`/dashboard?view=messages&conversation=${conversationId}`)
-    } else if (requestStatus.status === 'approved') {
-      // Request is approved, conversation should exist - navigate to messages
-      // MessagesContent will load conversations and user can find theirs
-      navigate('/dashboard?view=messages')
-    } else {
-      // Fallback
-      navigate('/dashboard?view=messages')
-    }
-  }
 
 
   if (loading) {
