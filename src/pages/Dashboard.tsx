@@ -697,13 +697,13 @@ const Dashboard = () => {
                                 e.stopPropagation()
                                 toggleSavedListing(listing.id)
                               }}
-                              className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center hover:bg-white transition-colors"
+                              className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center hover:bg-white transition-colors z-20"
                               aria-label={saved ? 'Unsave property' : 'Save property'}
                             >
                               <Heart className={`w-5 h-5 ${saved ? 'text-red-500 fill-red-500' : 'text-gray-600'}`} />
                             </button>
                             {getListingBadgeLabel(listing) && (
-                              <span className="absolute top-3 left-3 px-3 py-1 bg-mokogo-primary text-white rounded-full text-xs font-medium shadow-md">
+                              <span className="absolute top-3 left-3 max-w-[70%] px-3 py-1 bg-mokogo-primary text-white rounded-full text-xs font-medium shadow-md z-10 truncate">
                                 {getListingBadgeLabel(listing)}
                               </span>
                             )}
