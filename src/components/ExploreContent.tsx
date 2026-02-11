@@ -730,7 +730,7 @@ const ExploreContent = ({
                 </p>
                 <div className="flex items-center gap-2 text-sm">
                   <span className="text-gray-600">Sort by</span>
-                  <div className="w-44">
+                  <div className="w-48">
                     <CustomSelect
                       label=""
                       value={sortOption}

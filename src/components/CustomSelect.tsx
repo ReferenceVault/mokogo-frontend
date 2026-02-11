@@ -113,7 +113,7 @@ const CustomSelect = ({
             error ? 'border-red-300 focus:border-red-400 focus:ring-red-400/50' : ''
           } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
-          <span className={selectedOption ? 'text-stone-900' : 'text-stone-400'}>
+          <span className={`${selectedOption ? 'text-stone-900' : 'text-stone-400'} whitespace-nowrap overflow-hidden text-ellipsis`}>
             {selectedOption ? selectedOption.label : placeholder}
           </span>
           <svg 

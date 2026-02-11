@@ -443,7 +443,7 @@ const ExploreProperties = () => {
                 <div className="flex items-center gap-3">
                   <div className="hidden sm:flex items-center gap-2 text-xs md:text-sm">
                     <span className="text-gray-600">Sort by</span>
-                    <div className="w-40">
+                    <div className="w-48">
                       <CustomSelect
                         label=""
                         value={sortOption}
