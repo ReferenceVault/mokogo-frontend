@@ -191,18 +191,16 @@ const ContactHostSection = ({
       </div>
 
       <div className="space-y-3 mb-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div className={`${borderClass} ${inputClass}`}>
-            <div className={`${textClass} font-semibold text-gray-700 uppercase mb-1`}>Move-in Date</div>
-            <div className="[&_button]:!h-auto [&_button]:!py-0 [&_button]:!px-0 [&_button]:!border-0 [&_button]:!bg-transparent [&_button]:!shadow-none [&_button]:!min-w-0 [&_button]:!w-full [&_button]:text-xs">
-              <MoveInDateField
-                value={moveInDate}
-                onChange={(date) => setMoveInDate(date)}
-                min={new Date().toISOString().split('T')[0]}
-                hideLabel={true}
-                numberOfMonths={1}
-              />
-            </div>
+        <div className={`${borderClass} ${inputClass}`}>
+          <div className={`${textClass} font-semibold text-gray-700 uppercase mb-1`}>Move-in Date</div>
+          <div className="[&_button]:!h-auto [&_button]:!py-0 [&_button]:!px-0 [&_button]:!border-0 [&_button]:!bg-transparent [&_button]:!shadow-none [&_button]:!min-w-0 [&_button]:!w-full [&_button]:text-xs">
+            <MoveInDateField
+              value={moveInDate}
+              onChange={(date) => setMoveInDate(date)}
+              min={new Date().toISOString().split('T')[0]}
+              hideLabel={true}
+              numberOfMonths={1}
+            />
           </div>
         </div>
 

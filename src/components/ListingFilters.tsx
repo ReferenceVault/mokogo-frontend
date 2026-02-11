@@ -428,24 +428,28 @@ export const ListingFilters = ({
 
           {/* LGBTQ+ friendly */}
           <div>
-            <span className="block text-sm font-medium text-gray-800 mb-2">LGBTQ+ friendly</span>
-            <div className="flex gap-2">
+            <div className="flex items-center gap-3">
+              <span className="block text-sm font-medium text-gray-800">LGBTQ+ friendly</span>
               <button
                 type="button"
                 onClick={() => setLgbtqFriendly(prev => !prev)}
-                className={`flex-1 px-3 py-2 rounded-lg border text-xs font-medium ${
-                  lgbtqFriendly
-                    ? 'bg-mokogo-primary text-white border-mokogo-primary'
-                    : 'text-gray-700 border-gray-300 hover:border-mokogo-primary hover:text-mokogo-primary'
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-mokogo-primary focus:ring-offset-2 ${
+                  lgbtqFriendly ? 'bg-mokogo-primary' : 'bg-gray-300'
                 }`}
+                role="switch"
+                aria-checked={lgbtqFriendly}
               >
-                {lgbtqFriendly ? 'Enabled – show only LGBTQ+ friendly homes' : 'Show only LGBTQ+ friendly homes'}
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    lgbtqFriendly ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
               </button>
             </div>
           </div>
         </div>
 
-        <div className="px-5 py-3 border-t border-gray-200 flex items-center justify-between gap-3">
+        <div className="px-5 py-3 border-t border-gray-200 flex items-center justify-end gap-3">
           <button
             type="button"
             onClick={handleClearAll}
@@ -456,7 +460,7 @@ export const ListingFilters = ({
           <button
             type="button"
             onClick={handleApply}
-            className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-mokogo-primary text-white text-xs md:text-sm font-semibold py-2.5 px-4 hover:bg-mokogo-primary-dark transition-colors"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-mokogo-primary text-white text-xs md:text-sm font-semibold py-2.5 px-4 hover:bg-mokogo-primary-dark transition-colors"
           >
             Apply filters
           </button>
