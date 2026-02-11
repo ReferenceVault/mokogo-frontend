@@ -7,6 +7,7 @@ import { MoveInDateField } from '@/components/MoveInDateField'
 import { formatRent } from '@/utils/formatters'
 import { placesApi, AutocompletePrediction, listingsApi, ListingResponse } from '@/services/api'
 import { Listing } from '@/types'
+import { getListingBadgeLabel } from '@/utils/listingTags'
 import ListingFilters, { ListingFilterState } from '@/components/ListingFilters'
 
 const CityListings = () => {
@@ -68,6 +69,7 @@ const CityListings = () => {
           longitude: listing.longitude,
           formattedAddress: listing.formattedAddress,
           societyName: listing.societyName,
+          buildingType: listing.buildingType,
           bhkType: listing.bhkType || '',
           roomType: listing.roomType || '',
           rent: listing.rent || 0,
@@ -88,7 +90,7 @@ const CityListings = () => {
           createdAt: listing.createdAt,
           updatedAt: listing.updatedAt,
           mikoTags: listing.mikoTags,
-          lgbtqFriendly: (listing as any).lgbtqFriendly,
+          lgbtqFriendly: listing.lgbtqFriendly,
         }))
         setCityListingsBase(mapped)
       } catch (error) {
@@ -230,6 +232,7 @@ const CityListings = () => {
         longitude: listing.longitude,
         formattedAddress: listing.formattedAddress,
         societyName: listing.societyName,
+        buildingType: listing.buildingType,
         bhkType: listing.bhkType || '',
         roomType: listing.roomType || '',
         rent: listing.rent || 0,
@@ -250,7 +253,7 @@ const CityListings = () => {
         createdAt: listing.createdAt,
         updatedAt: listing.updatedAt,
         mikoTags: listing.mikoTags,
-        lgbtqFriendly: (listing as any).lgbtqFriendly,
+        lgbtqFriendly: listing.lgbtqFriendly,
       }))
       setCityListingsBase(mapped)
     } catch (error) {
@@ -282,6 +285,7 @@ const CityListings = () => {
         longitude: listing.longitude,
         formattedAddress: listing.formattedAddress,
         societyName: listing.societyName,
+        buildingType: listing.buildingType,
         bhkType: listing.bhkType || '',
         roomType: listing.roomType || '',
         rent: listing.rent || 0,
@@ -302,7 +306,7 @@ const CityListings = () => {
         createdAt: listing.createdAt,
         updatedAt: listing.updatedAt,
         mikoTags: listing.mikoTags,
-        lgbtqFriendly: (listing as any).lgbtqFriendly,
+        lgbtqFriendly: listing.lgbtqFriendly,
       }))
       setCityListingsBase(mapped)
     } catch (error) {
@@ -571,16 +575,18 @@ const CityListings = () => {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                           </svg>
                         </button>
-                        <span className="absolute top-3 left-3 px-3 py-1 bg-mokogo-primary text-white rounded-full text-xs font-medium shadow-md">
-                          {listing.roomType === 'Private Room' ? 'Private' : listing.roomType === 'Master Room' ? 'Master' : 'Shared'}
-                        </span>
+                        {getListingBadgeLabel(listing) && (
+                          <span className="absolute top-3 left-3 px-3 py-1 bg-mokogo-primary text-white rounded-full text-xs font-medium shadow-md">
+                            {getListingBadgeLabel(listing)}
+                          </span>
+                        )}
                       </div>
 
                       {/* Content */}
                       <div className="p-4 space-y-3">
                         <div className="flex items-start justify-between gap-2">
                           <h3 className="font-semibold text-gray-900 line-clamp-1 text-sm">
-                            {listing.title}
+                            {listing.title.split('·')[0].trim()}
                           </h3>
                         </div>
 

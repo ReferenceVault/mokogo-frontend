@@ -5,6 +5,7 @@ import { MoveInDateField } from '@/components/MoveInDateField'
 import { MapPin, Home, Heart } from 'lucide-react'
 import { Listing, VibeTagId } from '@/types'
 import { getListingMikoTags, getMikoMatchPercent, getMikoMatchScore } from '@/utils/miko'
+import { getListingBadgeLabel } from '@/utils/listingTags'
 import MikoTagPills from '@/components/MikoTagPills'
 import { listingsApi, ListingResponse, placesApi, AutocompletePrediction } from '@/services/api'
 import { useStore } from '@/store/useStore'
@@ -95,6 +96,7 @@ const ExploreContent = ({
           longitude: listing.longitude,
           formattedAddress: listing.formattedAddress,
           societyName: listing.societyName,
+          buildingType: listing.buildingType,
           bhkType: listing.bhkType || '',
           roomType: listing.roomType || '',
           rent: listing.rent || 0,
@@ -115,7 +117,7 @@ const ExploreContent = ({
           createdAt: listing.createdAt,
           updatedAt: listing.updatedAt,
           mikoTags: listing.mikoTags,
-          lgbtqFriendly: (listing as any).lgbtqFriendly,
+          lgbtqFriendly: listing.lgbtqFriendly,
         }))
         setExploreListings(mappedListings)
       } catch (error) {
@@ -414,6 +416,7 @@ const ExploreContent = ({
         longitude: listing.longitude,
         formattedAddress: listing.formattedAddress,
         societyName: listing.societyName,
+        buildingType: listing.buildingType,
         bhkType: listing.bhkType || '',
         roomType: listing.roomType || '',
         rent: listing.rent || 0,
@@ -434,6 +437,7 @@ const ExploreContent = ({
         createdAt: listing.createdAt,
         updatedAt: listing.updatedAt,
         mikoTags: listing.mikoTags,
+        lgbtqFriendly: listing.lgbtqFriendly,
       }))
       setExploreListings(mappedListings)
     } catch (error) {
@@ -467,6 +471,7 @@ const ExploreContent = ({
         longitude: listing.longitude,
         formattedAddress: listing.formattedAddress,
         societyName: listing.societyName,
+        buildingType: listing.buildingType,
         bhkType: listing.bhkType || '',
         roomType: listing.roomType || '',
         rent: listing.rent || 0,
@@ -487,6 +492,7 @@ const ExploreContent = ({
         createdAt: listing.createdAt,
         updatedAt: listing.updatedAt,
         mikoTags: listing.mikoTags,
+        lgbtqFriendly: listing.lgbtqFriendly,
       }))
       setExploreListings(mappedListings)
     } catch (error) {
@@ -783,9 +789,11 @@ const ExploreContent = ({
                     >
                       <Heart className={`w-5 h-5 ${saved ? 'text-red-500 fill-red-500' : 'text-gray-600'}`} />
                     </button>
-                    <span className="absolute top-3 left-3 px-3 py-1 bg-mokogo-primary text-white rounded-full text-xs font-medium shadow-md">
-                      {listing.roomType === 'Private Room' ? 'Private' : listing.roomType === 'Master Room' ? 'Master' : 'Shared'}
-                    </span>
+                    {getListingBadgeLabel(listing) && (
+                      <span className="absolute top-3 left-3 px-3 py-1 bg-mokogo-primary text-white rounded-full text-xs font-medium shadow-md">
+                        {getListingBadgeLabel(listing)}
+                      </span>
+                    )}
                     {isMikoMode && mikoTags.length > 0 && (
                       <span className="absolute bottom-3 left-3 px-2.5 py-1 bg-white/90 backdrop-blur-sm text-xs font-semibold text-orange-600 rounded-full border border-orange-200 shadow-sm">
                         {matchPercent}% Vibe Match
@@ -797,7 +805,7 @@ const ExploreContent = ({
                   <div className="p-4 space-y-3 flex-1 flex flex-col">
                     <div className="flex items-start justify-between gap-2">
                       <h3 className="font-semibold text-gray-900 line-clamp-1 text-sm">
-                        {listing.title}
+                        {listing.title.split('·')[0].trim()}
                       </h3>
                     </div>
 
