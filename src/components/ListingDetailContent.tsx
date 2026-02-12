@@ -535,33 +535,36 @@ const ListingDetailContent = ({ listingId, onBack, onExplore }: ListingDetailCon
                       ) : (
                         <div className="w-full h-full bg-mokogo-gray" />
                       )}
-                      <button 
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault()
-                          e.stopPropagation()
-                          const willSave = !isListingSaved(similar.id)
-                          const request = willSave
-                            ? usersApi.saveListing(similar.id)
-                            : usersApi.removeSavedListing(similar.id)
-                          request
-                            .then((updated) => {
-                              setSavedListings(updated)
-                            })
-                            .catch(() => {
-                              toggleSavedListing(similar.id)
-                            })
-                        }}
-                        className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center hover:bg-white transition-colors z-20"
-                        aria-label={saved ? 'Unsave property' : 'Save property'}
-                      >
-                        <Heart className={`w-5 h-5 ${saved ? 'text-red-500 fill-red-500' : 'text-gray-600'}`} />
-                      </button>
-                      {getListingBadgeLabel(similar) && (
-                        <span className="absolute top-3 left-3 px-3 py-1 bg-mokogo-primary text-white rounded-full text-xs font-medium shadow-md whitespace-normal break-words">
-                          {getListingBadgeLabel(similar)}
-                        </span>
-                      )}
+
+                      <div className="absolute top-3 left-3 right-3 flex items-start justify-between gap-2 pointer-events-none">
+                        {getListingBadgeLabel(similar) && (
+                          <span className="pointer-events-none inline-flex max-w-[75%] px-3 py-1 bg-mokogo-primary text-white rounded-full text-xs font-medium shadow-md whitespace-normal break-words">
+                            {getListingBadgeLabel(similar)}
+                          </span>
+                        )}
+                        <button 
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            const willSave = !isListingSaved(similar.id)
+                            const request = willSave
+                              ? usersApi.saveListing(similar.id)
+                              : usersApi.removeSavedListing(similar.id)
+                            request
+                              .then((updated) => {
+                                setSavedListings(updated)
+                              })
+                              .catch(() => {
+                                toggleSavedListing(similar.id)
+                              })
+                          }}
+                          className="pointer-events-auto w-9 h-9 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center hover:bg-white transition-colors z-20 flex-shrink-0"
+                          aria-label={saved ? 'Unsave property' : 'Save property'}
+                        >
+                          <Heart className={`w-5 h-5 ${saved ? 'text-red-500 fill-red-500' : 'text-gray-600'}`} />
+                        </button>
+                      </div>
                     </div>
 
                     {/* Content */}

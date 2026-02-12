@@ -9,13 +9,10 @@ import { placesApi, AutocompletePrediction, listingsApi, ListingResponse } from 
 import { Listing } from '@/types'
 import { getListingBadgeLabel } from '@/utils/listingTags'
 import ListingFilters, { ListingFilterState } from '@/components/ListingFilters'
-import { useStore } from '@/store/useStore'
-import { Heart } from 'lucide-react'
 
 const CityListings = () => {
   const { cityName } = useParams<{ cityName: string }>()
   const navigate = useNavigate()
-  const { user, toggleSavedListing, isListingSaved } = useStore()
 
   // Scroll to top when component mounts or city changes
   useEffect(() => {
@@ -553,7 +550,6 @@ const CityListings = () => {
                 {/* Listings Grid */}
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                   {cityListings.map((listing) => {
-                  const saved = isListingSaved(listing.id)
                   return (
                   <Link
                       key={listing.id}
@@ -571,22 +567,6 @@ const CityListings = () => {
                         ) : (
                           <div className="w-full h-full bg-mokogo-gray" />
                         )}
-                        <button 
-                          type="button"
-                          onClick={(e) => {
-                            e.preventDefault()
-                            e.stopPropagation()
-                            if (!user) {
-                              navigate('/login')
-                              return
-                            }
-                            toggleSavedListing(listing.id)
-                          }}
-                          className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center hover:bg-white transition-colors z-20"
-                          aria-label={saved ? 'Unsave property' : 'Save property'}
-                        >
-                          <Heart className={`w-5 h-5 ${saved ? 'text-red-500 fill-red-500' : 'text-gray-600'}`} />
-                        </button>
                         {getListingBadgeLabel(listing) && (
                           <span className="absolute top-3 left-3 px-3 py-1 bg-mokogo-primary text-white rounded-full text-xs font-medium shadow-md z-10 whitespace-normal break-words">
                             {getListingBadgeLabel(listing)}
