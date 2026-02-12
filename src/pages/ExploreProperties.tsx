@@ -516,7 +516,7 @@ const ExploreProperties = () => {
                             <div className="w-full h-full bg-mokogo-gray" />
                           )}
                           {getListingBadgeLabel(listing) && (
-                            <span className="absolute top-3 left-3 px-3 py-1 bg-mokogo-primary text-white rounded-full text-xs font-medium shadow-md whitespace-normal break-words">
+                            <span className="absolute top-3 left-3 px-3 py-1 bg-mokogo-primary text-white rounded-full text-xs font-medium shadow-md truncate">
                               {getListingBadgeLabel(listing)}
                             </span>
                           )}
