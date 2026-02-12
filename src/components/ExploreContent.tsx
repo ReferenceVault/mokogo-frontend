@@ -801,7 +801,7 @@ const ExploreContent = ({
                       <Heart className={`w-5 h-5 ${saved ? 'text-red-500 fill-red-500' : 'text-gray-600'}`} />
                     </button>
                     {getListingBadgeLabel(listing) && (
-                      <span className="absolute top-3 left-3 max-w-[70%] px-3 py-1 bg-mokogo-primary text-white rounded-full text-xs font-medium shadow-md z-10 truncate">
+                      <span className="absolute top-3 left-3 px-3 py-1 bg-mokogo-primary text-white rounded-full text-xs font-medium shadow-md z-10 whitespace-normal break-words">
                         {getListingBadgeLabel(listing)}
                       </span>
                     )}

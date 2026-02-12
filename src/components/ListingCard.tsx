@@ -84,7 +84,7 @@ const ListingCard = ({
         )}
 
         {getListingBadgeLabel(listing) && (
-          <span className="absolute top-3 left-3 max-w-[80%] px-3 py-1 bg-mokogo-primary text-white rounded-full text-xs font-medium shadow-md truncate">
+          <span className="absolute top-3 left-3 px-3 py-1 bg-mokogo-primary text-white rounded-full text-xs font-medium shadow-md whitespace-normal break-words">
             {getListingBadgeLabel(listing)}
           </span>
         )}

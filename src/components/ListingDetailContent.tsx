@@ -558,7 +558,7 @@ const ListingDetailContent = ({ listingId, onBack, onExplore }: ListingDetailCon
                         <Heart className={`w-5 h-5 ${saved ? 'text-red-500 fill-red-500' : 'text-gray-600'}`} />
                       </button>
                       {getListingBadgeLabel(similar) && (
-                        <span className="absolute top-3 left-3 max-w-[80%] px-3 py-1 bg-mokogo-primary text-white rounded-full text-xs font-medium shadow-md truncate">
+                        <span className="absolute top-3 left-3 px-3 py-1 bg-mokogo-primary text-white rounded-full text-xs font-medium shadow-md whitespace-normal break-words">
                           {getListingBadgeLabel(similar)}
                         </span>
                       )}
