@@ -53,7 +53,7 @@ const RequestsContent = ({
 
   useEffect(() => {
     // Always fetch latest requests when Requests view is opened
-    fetchRequests()
+      fetchRequests()
 
     const token = localStorage.getItem('mokogo-access-token')
     if (token && user) {

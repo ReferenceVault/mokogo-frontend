@@ -497,7 +497,8 @@ const ExploreProperties = () => {
                 </div>
               ) : (
                 <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  {sortedListings.map((listing) => (
+                  {sortedListings.map((listing) => {
+                    return (
                       <Link
                         key={listing.id}
                         to={`/listings/${listing.id}`}
@@ -515,7 +516,7 @@ const ExploreProperties = () => {
                             <div className="w-full h-full bg-mokogo-gray" />
                           )}
                           {getListingBadgeLabel(listing) && (
-                            <span className="absolute top-3 left-3 px-3 py-1 bg-mokogo-primary text-white rounded-full text-xs font-medium shadow-md">
+                            <span className="absolute top-3 left-3 px-3 py-1 bg-mokogo-primary text-white rounded-full text-xs font-medium shadow-md whitespace-normal break-words">
                               {getListingBadgeLabel(listing)}
                             </span>
                           )}
@@ -548,7 +549,8 @@ const ExploreProperties = () => {
                           </div>
                         </div>
                       </Link>
-                    ))}
+                    )
+                  })}
                 </div>
               )}
             </div>

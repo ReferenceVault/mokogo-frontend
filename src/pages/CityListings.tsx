@@ -116,13 +116,15 @@ const CityListings = () => {
       }
       
       // Move-in Date filter
+      // Business rule: show listings available ON or BEFORE the seeker's desired move-in date
+      // i.e., listing.moveInDate <= filters.moveInDate (date-only comparison)
       if (filters.moveInDate) {
         const filterDate = new Date(filters.moveInDate)
         filterDate.setHours(0, 0, 0, 0) // Reset time for accurate comparison
         const listingDate = new Date(listing.moveInDate)
         listingDate.setHours(0, 0, 0, 0)
-        // Show listings where move-in date is on or after the selected date
-        if (listingDate < filterDate) {
+        // Show listings where listing's date is on or before the chosen date
+        if (listingDate > filterDate) {
           return false
         }
       }

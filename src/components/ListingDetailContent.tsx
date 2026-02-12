@@ -10,13 +10,12 @@ import RoomDetails from '@/components/RoomDetails'
 import AmenitiesSection from '@/components/AmenitiesSection'
 import MeetYourHost from '@/components/MeetYourHost'
 import ContactHostSection from '@/components/ContactHostSection'
-import { formatPrice } from '@/utils/formatters'
+import { formatRent } from '@/utils/formatters'
 import { listingsApi, requestsApi, usersApi, messagesApi } from '@/services/api'
+import { getListingBadgeLabel } from '@/utils/listingTags'
 
 import {
-  MapPin,
   ChevronRight,
-  Home,
   Search,
   Heart,
 } from 'lucide-react'
@@ -516,65 +515,84 @@ const ListingDetailContent = ({ listingId, onBack, onExplore }: ListingDetailCon
               <Link to="/explore" className="text-sm text-orange-400 hover:text-orange-500 font-semibold">View All</Link>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {similarListings.map((similar) => (
-                <Link 
-                  key={similar.id}
-                  to={`/dashboard?listing=${similar.id}`}
-                  className="bg-white/70 backdrop-blur-md rounded-xl shadow-lg hover:shadow-xl transition-shadow border border-white/35"
-                >
-                  <div className="relative">
-                    {similar.photos && similar.photos.length > 0 ? (
-                      <img 
-                        className="w-full h-36 object-cover rounded-t-xl" 
-                        src={similar.photos[0]} 
-                        alt={similar.title} 
-                      />
-                    ) : (
-                      <div className="w-full h-36 bg-gray-200 rounded-t-xl flex items-center justify-center">
-                        <Home className="w-8 h-8 text-gray-400" />
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {similarListings.map((similar) => {
+                const saved = isListingSaved(similar.id)
+                return (
+                  <Link 
+                    key={similar.id}
+                    to={`/dashboard?listing=${similar.id}`}
+                    className="bg-white/50 backdrop-blur-md rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all group border border-white/60 block"
+                  >
+                    {/* Image */}
+                    <div className="relative h-48 overflow-hidden">
+                      {similar.photos && similar.photos.length > 0 ? (
+                        <img
+                          src={similar.photos[0]}
+                          alt={similar.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-mokogo-gray" />
+                      )}
+                      <button 
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          const willSave = !isListingSaved(similar.id)
+                          const request = willSave
+                            ? usersApi.saveListing(similar.id)
+                            : usersApi.removeSavedListing(similar.id)
+                          request
+                            .then((updated) => {
+                              setSavedListings(updated)
+                            })
+                            .catch(() => {
+                              toggleSavedListing(similar.id)
+                            })
+                        }}
+                        className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center hover:bg-white transition-colors z-20"
+                        aria-label={saved ? 'Unsave property' : 'Save property'}
+                      >
+                        <Heart className={`w-5 h-5 ${saved ? 'text-red-500 fill-red-500' : 'text-gray-600'}`} />
+                      </button>
+                      {getListingBadgeLabel(similar) && (
+                        <span className="absolute top-3 left-3 max-w-[80%] px-3 py-1 bg-mokogo-primary text-white rounded-full text-xs font-medium shadow-md truncate">
+                          {getListingBadgeLabel(similar)}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Content */}
+                    <div className="p-4 space-y-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <h3 className="font-semibold text-gray-900 line-clamp-1 text-sm">
+                          {similar.title.split('·')[0].trim()}
+                        </h3>
                       </div>
-                    )}
-                    <button 
-                      onClick={(e) => {
-                        e.preventDefault()
-                        const willSave = !isListingSaved(similar.id)
-                        const request = willSave
-                          ? usersApi.saveListing(similar.id)
-                          : usersApi.removeSavedListing(similar.id)
-                        request
-                          .then((updated) => {
-                            setSavedListings(updated)
-                          })
-                          .catch(() => {
-                            toggleSavedListing(similar.id)
-                          })
-                      }}
-                      className="absolute top-2 right-2 bg-white/80 backdrop-blur-sm p-1.5 rounded-full hover:bg-white transition-colors"
-                    >
-                      <Heart className={`w-4 h-4 ${isListingSaved(similar.id) ? 'text-red-500 fill-red-500' : 'text-gray-700'}`} />
-                    </button>
-                  </div>
-                  <div className="p-4">
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="text-sm font-semibold text-gray-900">{similar.title}</h3>
-                      <div className="text-right">
-                        <div className="text-base font-bold text-gray-900">₹{formatPrice(similar.rent)}</div>
-                        <div className="text-xs text-gray-500">/month</div>
+
+                      <div className="flex items-center gap-2 text-gray-600 text-sm">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <span className="line-clamp-1">{similar.locality}, {similar.city}</span>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-2 border-t border-gray-200">
+                        <div>
+                          <p className="text-xl font-bold text-gray-900">{formatRent(similar.rent)}</p>
+                          <p className="text-xs text-gray-600">per month</p>
+                        </div>
+                        <span className="btn-primary text-sm px-4 py-2 inline-block text-center">
+                          View Details
+                        </span>
                       </div>
                     </div>
-                    <div className="flex items-center text-gray-600 mb-2">
-                      <MapPin className="w-3.5 h-3.5 mr-1.5 text-orange-400" />
-                      <span className="text-xs">{similar.locality}, {similar.city}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="bg-pink-100 text-pink-800 px-2 py-0.5 rounded text-xs font-medium">
-                        {similar.preferredGender || 'Any'}
-                      </span>
-                    </div>
-                  </div>
-                </Link>
-              ))}
+                  </Link>
+                )
+              })}
             </div>
           </div>
         </section>
