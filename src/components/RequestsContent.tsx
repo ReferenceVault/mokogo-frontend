@@ -52,23 +52,8 @@ const RequestsContent = ({
   }, [initialTab, hasListings])
 
   useEffect(() => {
-    // Use cached data if available, otherwise fetch
-    const { cachedRequestsForOwner, cachedRequestsForRequester } = useStore.getState()
-    
-    if (cachedRequestsForOwner && cachedRequestsForRequester) {
-      // Use cached data
-      const all = [...cachedRequestsForOwner, ...cachedRequestsForRequester]
-      const sorted = all.sort((a, b) => {
-        if (a.status === 'pending' && b.status !== 'pending') return -1
-        if (a.status !== 'pending' && b.status === 'pending') return 1
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      })
-      setAllRequests(sorted)
-      setLoading(false)
-    } else {
-      // Fetch if not cached
+    // Always fetch latest requests when Requests view is opened
       fetchRequests()
-    }
 
     const token = localStorage.getItem('mokogo-access-token')
     if (token && user) {

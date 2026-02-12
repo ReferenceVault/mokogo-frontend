@@ -803,58 +803,60 @@ const LandingPage = () => {
               </div>
             ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {displayedListings.map((listing) => (
-                <Link
-                  key={listing.id}
-                  to={`/listings/${listing.id}`}
-                  className="bg-white/50 backdrop-blur-md rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all group border border-white/60 block"
-                >
-                  {/* Image */}
-                  <div className="relative h-48 overflow-hidden">
-                    {listing.photos && listing.photos.length > 0 ? (
-                      <img
-                        src={listing.photos[0]}
-                        alt={listing.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-mokogo-gray" />
-                    )}
-                    {getListingBadgeLabel(listing) && (
-                      <span className="absolute top-3 left-3 px-3 py-1 bg-mokogo-primary text-white rounded-full text-xs font-medium shadow-md">
-                        {getListingBadgeLabel(listing)}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Content */}
-                  <div className="p-4 space-y-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <h3 className="font-semibold text-gray-900 line-clamp-1 text-sm">
-                        {listing.title.split('·')[0].trim()}
-                      </h3>
-                    </div>
-
-                    <div className="flex items-center gap-2 text-gray-600 text-sm">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                      <span className="line-clamp-1">{listing.locality}, {listing.city}</span>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-2 border-t border-gray-200">
-                      <div>
-                        <p className="text-xl font-bold text-gray-900">{formatRent(listing.rent)}</p>
-                        <p className="text-xs text-gray-600">per month</p>
+                {displayedListings.map((listing) => {
+                  return (
+                    <Link
+                      key={listing.id}
+                      to={`/listings/${listing.id}`}
+                      className="bg-white/50 backdrop-blur-md rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all group border border-white/60 block"
+                    >
+                      {/* Image */}
+                      <div className="relative h-48 overflow-hidden">
+                        {listing.photos && listing.photos.length > 0 ? (
+                          <img
+                            src={listing.photos[0]}
+                            alt={listing.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-mokogo-gray" />
+                        )}
+                        {getListingBadgeLabel(listing) && (
+                          <span className="absolute top-3 left-3 max-w-[80%] px-3 py-1 bg-mokogo-primary text-white rounded-full text-xs font-medium shadow-md truncate">
+                            {getListingBadgeLabel(listing)}
+                          </span>
+                        )}
                       </div>
-                      <span className="btn-primary text-sm px-4 py-2 inline-block text-center">
-                        View Details
-                      </span>
-                    </div>
-                  </div>
-                </Link>
-              ))}
+
+                      {/* Content */}
+                      <div className="p-4 space-y-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <h3 className="font-semibold text-gray-900 line-clamp-1 text-sm">
+                            {listing.title.split('·')[0].trim()}
+                          </h3>
+                        </div>
+
+                        <div className="flex items-center gap-2 text-gray-600 text-sm">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                          <span className="line-clamp-1">{listing.locality}, {listing.city}</span>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-2 border-t border-gray-200">
+                          <div>
+                            <p className="text-xl font-bold text-gray-900">{formatRent(listing.rent)}</p>
+                            <p className="text-xs text-gray-600">per month</p>
+                          </div>
+                          <span className="btn-primary text-sm px-4 py-2 inline-block text-center">
+                            View Details
+                          </span>
+                        </div>
+                      </div>
+                    </Link>
+                  )
+                })}
               </div>
             )}
 

@@ -16,7 +16,6 @@ const MeetYourHost = ({ listing, hostInfo, className = '' }: MeetYourHostProps) 
   const titleClass = 'text-lg font-bold mb-4'
   const hostNameClass = 'text-base font-bold'
   const hostAboutClass = 'text-sm text-gray-700 mb-3'
-  const infoTextClass = 'text-xs text-gray-600'
   const spacingClass = 'space-x-4'
 
   const hostAbout =
@@ -43,15 +42,6 @@ const MeetYourHost = ({ listing, hostInfo, className = '' }: MeetYourHostProps) 
           <h3 className={`${hostNameClass} mb-2`}>{hostInfo?.name || 'Host'}</h3>
           
           <p className={hostAboutClass}>{hostAbout}</p>
-          
-          <div className={`flex items-center ${spacingClass}`}>
-            <div className={infoTextClass}>
-              <span className="font-semibold">Languages:</span> Hindi, English
-            </div>
-            <div className={infoTextClass}>
-              <span className="font-semibold">Response time:</span> Within 2 hours
-            </div>
-          </div>
         </div>
       </div>
     </div>

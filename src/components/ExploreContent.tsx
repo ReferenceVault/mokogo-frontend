@@ -188,21 +188,32 @@ const ExploreContent = ({
           areaMatch = listing.locality === filters.area
         }
       }
+      // Move-in date match
+      // Business rule: show listings available ON or BEFORE the seeker's desired move-in date
+      // i.e., listing.moveInDate <= filters.moveInDate (date-only comparison)
       const moveInDateMatch = filters.moveInDate
-      const genderMatch = filters.preferredGender
-        ? (() => {
-            if (filters.preferredGender === 'Any') {
-              return true
-            }
-            return listing.preferredGender === filters.preferredGender
-          })()
-        : false
         ? (() => {
             const filterDate = new Date(filters.moveInDate)
             filterDate.setHours(0, 0, 0, 0)
             const listingDate = new Date(listing.moveInDate)
             listingDate.setHours(0, 0, 0, 0)
-            return listingDate >= filterDate
+            return listingDate <= filterDate
+          })()
+        : false
+
+      // Gender preference match
+      // Note: 'Any' should behave like "no restriction", so only apply when a specific gender is selected
+      const genderMatch = filters.preferredGender
+        ? (() => {
+            if (filters.preferredGender === 'Any') {
+              return true
+            }
+            // If listing has a specific preference (not 'Any'), it must match the filter
+            if (listing.preferredGender && listing.preferredGender !== 'Any') {
+              return listing.preferredGender === filters.preferredGender
+            }
+            // Listings with 'Any' preference match all filters
+            return true
           })()
         : false
 
