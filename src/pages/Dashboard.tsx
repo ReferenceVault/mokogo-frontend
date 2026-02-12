@@ -15,7 +15,7 @@ import ProfileCompletionModal from '@/components/ProfileCompletionModal'
 import { isListingLimitError } from '@/utils/errorHandler'
 import { isProfileComplete as checkProfileComplete } from '@/utils/profileValidation'
 import { useStore } from '@/store/useStore'
-import { listingsApi, ListingResponse, usersApi, messagesApi, requestsApi } from '@/services/api'
+import { listingsApi, ListingResponse, usersApi, messagesApi } from '@/services/api'
 import { Listing, VibeTagId } from '@/types'
 import { getListingBadgeLabel } from '@/utils/listingTags'
 import { handleLogout as handleLogoutUtil } from '@/utils/auth'
@@ -56,8 +56,6 @@ const Dashboard = () => {
     cachedRequestsForOwner,
     dataFetchedAt,
     setCachedConversations,
-    setCachedRequestsForOwner,
-    setCachedRequestsForRequester,
     setDataFetchedAt,
     toggleSavedListing,
     isListingSaved,
@@ -183,7 +181,7 @@ const Dashboard = () => {
     fetchProfile()
   }, [user, setUser])
 
-  // Fetch all data once on mount (conversations, requests)
+  // Fetch conversations once on mount (requests are fetched when entering Requests view)
   const dataFetchInProgressRef = useRef(false)
   
   useEffect(() => {
@@ -209,22 +207,15 @@ const Dashboard = () => {
       dataFetchInProgressRef.current = true
       
       try {
-        // Fetch all data in parallel
-        const [conversations, requestsForOwner, requestsForRequester] = await Promise.all([
-          messagesApi.getAllConversations().catch(() => []),
-          requestsApi.getAllForOwner().catch(() => []),
-          requestsApi.getAllForRequester().catch(() => []),
-        ])
+        // Fetch conversations
+        const conversations = await messagesApi.getAllConversations().catch(() => [])
         
-        // Cache the data
+        // Cache the conversations
         setCachedConversations(conversations)
-        setCachedRequestsForOwner(requestsForOwner)
-        setCachedRequestsForRequester(requestsForRequester)
         setDataFetchedAt(now)
         
         // Update counts from cached data
         setConversationsCount(conversations.length)
-        setPendingRequestsCount(requestsForOwner.filter(r => r.status === 'pending').length)
       } catch (error: any) {
         console.error('Error fetching dashboard data:', error)
         // Use cached data if available

@@ -128,7 +128,8 @@ const CityListings = () => {
       }
       
       // Gender Preference filter
-      if (filters.genderPreference) {
+      // Note: 'Any' should behave like "no restriction", so only apply when a specific gender is selected
+      if (filters.genderPreference && filters.genderPreference !== 'Any') {
         // If filter is set and listing has a preference, they must match
         // If listing preference is 'Any', it matches all filters
         if (listing.preferredGender && listing.preferredGender !== 'Any') {
