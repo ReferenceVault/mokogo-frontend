@@ -59,6 +59,7 @@ const Dashboard = () => {
     setDataFetchedAt,
     toggleSavedListing,
     isListingSaved,
+    setSavedListings,
   } = useStore()
   const [showBoostModal, setShowBoostModal] = useState(false)
   const [showArchiveModal, setShowArchiveModal] = useState(false)
@@ -180,6 +181,23 @@ const Dashboard = () => {
     
     fetchProfile()
   }, [user, setUser])
+
+  // Fetch saved listings from backend when user is logged in
+  useEffect(() => {
+    const fetchSavedListings = async () => {
+      if (!user?.id) return
+      
+      try {
+        const savedListingIds = await usersApi.getSavedListings()
+        setSavedListings(savedListingIds)
+      } catch (error) {
+        console.error('Error fetching saved listings:', error)
+        // Keep existing saved listings from localStorage if API fails
+      }
+    }
+    
+    fetchSavedListings()
+  }, [user?.id, setSavedListings])
 
   // Fetch conversations once on mount (requests are fetched when entering Requests view)
   const dataFetchInProgressRef = useRef(false)
@@ -686,7 +704,18 @@ const Dashboard = () => {
                               onClick={(e) => {
                                 e.preventDefault()
                                 e.stopPropagation()
-                                toggleSavedListing(listing.id)
+                                const willSave = !isListingSaved(listing.id)
+                                const request = willSave
+                                  ? usersApi.saveListing(listing.id)
+                                  : usersApi.removeSavedListing(listing.id)
+                                request
+                                  .then((updated) => {
+                                    setSavedListings(updated)
+                                  })
+                                  .catch(() => {
+                                    // Fallback to local toggle if API fails
+                                    toggleSavedListing(listing.id)
+                                  })
                               }}
                               className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center hover:bg-white transition-colors z-20"
                               aria-label={saved ? 'Unsave property' : 'Save property'}

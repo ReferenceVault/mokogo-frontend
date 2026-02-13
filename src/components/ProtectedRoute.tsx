@@ -36,6 +36,7 @@ const isValidTokenFormat = (token: string): boolean => {
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const user = useStore((state) => state.user)
   const setUser = useStore((state) => state.setUser)
+  const setSavedListings = useStore((state) => state.setSavedListings)
   const [isChecking, setIsChecking] = useState(true)
   const [shouldRedirect, setShouldRedirect] = useState(false)
 
@@ -98,6 +99,17 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
         } catch (error) {
           console.error('Error fetching user profile:', error)
           // Continue even if profile fetch fails
+        }
+      }
+
+      // Fetch saved listings from backend when user is authenticated
+      if (currentUser) {
+        try {
+          const savedListingIds = await usersApi.getSavedListings()
+          setSavedListings(savedListingIds)
+        } catch (error) {
+          console.error('Error fetching saved listings:', error)
+          // Continue even if saved listings fetch fails
         }
       }
 

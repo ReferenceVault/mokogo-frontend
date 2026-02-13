@@ -7,7 +7,7 @@ import { Listing, VibeTagId } from '@/types'
 import { getListingMikoTags, getMikoMatchPercent, getMikoMatchScore } from '@/utils/miko'
 import { getListingBadgeLabel } from '@/utils/listingTags'
 import MikoTagPills from '@/components/MikoTagPills'
-import { listingsApi, ListingResponse, placesApi, AutocompletePrediction } from '@/services/api'
+import { listingsApi, ListingResponse, placesApi, AutocompletePrediction, usersApi } from '@/services/api'
 import { useStore } from '@/store/useStore'
 import { sortListingsByDistance, isListingWithinRadius } from '@/utils/distance'
 import ListingFilters, { ListingFilterState } from '@/components/ListingFilters'
@@ -32,7 +32,7 @@ const ExploreContent = ({
   const location = useLocation()
   const [exploreListings, setExploreListings] = useState<Listing[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const { toggleSavedListing, isListingSaved } = useStore()
+  const { toggleSavedListing, isListingSaved, setSavedListings } = useStore()
 
   // Area autocomplete state
   const [areaInputValue, setAreaInputValue] = useState('')
@@ -769,6 +769,20 @@ const ExploreContent = ({
                 const listingTags = getListingMikoTags(listing)
                 const matchPercent = isMikoMode ? getMikoMatchPercent(mikoTags, listingTags) : 0
                 const saved = isListingSaved(listing.id)
+                const handleToggleSave = () => {
+                  const willSave = !saved
+                  const request = willSave
+                    ? usersApi.saveListing(listing.id)
+                    : usersApi.removeSavedListing(listing.id)
+                  request
+                    .then((updated) => {
+                      setSavedListings(updated)
+                    })
+                    .catch(() => {
+                      // Fallback to local toggle if API fails
+                      toggleSavedListing(listing.id)
+                    })
+                }
                 return (
                 <button
                   key={listing.id}
@@ -800,7 +814,7 @@ const ExploreContent = ({
                         onClick={(e) => {
                           e.preventDefault()
                           e.stopPropagation()
-                          toggleSavedListing(listing.id)
+                          handleToggleSave()
                         }}
                         className="pointer-events-auto w-9 h-9 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center hover:bg-white transition-colors z-20 flex-shrink-0"
                         aria-label={saved ? 'Unsave property' : 'Save property'}
