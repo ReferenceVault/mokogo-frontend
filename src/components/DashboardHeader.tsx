@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import Logo from './Logo'
 import UserAvatar from './UserAvatar'
-import { Search, Bell, Heart as HeartIcon } from 'lucide-react'
+import { Bell, Heart as HeartIcon } from 'lucide-react'
 
 interface DashboardHeaderProps {
   activeView?: string
@@ -65,23 +65,17 @@ const DashboardHeader = ({
             )}
           </div>
 
-          {/* Right section with Search, Notifications, and User Menu */}
+          {/* Right section with Notifications, Heart, and User Menu */}
           <div className="flex items-center gap-4">
-            <div className="hidden lg:flex items-center bg-white/90 backdrop-blur-md rounded-xl px-4 py-2.5 border border-orange-200/50 shadow-sm hover:shadow-md transition-all duration-300">
-              <Search className="w-4 h-4 text-orange-400 mr-3" />
-              <input 
-                type="text" 
-                placeholder="Search listings, areas..." 
-                className="bg-transparent border-none outline-none text-sm text-gray-700 placeholder-gray-400 w-64 focus:placeholder-gray-300" 
-              />
-            </div>
-            
             <button className="relative p-2.5 text-gray-600 hover:text-orange-500 transition-all duration-300 hover:bg-orange-50 rounded-lg">
               <Bell className="w-5 h-5" />
               <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-orange-500 rounded-full ring-2 ring-white"></span>
             </button>
             
-            <button className="p-2.5 text-gray-600 hover:text-orange-500 transition-all duration-300 hover:bg-orange-50 rounded-lg">
+            <button 
+              onClick={() => onViewChange?.('saved')}
+              className="p-2.5 text-gray-600 hover:text-orange-500 transition-all duration-300 hover:bg-orange-50 rounded-lg"
+            >
               <HeartIcon className="w-5 h-5" />
             </button>
             

@@ -20,7 +20,7 @@ import { Listing, VibeTagId } from '@/types'
 import { getListingBadgeLabel } from '@/utils/listingTags'
 import { handleLogout as handleLogoutUtil } from '@/utils/auth'
 import { 
-  LayoutGrid, 
+  // LayoutGrid, 
   Home, 
   MessageSquare, 
   Bookmark, 
@@ -487,12 +487,12 @@ const Dashboard = () => {
       <DashboardHeader
         activeView={activeView === 'overview' ? 'overview' : activeView === 'listings' ? 'listings' : 'overview'}
         onViewChange={(view) => {
-          if (view === 'overview' || view === 'listings') {
+          if (view === 'overview' || view === 'listings' || view === 'saved') {
             setActiveView(view as ViewType)
           }
         }}
         menuItems={[
-          { label: 'Dashboard', view: 'overview' },
+          // { label: 'Dashboard', view: 'overview' },
           { label: 'My Listings', view: 'listings' }
         ]}
         userName={userName}
@@ -522,12 +522,12 @@ const Dashboard = () => {
               icon: Search,
               onClick: () => setActiveView('explore')
             },
-            {
-              id: 'overview',
-              label: 'Overview',
-              icon: LayoutGrid,
-              onClick: () => setActiveView('overview')
-            },
+            // {
+            //   id: 'overview',
+            //   label: 'Overview',
+            //   icon: LayoutGrid,
+            //   onClick: () => setActiveView('overview')
+            // },
             {
               id: 'listings',
               label: 'My Listings',
