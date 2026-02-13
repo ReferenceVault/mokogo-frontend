@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useStore } from '@/store/useStore'
-import { messagesApi, ConversationResponse, MessageResponse } from '@/services/api'
+import { messagesApi, ConversationResponse, MessageResponse, listingsApi, usersApi, UserProfile, ListingResponse } from '@/services/api'
 import { websocketService } from '@/services/websocket'
 import UserAvatar from './UserAvatar'
 import { 
@@ -11,7 +12,10 @@ import {
   Send,
   X,
   Flag,
-  Archive
+  Archive,
+  User,
+  ChevronLeft,
+  MapPin
 } from 'lucide-react'
 
 interface MessagesContentProps {
@@ -20,6 +24,7 @@ interface MessagesContentProps {
 
 const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
   const { user } = useStore()
+  const navigate = useNavigate()
   const [conversations, setConversations] = useState<ConversationResponse[]>([])
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(initialConversationId || null)
   const [messages, setMessages] = useState<MessageResponse[]>([])
@@ -30,10 +35,17 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
   const [showMenu, setShowMenu] = useState(false)
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set()) // Set of online user IDs
+  const [property, setProperty] = useState<ListingResponse | null>(null)
+  const [propertyLoading, setPropertyLoading] = useState(false)
+  const [profileToShow, setProfileToShow] = useState<UserProfile | null>(null)
+  const [profileLoading, setProfileLoading] = useState(false)
+  const [showUnavailableModal, setShowUnavailableModal] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const conversationsLoadedRef = useRef(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
+  const lastFetchedListingIdRef = useRef<string | null>(null)
+  const isFetchingRef = useRef(false)
 
   const conversationMenuRefs = useRef<Map<string, HTMLDivElement>>(new Map())
 
@@ -253,6 +265,104 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
     }
   }, [selectedConversationId])
 
+  // Fetch property and profile when conversation is selected
+  useEffect(() => {
+    const fetchPropertyAndProfile = async () => {
+      if (!selectedConversationId || !user) {
+        setProperty(null)
+        setProfileToShow(null)
+        lastFetchedListingIdRef.current = null
+        return
+      }
+
+      // Find conversation from current conversations state (accessed from closure, not dependency)
+      const conversation = conversations.find(c => (c._id || c.id) === selectedConversationId)
+      if (!conversation) {
+        setProperty(null)
+        setProfileToShow(null)
+        lastFetchedListingIdRef.current = null
+        return
+      }
+
+      // Get listingId from conversation
+      const listingId = typeof conversation.listingId === 'object' 
+        ? conversation.listingId._id 
+        : conversation.listingId
+
+      if (!listingId) {
+        setProperty(null)
+        setProfileToShow(null)
+        lastFetchedListingIdRef.current = null
+        return
+      }
+
+      // Guard: Skip if already fetching or if this listing is already loaded
+      if (isFetchingRef.current) {
+        return
+      }
+
+      if (lastFetchedListingIdRef.current === listingId && property?._id === listingId) {
+        // Already loaded this listing, skip refetch
+        return
+      }
+
+      // Mark as fetching and update ref
+      isFetchingRef.current = true
+      lastFetchedListingIdRef.current = listingId
+
+      // Fetch property using ONLY public endpoint
+      setPropertyLoading(true)
+      try {
+        const propertyData = await listingsApi.getByIdPublic(listingId)
+        setProperty(propertyData)
+
+        // Determine ownership
+        const userId = typeof user === 'object' && user?.id ? user.id : ''
+        const ownerId = propertyData.ownerId
+        const isOwner = ownerId === userId
+
+        // Determine which profile to show
+        let profileUserId: string | null = null
+        if (isOwner) {
+          // Show OTHER participant's profile
+          const user1Id = typeof conversation.user1Id === 'object' ? conversation.user1Id._id : conversation.user1Id
+          const user2Id = typeof conversation.user2Id === 'object' ? conversation.user2Id._id : conversation.user2Id
+          profileUserId = user1Id === userId ? user2Id : user1Id
+        } else {
+          // Show PROPERTY OWNER's profile
+          profileUserId = ownerId
+        }
+
+        // Fetch profile
+        if (profileUserId) {
+          setProfileLoading(true)
+          try {
+            const profileData = await usersApi.getUserById(profileUserId)
+            setProfileToShow(profileData)
+          } catch (error) {
+            console.error('Error fetching user profile:', error)
+            setProfileToShow(null)
+          } finally {
+            setProfileLoading(false)
+          }
+        } else {
+          setProfileToShow(null)
+        }
+      } catch (error) {
+        // Gracefully handle error - do NOT attempt protected fallback
+        console.error('Error fetching property from public endpoint:', error)
+        setProperty(null)
+        setProfileToShow(null)
+        lastFetchedListingIdRef.current = null
+      } finally {
+        setPropertyLoading(false)
+        isFetchingRef.current = false
+      }
+    }
+
+    fetchPropertyAndProfile()
+  }, [selectedConversationId, user]) // Removed 'conversations' from dependencies
+
   useEffect(() => {
     //messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   // Scroll only the messages container, not the entire page
@@ -373,31 +483,6 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
     }
   }
 
-  const handleClearChat = async () => {
-    if (!selectedConversationId) return
-    
-    if (!confirm('Are you sure you want to clear all messages in this chat? This action cannot be undone.')) {
-      return
-    }
-
-    try {
-      await messagesApi.clearMessages(selectedConversationId)
-      setMessages([])
-      setShowMenu(false)
-      
-      // Update conversation to remove last message
-      setConversations(prev => 
-        prev.map(conv => 
-          (conv._id || conv.id) === selectedConversationId
-            ? { ...conv, lastMessageId: undefined, lastMessageAt: new Date().toISOString() }
-            : conv
-        )
-      )
-    } catch (error) {
-      console.error('Error clearing messages:', error)
-      alert('Failed to clear messages. Please try again.')
-    }
-  }
 
   const handleDeleteConversation = async (conversationId: string, e: React.MouseEvent) => {
     e.stopPropagation()
@@ -523,7 +608,9 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
   }
 
   return (
-    <div className="h-[calc(100vh-120px)] flex bg-gray-50">
+    // <div className="h-[calc(100vh-120px)] flex bg-gray-50">
+      <div className="h-[calc(100vh-120px)] flex bg-gray-50 overflow-hidden">
+
       {/* Left Panel - Messages List */}
       <div className="w-80 border-r border-gray-200 bg-white flex flex-col">
         {/* Header */}
@@ -664,23 +751,18 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-2 relative" ref={menuRef}>
+              <div className="flex items-center gap-2">
                 <button 
-                  onClick={() => setShowMenu(!showMenu)}
+                  onClick={() => setShowProfile(!showProfile)}
                   className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  title={showProfile ? 'Hide profile' : 'Show profile'}
                 >
-                  <MoreVertical className="w-5 h-5 text-gray-600" />
+                  {showProfile ? (
+                    <ChevronLeft className="w-5 h-5 text-gray-600" />
+                  ) : (
+                    <User className="w-5 h-5 text-gray-600" />
+                  )}
                 </button>
-                {showMenu && (
-                  <div className="absolute right-0 top-12 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-10 min-w-[160px]">
-                    <button
-                      onClick={handleClearChat}
-                      className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
-                    >
-                      Clear Chat
-                    </button>
-                  </div>
-                )}
               </div>
             </div>
 
@@ -804,36 +886,13 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
         )}
       </div>
 
-      {/* Right Panel - User Profile */}
-      {selectedConversation && otherUser && showProfile && (
+      {/* Right Panel - Property & User Profile */}
+      {selectedConversation && showProfile && (
         <div className="w-80 border-l border-gray-200 bg-white overflow-y-auto">
+          {/* Header with Close Button */}
           <div className="p-4 border-b border-gray-200">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="relative">
-                  <UserAvatar 
-                    user={otherUser}
-                    size="xl" 
-                  />
-                </div>
-                <div>
-                  <span className="text-sm font-semibold text-gray-900">{otherUser.name || 'Unknown'}</span>
-                  <div className="flex items-center gap-2 text-xs">
-                    {(() => {
-                      const otherUserId = otherUser._id
-                      const isOnline = otherUserId ? onlineUsers.has(otherUserId) : false
-                      return (
-                        <>
-                          <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
-                          <span className={isOnline ? 'text-green-600 font-medium' : 'text-gray-500'}>
-                            {isOnline ? 'Online' : 'Offline'}
-                          </span>
-                        </>
-                      )
-                    })()}
-                  </div>
-                </div>
-              </div>
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-gray-900">Details</h3>
               <button
                 onClick={() => setShowProfile(false)}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -844,19 +903,185 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
           </div>
 
           <div className="p-4 space-y-6">
-            {/* Basic Information */}
-            <div>
-              <h3 className="text-sm font-semibold text-gray-900 mb-3">Basic Information</h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Email</span>
-                  <span className="text-gray-900 font-medium">{otherUser.email || 'N/A'}</span>
+            {/* Property Tile */}
+            <div className="relative">
+              {/* Skeleton - Fades out when content loads */}
+              <div 
+                className={`border border-gray-200 rounded-lg overflow-hidden transition-all duration-300 ease-in-out ${
+                  propertyLoading ? 'opacity-100 animate-pulse' : 'opacity-0 absolute inset-0 pointer-events-none'
+                }`}
+              >
+                {/* Skeleton Image */}
+                <div className="h-48 bg-gray-200"></div>
+                {/* Skeleton Content */}
+                <div className="p-4 space-y-3">
+                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                  <div className="h-10 bg-gray-200 rounded"></div>
                 </div>
               </div>
+              
+              {/* Actual Content - Fades in when loaded */}
+              {property && (
+                <div 
+                  className={`border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-all duration-300 ease-in-out ${
+                    propertyLoading ? 'opacity-0' : 'opacity-100'
+                  }`}
+                >
+                  {/* Property Image */}
+                  <div className="relative h-48 bg-gray-100">
+                    {property.photos && property.photos.length > 0 ? (
+                      <img
+                        src={property.photos[0]}
+                        alt={property.title}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gray-200">
+                        <ImageIcon className="w-12 h-12 text-gray-400" />
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Property Details */}
+                  <div className="p-4">
+                    <h4 className="text-sm font-semibold text-gray-900 mb-2 line-clamp-2">
+                      {property.title}
+                    </h4>
+                    {(property.locality || property.city) && (
+                      <div className="flex items-center gap-1 text-xs text-gray-600 mb-3">
+                        <MapPin className="w-3 h-3" />
+                        <span>
+                          {property.locality && property.city
+                            ? `${property.locality}, ${property.city}`
+                            : property.locality || property.city || 'Location'}
+                        </span>
+                      </div>
+                    )}
+                    <button
+                      onClick={() => {
+                        const listingId = property._id || property.id
+                        const listingStatus = (property as any).status || property.status
+                        
+                        // Only navigate if listing is 'live' (publicly accessible)
+                        if (listingStatus === 'live') {
+                          navigate(`/listings/${listingId}`)
+                        } else {
+                          setShowUnavailableModal(true)
+                        }
+                      }}
+                      className="w-full px-4 py-2 bg-orange-400 text-white text-sm font-medium rounded-lg hover:bg-orange-500 transition-colors"
+                    >
+                      View Detail
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* User Profile Section */}
+            <div className="relative">
+              {/* Skeleton - Fades out when content loads */}
+              <div 
+                className={`border-t border-gray-200 pt-6 transition-all duration-300 ease-in-out ${
+                  profileLoading ? 'opacity-100 animate-pulse' : 'opacity-0 absolute inset-0 pointer-events-none'
+                }`}
+              >
+                <div className="h-4 bg-gray-200 rounded w-20 mb-4"></div>
+                
+                {/* Skeleton Profile Header */}
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-16 h-16 bg-gray-200 rounded-full"></div>
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 bg-gray-200 rounded w-32"></div>
+                    <div className="h-3 bg-gray-200 rounded w-20"></div>
+                  </div>
+                </div>
+
+                {/* Skeleton Profile Info */}
+                <div className="space-y-3">
+                  <div className="flex justify-between">
+                    <div className="h-3 bg-gray-200 rounded w-16"></div>
+                    <div className="h-3 bg-gray-200 rounded w-24"></div>
+                  </div>
+                  <div className="flex justify-between">
+                    <div className="h-3 bg-gray-200 rounded w-20"></div>
+                    <div className="h-3 bg-gray-200 rounded w-32"></div>
+                  </div>
+                  <div className="flex justify-between">
+                    <div className="h-3 bg-gray-200 rounded w-16"></div>
+                    <div className="h-3 bg-gray-200 rounded w-28"></div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Actual Content - Fades in when loaded */}
+              {profileToShow && (
+                <div 
+                  className={`border-t border-gray-200 pt-6 transition-all duration-300 ease-in-out ${
+                    profileLoading ? 'opacity-0' : 'opacity-100'
+                  }`}
+                >
+                  <h3 className="text-sm font-semibold text-gray-900 mb-4">Profile</h3>
+                  
+                  {/* Profile Photo and Name */}
+                  <div className="flex items-center gap-3 mb-4">
+                    <UserAvatar 
+                      user={profileToShow}
+                      size="xl" 
+                    />
+                    <div>
+                      <div className="text-sm font-semibold text-gray-900">
+                        {profileToShow.name || 'Unknown'}
+                      </div>
+                      {(() => {
+                        const profileUserId = profileToShow._id
+                        const isOnline = profileUserId ? onlineUsers.has(profileUserId) : false
+                        return (
+                          <div className="flex items-center gap-2 text-xs mt-1">
+                            <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
+                            <span className={isOnline ? 'text-green-600 font-medium' : 'text-gray-500'}>
+                              {isOnline ? 'Online' : 'Offline'}
+                            </span>
+                          </div>
+                        )
+                      })()}
+                    </div>
+                  </div>
+
+                  {/* Profile Information */}
+                  <div className="space-y-3 text-sm">
+                    {profileToShow.gender && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Gender</span>
+                        <span className="text-gray-900 font-medium">{profileToShow.gender}</span>
+                      </div>
+                    )}
+                    {profileToShow.occupation && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Occupation</span>
+                        <span className="text-gray-900 font-medium">{profileToShow.occupation}</span>
+                      </div>
+                    )}
+                    {profileToShow.companyName && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Company</span>
+                        <span className="text-gray-900 font-medium">{profileToShow.companyName}</span>
+                      </div>
+                    )}
+                    {profileToShow.about && (
+                      <div>
+                        <span className="text-gray-600 block mb-1">About You</span>
+                        <p className="text-gray-900 font-medium">{profileToShow.about}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Safety & Privacy */}
-            <div className="border-t border-gray-200 pt-4">
+            <div className="border-t border-gray-200 pt-6">
               <h3 className="text-sm font-semibold text-gray-900 mb-3">Safety & Privacy</h3>
               <div className="space-y-2">
                 <button className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors flex items-center gap-2">
@@ -884,6 +1109,33 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Unavailable Listing Modal */}
+      {showUnavailableModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="relative bg-white rounded-2xl p-6 max-w-md w-full border border-gray-200 shadow-2xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-gray-900">Listing Unavailable</h3>
+              <button
+                onClick={() => setShowUnavailableModal(false)}
+                className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+                aria-label="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <p className="text-gray-600 mb-6">
+              This listing is no longer available.
+            </p>
+            <button
+              onClick={() => setShowUnavailableModal(false)}
+              className="w-full px-6 py-3 bg-orange-400 text-white rounded-xl font-semibold hover:bg-orange-500 transition-colors"
+            >
+              OK
+            </button>
           </div>
         </div>
       )}

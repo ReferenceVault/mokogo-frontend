@@ -441,8 +441,37 @@ export const listingsApi = {
 
   getByIdPublic: async (id: string): Promise<ListingResponse> => {
     // Use axios directly for public endpoint (no auth token needed)
-    const response = await axios.get<ListingResponse>(`${API_BASE_URL}/listings/${id}`)
-    return response.data
+    // Try /listings/public/:id first, if that doesn't work, use /listings/public with filter
+    const url = `${API_BASE_URL}/listings/public/${id}`
+    console.log('getByIdPublic: Calling URL:', url)
+    
+    try {
+      const response = await axios.get<ListingResponse>(url, { timeout: 10000 })
+      console.log('getByIdPublic: Success from /listings/public/:id')
+      return response.data
+    } catch (error: any) {
+      // If /listings/public/:id doesn't exist (404), try using /listings/public with status filter
+      if (error?.response?.status === 404) {
+        console.log('getByIdPublic: /listings/public/:id not found, trying /listings/public?status=live')
+        const publicUrl = `${API_BASE_URL}/listings/public?status=live`
+        console.log('getByIdPublic: Calling URL:', publicUrl)
+        
+        const publicResponse = await axios.get<ListingResponse[]>(publicUrl, { timeout: 10000 })
+        const listings = publicResponse.data || []
+        const listing = listings.find((l: ListingResponse) => (l._id || l.id) === id)
+        
+        if (listing) {
+          console.log('getByIdPublic: Found listing in public listings array')
+          return listing
+        } else {
+          console.error('getByIdPublic: Listing not found in public listings')
+          throw new Error('Listing not found in public listings')
+        }
+      }
+      // Re-throw other errors
+      console.error('getByIdPublic: Error:', error?.response?.status, error?.response?.data)
+      throw error
+    }
   },
 
   update: async (id: string, data: UpdateListingRequest): Promise<ListingResponse> => {

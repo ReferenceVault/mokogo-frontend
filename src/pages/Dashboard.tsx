@@ -66,12 +66,12 @@ const Dashboard = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [showListingLimitModal, setShowListingLimitModal] = useState(false)
   const [showProfileModal, setShowProfileModal] = useState(false)
-  const [activeView, setActiveView] = useState<ViewType>('overview')
+  const [activeView, setActiveView] = useState<ViewType>('explore')
   const [isMikoOpen, setIsMikoOpen] = useState(false)
   const [viewingListingId, setViewingListingId] = useState<string | null>(null)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null)
-  const [listingReturnView, setListingReturnView] = useState<ViewType>('overview')
+  const [listingReturnView, setListingReturnView] = useState<ViewType>('explore')
   const [savedPublicListings, setSavedPublicListings] = useState<Listing[]>([])
   const [isSavedLoading, setIsSavedLoading] = useState(false)
   const [conversationsCount, setConversationsCount] = useState<number>(0)
@@ -263,7 +263,7 @@ const Dashboard = () => {
     if (listingParam) {
       setViewingListingId(listingParam)
       setActiveView('listing-detail')
-      setListingReturnView('overview')
+      setListingReturnView('explore')
       // Scroll to top when viewing a listing
       window.scrollTo({ top: 0, behavior: 'smooth' })
       // Don't clean up listing param - keep it in URL while viewing
@@ -485,9 +485,9 @@ const Dashboard = () => {
       
       {/* Dashboard Header */}
       <DashboardHeader
-        activeView={activeView === 'overview' ? 'overview' : activeView === 'listings' ? 'listings' : 'overview'}
+        activeView={activeView === 'explore' ? 'explore' : activeView === 'listings' ? 'listings' : activeView === 'overview' ? 'overview' : 'explore'}
         onViewChange={(view) => {
-          if (view === 'overview' || view === 'listings' || view === 'saved') {
+          if (view === 'explore' || view === 'overview' || view === 'listings' || view === 'saved') {
             setActiveView(view as ViewType)
           }
         }}
@@ -871,7 +871,7 @@ const Dashboard = () => {
                         <button
                           key={listing.id}
                           type="button"
-                          onClick={() => openListingDetail(listing.id, 'overview')}
+                          onClick={() => openListingDetail(listing.id, 'explore')}
                           className="relative bg-white/80 backdrop-blur-sm rounded-2xl border border-orange-200/50 overflow-hidden shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300 block cursor-pointer group text-left"
                           style={{ animation: `fadeInUp 0.6s ease-out ${index * 0.1}s both` }}
                         >
