@@ -70,7 +70,7 @@ const Step6Miko = ({ data, onChange, error }: Step6MikoProps) => {
                   key={tag}
                   type="button"
                   onClick={() => toggleTag(tag)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+                  className={`min-h-[44px] px-3 py-2 rounded-full text-xs font-semibold border transition-all ${
                     isSelected
                       ? 'bg-orange-500 text-white border-orange-500 shadow-sm'
                       : 'bg-white text-gray-700 border-gray-200 hover:border-orange-300'

@@ -29,7 +29,7 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(initialConversationId || null)
   const [messages, setMessages] = useState<MessageResponse[]>([])
   const [message, setMessage] = useState('')
-  const [showProfile, setShowProfile] = useState(true)
+  const [showProfile, setShowProfile] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1024)
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
   const [showMenu, setShowMenu] = useState(false)
@@ -237,10 +237,36 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
   }, [])
 
   useEffect(() => {
-    if (initialConversationId && !selectedConversationId) {
+    if (initialConversationId) {
       setSelectedConversationId(initialConversationId)
     }
   }, [initialConversationId])
+
+  // When conversation from URL is not in list, fetch it directly (e.g. deep link on mobile)
+  const [conversationFromUrl, setConversationFromUrl] = useState<ConversationResponse | null>(null)
+  useEffect(() => {
+    if (!selectedConversationId || loading) return
+    const inList = conversations.some(c => (c._id || c.id) === selectedConversationId)
+    if (inList) {
+      setConversationFromUrl(null)
+      return
+    }
+    let cancelled = false
+    messagesApi.getConversationById(selectedConversationId)
+      .then((conv) => {
+        if (!cancelled) {
+          setConversationFromUrl(conv)
+          setConversations(prev => {
+            if (prev.some(c => (c._id || c.id) === selectedConversationId)) return prev
+            return [conv, ...prev]
+          })
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setConversationFromUrl(null)
+      })
+    return () => { cancelled = true }
+  }, [selectedConversationId, loading, conversations.length])
 
   useEffect(() => {
     if (selectedConversationId) {
@@ -276,7 +302,7 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
       }
 
       // Find conversation from current conversations state (accessed from closure, not dependency)
-      const conversation = conversations.find(c => (c._id || c.id) === selectedConversationId)
+      const conversation = conversations.find(c => (c._id || c.id) === selectedConversationId) || (conversationFromUrl && (conversationFromUrl._id || conversationFromUrl.id) === selectedConversationId ? conversationFromUrl : null)
       if (!conversation) {
         setProperty(null)
         setProfileToShow(null)
@@ -361,7 +387,7 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
     }
 
     fetchPropertyAndProfile()
-  }, [selectedConversationId, user]) // Removed 'conversations' from dependencies
+  }, [selectedConversationId, user, conversationFromUrl]) // conversationFromUrl triggers when fetched by deep link
 
   useEffect(() => {
     //messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -596,7 +622,8 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
     return 'No messages yet'
   }
 
-  const selectedConversation = conversations.find(c => (c._id || c.id) === selectedConversationId)
+  const selectedConversation = conversations.find(c => (c._id || c.id) === selectedConversationId) ||
+    (conversationFromUrl && (conversationFromUrl._id || conversationFromUrl.id) === selectedConversationId ? conversationFromUrl : null)
   const otherUser = selectedConversation ? getOtherUser(selectedConversation) : null
   
   // Debug: Log to see what data we're getting
@@ -608,18 +635,27 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
   }
 
   return (
-    // <div className="h-[calc(100vh-120px)] flex bg-gray-50">
-      <div className="h-[calc(100vh-120px)] flex bg-gray-50 overflow-hidden">
+    // <div className="h-[calc(100vh-4rem)] sm:h-[calc(100vh-120px)] flex bg-gray-50">
+      <div className="h-[calc(100dvh-4rem)] sm:h-[calc(100vh-120px)] min-h-[400px] flex flex-col lg:flex-row bg-gray-50 overflow-hidden">
+
+      {/* Backdrop for profile overlay on mobile */}
+      {selectedConversation && showProfile && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-30 lg:hidden" 
+          onClick={() => setShowProfile(false)}
+          aria-hidden="true"
+        />
+      )}
 
       {/* Left Panel - Messages List */}
-      <div className="w-80 border-r border-gray-200 bg-white flex flex-col">
+      <div className={`flex flex-col w-full lg:w-80 border-r border-gray-200 bg-white flex-shrink-0 ${selectedConversationId ? 'hidden lg:flex' : 'flex'}`}>
         {/* Header */}
         <div className="p-4 border-b border-gray-200">
           <h2 className="text-lg font-bold text-gray-900">Messages</h2>
         </div>
 
         {/* Conversations List */}
-        <div className="flex-1 overflow-y-auto border-t border-gray-200">
+        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden border-t border-gray-200">
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="w-8 h-8 border-2 border-orange-400 border-t-transparent rounded-full animate-spin"></div>
@@ -697,7 +733,7 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
                           e.stopPropagation()
                           setOpenMenuId(isMenuOpen ? null : convId)
                         }}
-                        className="p-1 hover:bg-gray-200 rounded transition-colors"
+                        className="p-2 min-h-[44px] min-w-[44px] hover:bg-gray-200 rounded transition-colors flex items-center justify-center"
                       >
                         <MoreVertical className="w-4 h-4 text-gray-600" />
                       </button>
@@ -721,12 +757,19 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
       </div>
 
       {/* Center Panel - Chat Window */}
-      <div className="flex-1 flex flex-col bg-white">
+      <div className={`flex-1 flex flex-col min-h-0 bg-white min-w-0 ${!selectedConversationId ? 'hidden lg:flex' : 'flex'}`}>
         {selectedConversation && otherUser ? (
           <>
             {/* Chat Header */}
-            <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-              <div className="flex items-center gap-3">
+            <div className="p-4 border-b border-gray-200 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                <button
+                  onClick={() => setSelectedConversationId(null)}
+                  className="lg:hidden p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                  aria-label="Back to conversations"
+                >
+                  <ChevronLeft className="w-5 h-5 text-gray-600" />
+                </button>
                 <div className="relative">
                   <UserAvatar 
                     user={otherUser}
@@ -754,7 +797,7 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
               <div className="flex items-center gap-2">
                 <button 
                   onClick={() => setShowProfile(!showProfile)}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="p-2 min-h-[44px] min-w-[44px] hover:bg-gray-100 rounded-lg transition-colors flex items-center justify-center flex-shrink-0"
                   title={showProfile ? 'Hide profile' : 'Show profile'}
                 >
                   {showProfile ? (
@@ -778,7 +821,7 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
 
             {/* Messages */}
             {/* <div className="flex-1 overflow-y-auto p-4 space-y-4"> */}
-            <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-4">
+            <div ref={messagesContainerRef} className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-4 space-y-4">
 
               {(() => {
                 const userId = typeof user === 'object' && user?.id ? user.id : ''
@@ -808,7 +851,7 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
 
                   return (
                     <div key={msgId} className={`flex ${isYou ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`flex gap-2 max-w-[70%] ${isYou ? 'flex-row-reverse' : 'flex-row'}`}>
+                      <div className={`flex gap-2 max-w-[85%] sm:max-w-[70%] ${isYou ? 'flex-row-reverse' : 'flex-row'}`}>
                         {!isYou && (
                           <UserAvatar 
                             user={{
@@ -846,7 +889,7 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
                 </div>
               ) : (
                 <div className="flex items-end gap-2">
-                  <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                  <button className="hidden sm:flex p-2 min-h-[44px] min-w-[44px] hover:bg-gray-100 rounded-lg transition-colors items-center justify-center">
                     <span className="text-xl text-gray-600">+</span>
                   </button>
                   <input
@@ -856,18 +899,18 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
                     onKeyPress={handleKeyPress}
                     placeholder="Type your message..."
                     disabled={sending}
-                    className="flex-1 px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent disabled:opacity-50"
+                    className="flex-1 min-h-[44px] px-4 py-2.5 border border-gray-200 rounded-lg text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent disabled:opacity-50"
                   />
-                  <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                  <button className="hidden sm:flex p-2 min-h-[44px] min-w-[44px] hover:bg-gray-100 rounded-lg transition-colors items-center justify-center">
                     <Paperclip className="w-5 h-5 text-gray-600" />
                   </button>
-                  <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                  <button className="hidden sm:flex p-2 min-h-[44px] min-w-[44px] hover:bg-gray-100 rounded-lg transition-colors items-center justify-center">
                     <ImageIcon className="w-5 h-5 text-gray-600" />
                   </button>
                   <button 
                     onClick={handleSendMessage}
                     disabled={sending || !message.trim()}
-                    className="w-10 h-10 bg-orange-400 text-white rounded-full flex items-center justify-center hover:bg-orange-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="min-h-[44px] min-w-[44px] flex-shrink-0 bg-orange-400 text-white rounded-full flex items-center justify-center hover:bg-orange-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {sending ? (
                       <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -879,23 +922,38 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
               )}
             </div>
           </>
+        ) : selectedConversationId && loading ? (
+          <div className="flex-1 flex flex-col items-center justify-center text-gray-500 p-6 text-center">
+            <div className="w-8 h-8 border-2 border-orange-400 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+            <p className="text-base sm:text-sm">Loading conversation...</p>
+          </div>
+        ) : selectedConversationId && !selectedConversation && !loading ? (
+          <div className="flex-1 flex flex-col items-center justify-center text-gray-500 p-6 text-center">
+            <p className="text-base sm:text-sm">Conversation not found</p>
+            <button
+              onClick={() => setSelectedConversationId(null)}
+              className="mt-3 text-sm text-orange-500 hover:text-orange-600 font-medium"
+            >
+              Back to conversations
+            </button>
+          </div>
         ) : (
-          <div className="flex-1 flex items-center justify-center text-gray-500">
-            Select a conversation to start messaging
+          <div className="flex-1 flex flex-col items-center justify-center text-gray-500 p-6 text-center">
+            <p className="text-base sm:text-sm">Select a conversation to start messaging</p>
           </div>
         )}
       </div>
 
       {/* Right Panel - Property & User Profile */}
       {selectedConversation && showProfile && (
-        <div className="w-80 border-l border-gray-200 bg-white overflow-y-auto">
+        <div className="fixed lg:relative inset-y-0 right-0 z-40 w-full max-w-sm lg:max-w-none lg:w-80 border-l border-gray-200 bg-white overflow-y-auto shadow-xl lg:shadow-none">
           {/* Header with Close Button */}
           <div className="p-4 border-b border-gray-200">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold text-gray-900">Details</h3>
               <button
                 onClick={() => setShowProfile(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 min-h-[44px] min-w-[44px] hover:bg-gray-100 rounded-lg transition-colors flex items-center justify-center"
               >
                 <X className="w-5 h-5 text-gray-600" />
               </button>
@@ -1144,3 +1202,4 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
 }
 
 export default MessagesContent
+

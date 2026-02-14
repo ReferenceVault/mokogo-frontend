@@ -249,7 +249,7 @@ const Step1Photos = ({ data, onChange, error: stepError, onClearError }: Step1Ph
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
-            className="btn-primary text-sm px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="btn-primary text-sm px-4 py-2 min-h-[44px] disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {uploading ? 'Uploading...' : 'Choose Photos'}
           </button>
@@ -287,7 +287,7 @@ const Step1Photos = ({ data, onChange, error: stepError, onClearError }: Step1Ph
                     className="w-full h-full object-cover"
                   />
                 </div>
-                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 rounded-lg">
+                <div className="absolute inset-0 bg-black/50 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 rounded-lg">
                   {index > 0 && (
                     <button
                       type="button"

@@ -69,7 +69,8 @@ const Dashboard = () => {
   const [activeView, setActiveView] = useState<ViewType>('explore')
   const [isMikoOpen, setIsMikoOpen] = useState(false)
   const [viewingListingId, setViewingListingId] = useState<string | null>(null)
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => typeof window !== 'undefined' && window.innerWidth < 1024)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null)
   const [listingReturnView, setListingReturnView] = useState<ViewType>('explore')
   const [savedPublicListings, setSavedPublicListings] = useState<Listing[]>([])
@@ -260,6 +261,8 @@ const Dashboard = () => {
     const viewParam = urlParams.get('view')
     const tabParam = urlParams.get('tab')
     
+    const conversationParam = urlParams.get('conversation')
+    
     if (listingParam) {
       setViewingListingId(listingParam)
       setActiveView('listing-detail')
@@ -267,6 +270,11 @@ const Dashboard = () => {
       // Scroll to top when viewing a listing
       window.scrollTo({ top: 0, behavior: 'smooth' })
       // Don't clean up listing param - keep it in URL while viewing
+    } else if (conversationParam) {
+      // URL has ?conversation=xxx - open messages view with that conversation
+      setActiveView('messages')
+      setSelectedConversationId(conversationParam)
+      // Keep conversation in URL
     } else if (viewParam && ['overview', 'listings', 'requests', 'messages', 'profile', 'explore', 'saved', 'miko'].includes(viewParam)) {
       // Set active view from URL param
       setActiveView(viewParam as ViewType)
@@ -486,6 +494,7 @@ const Dashboard = () => {
       {/* Dashboard Header */}
       <DashboardHeader
         activeView={activeView === 'explore' ? 'explore' : activeView === 'listings' ? 'listings' : activeView === 'overview' ? 'overview' : 'explore'}
+        onMenuClick={() => setMobileMenuOpen(true)}
         onViewChange={(view) => {
           if (view === 'explore' || view === 'overview' || view === 'listings' || view === 'saved') {
             setActiveView(view as ViewType)
@@ -502,25 +511,37 @@ const Dashboard = () => {
         onLogout={handleLogout}
       />
 
-      <div className="flex flex-1">
-        {/* Sidebar */}
+      <div className="flex flex-1 relative">
+        {/* Mobile menu backdrop */}
+        {mobileMenuOpen && (
+          <div
+            className="lg:hidden fixed inset-0 bg-black/50 z-40"
+            onClick={() => setMobileMenuOpen(false)}
+            aria-hidden="true"
+          />
+        )}
+        {/* Sidebar - overlay on mobile when menu open */}
+        <div className={`lg:relative ${mobileMenuOpen ? 'fixed left-0 top-16 bottom-0 z-50 w-64 lg:relative lg:top-0 lg:bottom-auto lg:w-auto' : 'hidden lg:block'}`}>
         <DashboardSidebar
           title="Workspace"
-          collapsed={sidebarCollapsed}
-          onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+          collapsed={mobileMenuOpen ? false : sidebarCollapsed}
+          onToggleCollapse={() => { 
+            if (mobileMenuOpen) setMobileMenuOpen(false)
+            else setSidebarCollapsed(!sidebarCollapsed)
+          }}
           activeView={activeView}
           menuItems={[
             {
               id: 'miko',
               label: 'Miko Vibe Search',
               icon: Sparkles,
-              onClick: () => setIsMikoOpen(true)
+              onClick: () => { setIsMikoOpen(true); setMobileMenuOpen(false) }
             },
             {
               id: 'explore',
               label: 'Explore',
               icon: Search,
-              onClick: () => setActiveView('explore')
+              onClick: () => { setActiveView('explore'); setMobileMenuOpen(false) }
             },
             // {
             //   id: 'overview',
@@ -533,28 +554,28 @@ const Dashboard = () => {
               label: 'My Listings',
               icon: Home,
               badge: activeListings.length > 0 ? activeListings.length : undefined,
-              onClick: () => setActiveView('listings')
+              onClick: () => { setActiveView('listings'); setMobileMenuOpen(false) }
             },
             {
               id: 'messages',
               label: 'Conversations',
               icon: MessageSquare,
               badge: conversationsCount > 0 ? conversationsCount : undefined,
-              onClick: () => setActiveView('messages')
+              onClick: () => { setActiveView('messages'); setMobileMenuOpen(false) }
             },
             {
               id: 'saved',
               label: 'Saved Properties',
               icon: Bookmark,
               badge: savedListings.length > 0 ? savedListings.length : undefined,
-              onClick: () => setActiveView('saved')
+              onClick: () => { setActiveView('saved'); setMobileMenuOpen(false) }
             },
             {
               id: 'requests',
               label: 'Requests',
               icon: Calendar,
               badge: pendingRequestsCount > 0 ? pendingRequestsCount : undefined,
-              onClick: () => setActiveView('requests')
+              onClick: () => { setActiveView('requests'); setMobileMenuOpen(false) }
             }
           ]}
           quickFilters={[]}
@@ -569,7 +590,7 @@ const Dashboard = () => {
                   <h4 className="text-sm font-semibold text-gray-900 mb-1">Post Your Listing</h4>
                   <p className="text-xs text-gray-600 mb-3">Find your perfect roommate in minutes</p>
                   <button 
-                    onClick={handleCreateListingWithProfileCheck}
+                    onClick={() => { handleCreateListingWithProfileCheck(); setMobileMenuOpen(false) }}
                     className="text-xs font-semibold text-orange-600 hover:text-orange-700 transition-colors flex items-center gap-1 group-hover:gap-2"
                   >
                     Get Started
@@ -581,13 +602,14 @@ const Dashboard = () => {
           }
           collapsedCtaButton={{
             icon: Plus,
-            onClick: handleCreateListingWithProfileCheck,
+            onClick: () => { handleCreateListingWithProfileCheck(); setMobileMenuOpen(false) },
             title: 'Post Your Listing'
           }}
         />
+        </div>
 
         {/* Main Content */}
-        <main className="flex-1 pr-4 sm:pr-6 lg:pr-14">
+        <main className="flex-1 min-w-0 overflow-x-hidden pr-4 sm:pr-6 lg:pr-14">
           {activeView === 'listing-detail' && viewingListingId ? (
             <ListingDetailContent 
               key={viewingListingId}
@@ -1013,7 +1035,7 @@ const Dashboard = () => {
                   </h1>
                   <button 
                     onClick={handleCreateListingWithProfileCheck}
-                    className="px-6 py-3 bg-gradient-to-r from-orange-300 to-orange-400 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-orange-300/30 hover:scale-105 active:scale-95 transition-all duration-300 flex items-center gap-2"
+                    className="px-6 py-3 w-full sm:w-auto min-h-[44px] bg-gradient-to-r from-orange-300 to-orange-400 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-orange-300/30 sm:hover:scale-105 active:scale-95 transition-all duration-300 flex items-center justify-center gap-2"
                   >
                     <Plus className="w-4 h-4" />
                     New Listing
@@ -1024,8 +1046,7 @@ const Dashboard = () => {
                 {activeListings.length > 0 && (
                   <div className="relative overflow-hidden bg-gradient-to-br from-orange-100 via-orange-50 to-orange-100 rounded-2xl p-4 sm:p-6 mb-6 border border-orange-200 shadow-lg transform hover:scale-[1.01] transition-all duration-300">
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.15),transparent_60%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.1),transparent_60%)]" />
-                    <div className="relative flex items-start gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-orange-200/50 backdrop-blur-sm border border-orange-300/50 flex items-center justify-center flex-shrink-0 shadow-md">
+                    <div className="relative flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4"><div className="w-12 h-12 rounded-xl bg-orange-200/50 backdrop-blur-sm border border-orange-300/50 flex items-center justify-center flex-shrink-0 shadow-md">
                         <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
@@ -1054,7 +1075,7 @@ const Dashboard = () => {
                       <p className="text-gray-600 mb-6">It takes less than 4 minutes.</p>
                       <button 
                         onClick={handleCreateListingWithProfileCheck} 
-                        className="px-6 py-3 bg-gradient-to-r from-orange-400 to-orange-500 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-orange-500/30 hover:scale-105 active:scale-95 transition-all duration-300 inline-block"
+                        className="px-6 py-3 w-full sm:w-auto min-h-[44px] bg-gradient-to-r from-orange-400 to-orange-500 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-orange-500/30 sm:hover:scale-105 active:scale-95 transition-all duration-300 flex items-center justify-center gap-2"
                       >
                         Create your first listing
                       </button>
@@ -1066,7 +1087,7 @@ const Dashboard = () => {
                     {allListings.map((listing) => (
                       <div
                         key={listing.id}
-                        className={`relative overflow-hidden rounded-2xl shadow-lg border-2 p-6 hover:shadow-xl transition-all duration-300 ${
+                        className={`relative overflow-hidden rounded-2xl shadow-lg border-2 p-4 sm:p-6 hover:shadow-xl transition-all duration-300 ${
                           listing.status === 'draft'
                             ? 'bg-white/80 backdrop-blur-sm border-stone-200'
                             : listing.status === 'live'
@@ -1085,9 +1106,7 @@ const Dashboard = () => {
                             </div>
                           )}
                           <div className="flex-1">
-                            <div className="flex items-start justify-between mb-3">
-                              <div className="flex-1">
-                                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-3"><div className="flex-1 min-w-0"><h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
                                   {listing.title || 'Untitled Listing'}
                                 </h2>
                                 <div className="flex items-center gap-3 flex-wrap">
@@ -1135,24 +1154,17 @@ const Dashboard = () => {
                                 </p>
                               </div>
                             )}
-                            <div className="flex flex-wrap gap-2.5 mt-5">
+                            <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2.5 mt-5">
                               {listing.status === 'live' ? (
                                 <>
                                   <button
                                     onClick={() => {
                                       openListingDetail(listing.id, 'listings')
                                     }}
-                                    className="px-5 py-2.5 bg-gradient-to-r from-orange-300 to-orange-400 text-white rounded-lg font-bold hover:shadow-lg hover:shadow-orange-300/30 hover:scale-105 active:scale-95 transition-all duration-300 flex items-center gap-2"
+                                    className="px-5 py-2.5 w-full sm:w-auto min-h-[44px] bg-gradient-to-r from-orange-300 to-orange-400 text-white rounded-lg font-bold hover:shadow-lg hover:shadow-orange-300/30 sm:hover:scale-105 active:scale-95 transition-all duration-300 flex items-center justify-center gap-2"
                                   >
                                     <Eye className="w-4 h-4" />
-                                    View listing
-                                  </button>
-                                  <button 
-                                    onClick={() => {
-                                      setCurrentListing(listing)
-                                      handleEditListing()
-                                    }} 
-                                    className="px-5 py-2.5 bg-white border-2 border-orange-200 text-orange-400 rounded-lg font-bold hover:bg-orange-50/50 hover:border-orange-300 hover:scale-105 transition-all duration-300 flex items-center gap-2 shadow-md"
+                                    View listing</button><button onClick={() => { setCurrentListing(listing); handleEditListing() }} className="px-5 py-2.5 w-full sm:w-auto min-h-[44px] bg-white border-2 border-orange-200 text-orange-400 rounded-lg font-bold hover:bg-orange-50/50 hover:border-orange-300 sm:hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2 shadow-md"
                                   >
                                     <Pen className="w-4 h-4" />
                                     Edit listing
@@ -1162,7 +1174,7 @@ const Dashboard = () => {
                                       setCurrentListing(listing)
                                       setActiveView('requests')
                                     }}
-                                    className="px-5 py-2.5 bg-white border-2 border-orange-200 text-orange-400 rounded-lg font-bold hover:bg-orange-50/50 hover:border-orange-300 hover:scale-105 transition-all duration-300 flex items-center gap-2 shadow-md"
+                                    className="px-5 py-2.5 w-full sm:w-auto min-h-[44px] bg-white border-2 border-orange-200 text-orange-400 rounded-lg font-bold hover:bg-orange-50/50 hover:border-orange-300 sm:hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2 shadow-md"
                                   >
                                     <MessageCircle className="w-4 h-4" />
                                     View requests
@@ -1172,7 +1184,7 @@ const Dashboard = () => {
                                       setCurrentListing(listing)
                                       setShowArchiveModal(true)
                                     }}
-                                    className="px-5 py-2.5 bg-white border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 hover:border-gray-400 transition-all duration-300"
+                                    className="px-5 py-2.5 w-full sm:w-auto min-h-[44px] bg-white border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 hover:border-gray-400 transition-all duration-300 flex items-center justify-center"
                                   >
                                     Archive listing
                                   </button>
@@ -1184,7 +1196,7 @@ const Dashboard = () => {
                                       setCurrentListing(listing)
                                       handleContinueDraft()
                                     }} 
-                                    className="px-5 py-2.5 bg-white border-2 border-orange-200 text-orange-400 rounded-lg font-bold hover:bg-orange-50/50 hover:border-orange-300 hover:scale-105 transition-all duration-300 flex items-center gap-2 shadow-md"
+                                    className="px-5 py-2.5 w-full sm:w-auto min-h-[44px] bg-white border-2 border-orange-200 text-orange-400 rounded-lg font-bold hover:bg-orange-50/50 hover:border-orange-300 sm:hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2 shadow-md"
                                   >
                                     <Pen className="w-4 h-4" />
                                     Continue draft
@@ -1220,7 +1232,7 @@ const Dashboard = () => {
                                         }
                                       }
                                     }}
-                                    className="px-5 py-2.5 bg-gradient-to-r from-orange-300 to-orange-400 text-white rounded-lg font-bold hover:shadow-lg hover:shadow-orange-300/30 hover:scale-105 active:scale-95 transition-all duration-300 flex items-center gap-2"
+                                    className="px-5 py-2.5 w-full sm:w-auto min-h-[44px] bg-gradient-to-r from-orange-300 to-orange-400 text-white rounded-lg font-bold hover:shadow-lg hover:shadow-orange-300/30 sm:hover:scale-105 active:scale-95 transition-all duration-300 flex items-center justify-center gap-2"
                                   >
                                     <CheckCircle className="w-4 h-4" />
                                     Activate
@@ -1230,7 +1242,7 @@ const Dashboard = () => {
                                       setCurrentListing(listing)
                                       setShowDeleteModal(true)
                                     }}
-                                    className="px-5 py-2.5 bg-white border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 hover:border-gray-400 transition-all duration-300"
+                                    className="px-5 py-2.5 w-full sm:w-auto min-h-[44px] bg-white border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 hover:border-gray-400 transition-all duration-300 flex items-center justify-center"
                                   >
                                     Delete
                                   </button>
@@ -1241,7 +1253,7 @@ const Dashboard = () => {
                                     onClick={() => {
                                       openListingDetail(listing.id, 'listings')
                                     }}
-                                    className="px-5 py-2.5 bg-white border-2 border-orange-300 text-orange-600 rounded-lg font-bold hover:bg-orange-50 hover:border-orange-400 transition-all duration-300"
+                                    className="px-5 py-2.5 w-full sm:w-auto min-h-[44px] bg-white border-2 border-orange-300 text-orange-600 rounded-lg font-bold hover:bg-orange-50 hover:border-orange-400 transition-all duration-300 flex items-center justify-center"
                                   >
                                     View listing
                                   </button>
@@ -1275,7 +1287,7 @@ const Dashboard = () => {
                                         }
                                       }
                                     }}
-                                    className="px-5 py-2.5 bg-gradient-to-r from-orange-400 to-orange-500 text-white rounded-lg font-bold hover:shadow-lg hover:shadow-orange-500/40 transition-all duration-300"
+                                    className="px-5 py-2.5 w-full sm:w-auto min-h-[44px] bg-gradient-to-r from-orange-400 to-orange-500 text-white rounded-lg font-bold hover:shadow-lg hover:shadow-orange-500/40 sm:hover:scale-105 active:scale-95 transition-all duration-300 flex items-center justify-center gap-2"
                                   >
                                     Reactivate
                                   </button>

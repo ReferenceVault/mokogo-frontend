@@ -90,11 +90,11 @@ const ListingHeading = ({
             </div>
           </div>
           {showActions && (
-            <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-4 sm:mt-6 lg:mt-0">
+            <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2 sm:gap-4 mt-4 sm:mt-6 lg:mt-0 w-full sm:w-auto">
               {isOwner && listing.status === 'live' && onMarkAsFulfilled && (
                 <button
                   onClick={onMarkAsFulfilled}
-                  className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+                  className="flex items-center justify-center space-x-2 px-4 py-2.5 min-h-[44px] w-full sm:w-auto bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
                 >
                   <CheckCircle2 className="w-4 h-4" />
                   <span>Mark as Fulfilled</span>
@@ -111,7 +111,7 @@ const ListingHeading = ({
                   {onShare && (
                     <button
                       onClick={onShare}
-                      className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                      className="flex items-center justify-center space-x-2 px-4 py-2.5 min-h-[44px] w-full sm:w-auto border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                     >
                       <Share2 className="w-4 h-4 text-gray-600" />
                       <span>Share</span>
@@ -120,7 +120,7 @@ const ListingHeading = ({
                   {onSave && (
                     <button
                       onClick={onSave}
-                      className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                      className="flex items-center justify-center space-x-2 px-4 py-2.5 min-h-[44px] w-full sm:w-auto border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                     >
                       <Heart className={`w-4 h-4 ${isSaved ? 'text-red-500 fill-red-500' : 'text-gray-600'}`} />
                       <span>Save</span>
@@ -129,7 +129,7 @@ const ListingHeading = ({
                   {onReport && (
                     <button
                       onClick={onReport}
-                      className="flex items-center space-x-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                      className="flex items-center justify-center space-x-2 px-4 py-2.5 min-h-[44px] w-full sm:w-auto bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
                     >
                       <Flag className="w-4 h-4" />
                       <span>Report</span>

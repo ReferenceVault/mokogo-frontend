@@ -60,7 +60,7 @@ const AmenitiesSelector = ({ selected = [], onChange, label = 'Amenities (Option
           {label}
         </label>
       )}
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {allAmenities.map((amenity) => {
           const Icon = amenity.icon
           const isSelected = selected.includes(amenity.id)
@@ -70,7 +70,7 @@ const AmenitiesSelector = ({ selected = [], onChange, label = 'Amenities (Option
               key={amenity.id}
               type="button"
               onClick={() => handleToggle(amenity.id)}
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all duration-200 ${
+              className={`flex items-center gap-3 min-h-[44px] px-4 py-3 rounded-xl border-2 transition-all duration-200 ${
                 isSelected
                   ? 'bg-orange-400 border-orange-400 shadow-md'
                   : 'bg-stone-50 border-stone-200 hover:border-orange-300 hover:shadow-sm'

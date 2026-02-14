@@ -23,7 +23,7 @@ const RoomDetails = ({ listing, className = '' }: RoomDetailsProps) => {
 
   return (
     <div className={`${containerClass} ${className}`}>
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
         <h2 className={titleClass}>Room Details</h2>
         <div className="text-right">
           <div className={priceClass}>₹{formatPrice(listing.rent)}</div>

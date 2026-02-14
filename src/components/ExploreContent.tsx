@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { useLocation } from 'react-router-dom'
 import CustomSelect from '@/components/CustomSelect'
 import { MoveInDateField } from '@/components/MoveInDateField'
@@ -40,6 +41,8 @@ const ExploreContent = ({
   const [showAreaSuggestions, setShowAreaSuggestions] = useState(false)
   const [isLoadingArea, setIsLoadingArea] = useState(false)
   const skipNextAreaFetchRef = useRef(false)
+  const areaInputRef = useRef<HTMLDivElement>(null)
+  const [areaDropdownPosition, setAreaDropdownPosition] = useState({ top: 0, left: 0, width: 0 })
 
   // Filter state
   const [filters, setFilters] = useState(() => {
@@ -550,6 +553,27 @@ const ExploreContent = ({
       if (timeoutId) clearTimeout(timeoutId)
     }
   }, [areaInputValue, filters.city])
+  useEffect(() => {
+    const updateAreaDropdownPosition = () => {
+      if (showAreaSuggestions && areaInputRef.current) {
+        const rect = areaInputRef.current.getBoundingClientRect()
+        setAreaDropdownPosition({
+          top: rect.bottom + 8,
+          left: rect.left,
+          width: rect.width
+        })
+      }
+    }
+    if (showAreaSuggestions) {
+      updateAreaDropdownPosition()
+      window.addEventListener('scroll', updateAreaDropdownPosition, true)
+      window.addEventListener('resize', updateAreaDropdownPosition)
+    }
+    return () => {
+      window.removeEventListener('scroll', updateAreaDropdownPosition, true)
+      window.removeEventListener('resize', updateAreaDropdownPosition)
+    }
+  }, [showAreaSuggestions])
 
   const handleAreaSuggestionSelect = async (prediction: AutocompletePrediction) => {
     // Prevent the next useEffect run from firing autocomplete again
@@ -627,7 +651,7 @@ const ExploreContent = ({
               />
             </div>
             {filters.city && (
-              <div className="flex-1 relative z-20">
+              <div ref={areaInputRef} className="flex-1 relative z-20">
                 <label className="block text-sm font-medium text-stone-700 mb-2">
                   Area
                 </label>
@@ -636,10 +660,17 @@ const ExploreContent = ({
                   value={areaInputValue}
                   onChange={(e) => setAreaInputValue(e.target.value)}
                   placeholder="Search area (e.g., Baner, Wakad)"
-                  className="w-full h-[52px] px-4 rounded-xl border border-mokogo-gray focus:outline-none focus:ring-2 focus:ring-mokogo-primary bg-white/80"
+                  className="w-full h-[52px] px-4 rounded-xl border border-mokogo-gray focus:outline-none focus:ring-2 focus:ring-mokogo-primary bg-white/80 text-base sm:text-sm"
                 />
-                {showAreaSuggestions && (
-                  <div className="absolute mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg z-30 max-h-60 overflow-auto">
+                {showAreaSuggestions && typeof document !== 'undefined' && createPortal(
+                  <div
+                    className="fixed z-[9999] bg-white border border-gray-200 rounded-xl shadow-xl max-h-[50vh] sm:max-h-60 overflow-auto"
+                    style={{
+                      top: `${areaDropdownPosition.top}px`,
+                      left: `${areaDropdownPosition.left}px`,
+                      width: `${Math.max(areaDropdownPosition.width, 200)}px`
+                    }}
+                  >
                     {isLoadingArea ? (
                       <div className="px-4 py-3 text-sm text-gray-500">Searching areas...</div>
                     ) : (
@@ -648,20 +679,21 @@ const ExploreContent = ({
                           key={prediction.place_id}
                           type="button"
                           onClick={() => handleAreaSuggestionSelect(prediction)}
-                          className="w-full text-left px-4 py-2 hover:bg-orange-50 text-sm text-gray-700"
+                          className="w-full text-left px-4 py-3 sm:py-2 min-h-[48px] sm:min-h-0 flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-2 hover:bg-orange-50 active:bg-orange-50 text-sm text-gray-700"
                         >
-                          <div className="font-medium">
+                          <span className="font-medium truncate">
                             {prediction.structured_formatting.main_text}
-                          </div>
-                          <div className="text-xs text-gray-500">
+                          </span>
+                          <span className="text-xs text-gray-500 truncate sm:max-w-none">
                             {prediction.structured_formatting.secondary_text}
-                          </div>
+                          </span>
                         </button>
                       ))
                     )}
-                  </div>
+                  </div>,
+                  document.body
                 )}
-              </div>
+            </div>
             )}
             <div className="flex-1 relative z-20 [&_button]:h-[52px] [&_button]:py-0">
               <label className="block text-sm font-medium text-stone-700 mb-2">
@@ -692,11 +724,11 @@ const ExploreContent = ({
                 ]}
               />
             </div>
-            <div className="flex items-end gap-3">
+            <div className="flex flex-wrap items-end gap-3 w-full md:w-auto">
               {hasActiveFilters && (
                 <button
                   onClick={clearFilters}
-                  className="h-[52px] px-6 rounded-xl border border-mokogo-gray bg-white/80 hover:bg-white transition-colors text-gray-700 font-medium whitespace-nowrap"
+                  className="h-[52px] min-h-[44px] px-4 sm:px-6 rounded-xl border border-mokogo-gray bg-white/80 hover:bg-white transition-colors text-gray-700 font-medium whitespace-nowrap"
                 >
                   Clear Filters
                 </button>
@@ -704,7 +736,7 @@ const ExploreContent = ({
               <button
                 type="button"
                 onClick={() => setIsFilterOpen(true)}
-                className="h-[52px] px-5 rounded-xl border border-orange-300 bg-white text-xs font-semibold text-orange-600 shadow-sm hover:bg-orange-50 flex items-center gap-2"
+                className="h-[52px] min-h-[44px] px-4 sm:px-5 rounded-xl border border-orange-300 bg-white text-xs font-semibold text-orange-600 shadow-sm hover:bg-orange-50 flex items-center gap-2"
               >
                 <span>Filter</span>
                 <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-orange-500 text-[11px] text-white">

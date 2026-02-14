@@ -55,7 +55,7 @@ const Step5Preferences = ({ data, onChange, error, onClearError }: Step5Preferen
                   key={pref}
                   type="button"
                   onClick={() => handleChange('preferredGender', value)}
-                  className={`flex-1 px-4 py-3 rounded-lg font-medium transition-colors ${
+                  className={`flex-1 min-h-[44px] px-4 py-3 rounded-lg font-medium transition-colors ${
                     data.preferredGender === value
                       ? 'bg-orange-400 text-white border-orange-400'
                       : 'bg-white/30 text-gray-700 border border-stone-200 hover:border-orange-400 hover:text-orange-500'
@@ -80,7 +80,7 @@ const Step5Preferences = ({ data, onChange, error, onClearError }: Step5Preferen
                   key={pref}
                   type="button"
                   onClick={() => handleChange('foodPreference', pref)}
-                  className={`flex-1 px-4 py-3 rounded-lg font-medium transition-colors ${
+                  className={`flex-1 min-h-[44px] px-4 py-3 rounded-lg font-medium transition-colors ${
                     data.foodPreference === pref
                       ? 'bg-orange-400 text-white border-orange-400'
                       : 'bg-white/30 text-gray-700 border border-stone-200 hover:border-orange-400 hover:text-orange-500'
@@ -105,7 +105,7 @@ const Step5Preferences = ({ data, onChange, error, onClearError }: Step5Preferen
                   key={pref}
                   type="button"
                   onClick={() => handleChange('petPolicy', pref)}
-                  className={`flex-1 px-4 py-3 rounded-lg font-medium transition-colors ${
+                  className={`flex-1 min-h-[44px] px-4 py-3 rounded-lg font-medium transition-colors ${
                     data.petPolicy === pref
                       ? 'bg-orange-400 text-white border-orange-400'
                       : 'bg-white/30 text-gray-700 border border-stone-200 hover:border-orange-400 hover:text-orange-500'
@@ -130,7 +130,7 @@ const Step5Preferences = ({ data, onChange, error, onClearError }: Step5Preferen
                   key={pref}
                   type="button"
                   onClick={() => handleChange('smokingPolicy', pref)}
-                  className={`flex-1 px-4 py-3 rounded-lg font-medium transition-colors ${
+                  className={`flex-1 min-h-[44px] px-4 py-3 rounded-lg font-medium transition-colors ${
                     data.smokingPolicy === pref
                       ? 'bg-orange-400 text-white border-orange-400'
                       : 'bg-white/30 text-gray-700 border border-stone-200 hover:border-orange-400 hover:text-orange-500'
@@ -155,7 +155,7 @@ const Step5Preferences = ({ data, onChange, error, onClearError }: Step5Preferen
                   key={pref}
                   type="button"
                   onClick={() => handleChange('drinkingPolicy', pref)}
-                  className={`flex-1 px-4 py-3 rounded-lg font-medium transition-colors ${
+                  className={`flex-1 min-h-[44px] px-4 py-3 rounded-lg font-medium transition-colors ${
                     data.drinkingPolicy === pref
                       ? 'bg-orange-400 text-white border-orange-400'
                       : 'bg-white/30 text-gray-700 border border-stone-200 hover:border-orange-400 hover:text-orange-500'
@@ -177,7 +177,7 @@ const Step5Preferences = ({ data, onChange, error, onClearError }: Step5Preferen
             <button
               type="button"
               onClick={() => handleChange('lgbtqFriendly', true)}
-              className={`flex-1 px-4 py-3 rounded-lg font-medium transition-colors ${
+              className={`flex-1 min-h-[44px] px-4 py-3 rounded-lg font-medium transition-colors ${
                 data.lgbtqFriendly
                   ? 'bg-orange-400 text-white border-orange-400'
                   : 'bg-white/30 text-gray-700 border border-stone-200 hover:border-orange-400 hover:text-orange-500'
@@ -188,7 +188,7 @@ const Step5Preferences = ({ data, onChange, error, onClearError }: Step5Preferen
             <button
               type="button"
               onClick={() => handleChange('lgbtqFriendly', false)}
-              className={`flex-1 px-4 py-3 rounded-lg font-medium transition-colors ${
+              className={`flex-1 min-h-[44px] px-4 py-3 rounded-lg font-medium transition-colors ${
                 data.lgbtqFriendly === false
                   ? 'bg-orange-400 text-white border-orange-400'
                   : 'bg-white/30 text-gray-700 border border-stone-200 hover:border-orange-400 hover:text-orange-500'
