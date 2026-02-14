@@ -39,8 +39,8 @@ const DashboardSidebar = ({
   collapsedCtaButton
 }: DashboardSidebarProps) => {
   return (
-    <aside className={`${collapsed ? 'w-20' : 'w-72'} min-h-screen bg-white/80 backdrop-blur-md border-r border-orange-200/50 sticky top-16 shadow-sm transition-all duration-300`}>
-      <div className={`p-6 ${collapsed ? 'px-3' : ''}`}>
+    <aside className={`${collapsed ? 'w-16 sm:w-20' : 'w-64 lg:w-72'} min-h-screen bg-white/80 backdrop-blur-md border-r border-orange-200/50 sticky top-16 shadow-sm transition-all duration-300`}>
+      <div className={`p-4 sm:p-6 ${collapsed ? 'px-3' : ''}`}>
         <div className="mb-8">
           <div className={`flex items-center ${collapsed ? 'justify-center' : 'justify-between'} mb-4`}>
             {!collapsed && (

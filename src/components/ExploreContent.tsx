@@ -612,8 +612,8 @@ const ExploreContent = ({
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50/30 via-white to-orange-50/20">
       {!hideFilters ? (
-        <section className="relative z-10 w-full bg-white/50 backdrop-blur-sm border-b border-gray-200 py-6">
-          <div className="max-w-7xl mx-auto px-6 md:px-12">
+        <section className="relative z-10 w-full bg-white/50 backdrop-blur-sm border-b border-gray-200 py-4 sm:py-6">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12">
             <div className="flex flex-col md:flex-row md:items-end gap-4">
             <div className="flex-1 relative z-20">
               <CustomSelect
@@ -717,8 +717,8 @@ const ExploreContent = ({
           </div>
         </section>
       ) : (
-        <section className="relative z-10 w-full bg-white/50 backdrop-blur-sm border-b border-gray-200 py-6">
-          <div className="max-w-7xl mx-auto px-6 md:px-12">
+        <section className="relative z-10 w-full bg-white/50 backdrop-blur-sm border-b border-gray-200 py-4 sm:py-6">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12">
             <div className="space-y-2">
               <h2 className="text-2xl font-bold text-gray-900">
                 {headerTitle || 'MIKO Vibe Search Results'}
@@ -733,7 +733,7 @@ const ExploreContent = ({
       )}
 
       {/* Listings Grid */}
-      <section className="py-8 px-6 md:px-12">
+      <section className="py-6 sm:py-8 px-4 sm:px-6 md:px-12">
         <div className="max-w-7xl mx-auto">
           {isLoading ? (
             <div className="text-center py-16 text-gray-600">
@@ -741,7 +741,7 @@ const ExploreContent = ({
             </div>
           ) : sortedListings.length > 0 ? (
             <>
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
                 <p className="text-sm text-gray-700">
                   {sortedListings.length} {sortedListings.length === 1 ? 'place' : 'places'} found
                 </p>
@@ -764,7 +764,7 @@ const ExploreContent = ({
                   </div>
                 </div>
               </div>
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 items-stretch">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4 sm:gap-6 items-stretch">
               {sortedListings.map((listing) => {
                 const listingTags = getListingMikoTags(listing)
                 const matchPercent = isMikoMode ? getMikoMatchPercent(mikoTags, listingTags) : 0

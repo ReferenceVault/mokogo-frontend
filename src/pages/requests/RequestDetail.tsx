@@ -55,18 +55,18 @@ const RequestDetail = () => {
 
   return (
     <div className="min-h-screen bg-mokogo-off-white">
-      <header className="bg-white border-b border-mokogo-gray px-6 py-4">
+      <header className="bg-white border-b border-mokogo-gray px-4 sm:px-6 py-4">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <Logo />
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-6 py-8">
-        <Link to="/requests" className="text-mokogo-primary hover:underline mb-4 inline-block">
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        <Link to="/requests" className="text-mokogo-primary hover:underline mb-4 inline-block text-sm sm:text-base">
           ← Back to requests
         </Link>
 
-        <div className="card">
+        <div className="card p-4 sm:p-6">
           <div className="mb-6">
             <span
               className={`px-3 py-1 rounded-full text-xs font-medium inline-block ${
@@ -85,8 +85,8 @@ const RequestDetail = () => {
 
           {/* Seeker Summary */}
           <section className="mb-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Seeker summary</h2>
-            <div className="flex items-center gap-4 mb-4">
+            <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Seeker summary</h2>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-4">
               <div className="w-16 h-16 rounded-full bg-mokogo-primary/20 flex items-center justify-center">
                 <span className="text-mokogo-primary font-medium text-xl">
                   {request.seekerName[0]?.toUpperCase()}
@@ -112,7 +112,7 @@ const RequestDetail = () => {
 
           {/* Intro Message */}
           <section className="mb-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-2">Intro message</h2>
+            <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">Intro message</h2>
             <p className="text-gray-700 whitespace-pre-wrap">{request.introMessage}</p>
           </section>
 
@@ -174,22 +174,22 @@ const RequestDetail = () => {
 
           {/* Actions */}
           {request.status === 'pending' && (
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3">
               <button
                 onClick={() => setShowAcceptModal(true)}
-                className="btn-primary"
+                className="btn-primary w-full sm:w-auto min-h-[44px] sm:min-h-0 py-3 sm:py-2.5"
               >
                 Accept request
               </button>
               <button
                 onClick={() => setShowRejectModal(true)}
-                className="btn-secondary"
+                className="btn-secondary w-full sm:w-auto min-h-[44px] sm:min-h-0 py-3 sm:py-2.5"
               >
                 Reject
               </button>
               <button
                 onClick={() => setShowBlockModal(true)}
-                className="text-sm text-gray-600 hover:text-gray-900"
+                className="text-sm text-gray-600 hover:text-gray-900 w-full sm:w-auto min-h-[44px] sm:min-h-0 py-3 sm:py-2.5 text-center sm:text-left"
               >
                 Block this user for 14 days
               </button>
@@ -201,18 +201,18 @@ const RequestDetail = () => {
       {/* Accept Modal */}
       {showAcceptModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+          <div className="bg-white rounded-lg p-4 sm:p-6 max-w-md w-full mx-2 sm:mx-0">
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Share your contact details?</h3>
             <p className="text-gray-600 mb-4">
               If you accept, your phone number and email will be shared with this person so they can contact you directly.
             </p>
-            <div className="flex gap-3">
-              <button onClick={handleAccept} className="btn-primary flex-1">
+            <div className="flex flex-col-reverse sm:flex-row gap-3 mt-4">
+              <button onClick={handleAccept} className="btn-primary flex-1 min-h-[44px] py-3 sm:py-2.5">
                 Confirm & share details
               </button>
               <button
                 onClick={() => setShowAcceptModal(false)}
-                className="btn-secondary flex-1"
+                className="btn-secondary flex-1 min-h-[44px] py-3 sm:py-2.5"
               >
                 Cancel
               </button>
@@ -230,12 +230,12 @@ const RequestDetail = () => {
               They won't see your contact details.
             </p>
             <div className="flex gap-3">
-              <button onClick={handleReject} className="btn-primary flex-1">
+              <button onClick={handleReject} className="btn-primary flex-1 min-h-[44px] py-3 sm:py-2.5">
                 Reject
               </button>
               <button
                 onClick={() => setShowRejectModal(false)}
-                className="btn-secondary flex-1"
+                className="btn-secondary flex-1 min-h-[44px] py-3 sm:py-2.5"
               >
                 Cancel
               </button>
@@ -253,12 +253,12 @@ const RequestDetail = () => {
               They won't be able to send you new requests for 14 days.
             </p>
             <div className="flex gap-3">
-              <button onClick={handleBlock} className="btn-primary flex-1">
+              <button onClick={handleBlock} className="btn-primary flex-1 min-h-[44px] py-3 sm:py-2.5">
                 Block
               </button>
               <button
                 onClick={() => setShowBlockModal(false)}
-                className="btn-secondary flex-1"
+                className="btn-secondary flex-1 min-h-[44px] py-3 sm:py-2.5"
               >
                 Cancel
               </button>

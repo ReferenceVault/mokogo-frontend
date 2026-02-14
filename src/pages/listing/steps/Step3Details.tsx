@@ -53,7 +53,7 @@ const Step3Details = ({ data, onChange, error, onClearError }: Step3DetailsProps
 
   return (
     <div>
-      <h2 className="text-[1.2375rem] font-semibold text-gray-900 mb-1">Details</h2>
+      <h2 className="text-lg sm:text-[1.2375rem] font-semibold text-gray-900 mb-1">Details</h2>
       <p className="text-[0.825rem] text-gray-600 mb-4">Room and apartment details</p>
 
       {error && (
@@ -68,7 +68,7 @@ const Step3Details = ({ data, onChange, error, onClearError }: Step3DetailsProps
           <label className="block text-sm font-medium text-stone-700 mb-3">
             Room Type <span className="text-red-500">*</span>
           </label>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-2 sm:gap-3">
             {['Private Room', 'Shared Room', 'Master Room'].map((type) => (
               <button
                 key={type}
@@ -91,7 +91,7 @@ const Step3Details = ({ data, onChange, error, onClearError }: Step3DetailsProps
           {/* Row 1: Building Type + Apartment Type */}
           <div className="flex flex-wrap gap-4">
             {/* Building Type */}
-            <div className="flex-1 min-w-[200px]">
+            <div className="flex-1 min-w-0 sm:min-w-[200px]">
               <CustomSelect
                 label="Building Type"
                 value={data.buildingType || ''}
@@ -107,7 +107,7 @@ const Step3Details = ({ data, onChange, error, onClearError }: Step3DetailsProps
             </div>
 
             {/* BHK Type */}
-            <div className="flex-1 min-w-[200px]">
+            <div className="flex-1 min-w-0 sm:min-w-[200px]">
               <CustomSelect
                 label="Apartment Type"
                 value={data.bhkType || ''}
@@ -127,7 +127,7 @@ const Step3Details = ({ data, onChange, error, onClearError }: Step3DetailsProps
           {/* Row 2: Furnishing + Bathroom Type */}
           <div className="flex flex-wrap gap-4">
             {/* Furnishing */}
-            <div className="flex-1 min-w-[200px]">
+            <div className="flex-1 min-w-0 sm:min-w-[200px]">
               <CustomSelect
                 label="Furnishing"
                 value={data.furnishingLevel || ''}
@@ -142,7 +142,7 @@ const Step3Details = ({ data, onChange, error, onClearError }: Step3DetailsProps
             </div>
 
             {/* Bathroom Type */}
-            <div className="flex-1 min-w-[200px]">
+            <div className="flex-1 min-w-0 sm:min-w-[200px]">
               <CustomSelect
                 label="Bathroom Type"
                 value={data.bathroomType || ''}

@@ -84,7 +84,7 @@ const Step4Pricing = ({ data, onChange, error, onClearError }: Step4PricingProps
 
   return (
     <div>
-      <h2 className="text-[1.375rem] font-semibold text-gray-900 mb-1">Pricing</h2>
+      <h2 className="text-xl sm:text-[1.375rem] font-semibold text-gray-900 mb-1">Pricing</h2>
       <p className="text-[0.9625rem] text-gray-600 mb-4">Rent and deposit</p>
 
       {/* Show general error only if it's not a move-in date error (move-in date errors show below the field) */}
@@ -96,7 +96,7 @@ const Step4Pricing = ({ data, onChange, error, onClearError }: Step4PricingProps
 
       <div className="flex flex-wrap gap-4">
         {/* Rent */}
-        <div className="flex-1 min-w-[200px]">
+        <div className="flex-1 min-w-0 sm:min-w-[200px]">
           <label className="block text-sm font-medium text-stone-700 mb-2">
             Monthly Rent (₹) <span className="text-red-500">*</span>
           </label>
@@ -116,7 +116,7 @@ const Step4Pricing = ({ data, onChange, error, onClearError }: Step4PricingProps
         </div>
 
         {/* Deposit */}
-        <div className="flex-1 min-w-[200px]">
+        <div className="flex-1 min-w-0 sm:min-w-[200px]">
           <label className="block text-sm font-medium text-stone-700 mb-2">
             Security Deposit (₹) <span className="text-red-500">*</span>
           </label>
@@ -136,7 +136,7 @@ const Step4Pricing = ({ data, onChange, error, onClearError }: Step4PricingProps
         </div>
 
         {/* Available From */}
-        <div className="flex-1 min-w-[200px]">
+        <div className="flex-1 min-w-0 sm:min-w-[200px]">
           <label className="block text-sm font-medium text-stone-700 mb-2">
             Available From <span className="text-red-500">*</span>
           </label>

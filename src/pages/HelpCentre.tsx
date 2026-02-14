@@ -202,34 +202,34 @@ const HelpCentre = () => {
       
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="relative overflow-hidden bg-gradient-to-br from-orange-50 via-orange-100/50 to-orange-50 px-6 md:px-[10%] pt-14 pb-16 sm:pt-16 sm:pb-20">
+        <section className="relative overflow-hidden bg-gradient-to-br from-orange-50 via-orange-100/50 to-orange-50 px-4 sm:px-6 md:px-[10%] pt-10 sm:pt-14 pb-12 sm:pb-16 md:pt-16 md:pb-20">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(249,115,22,0.15),transparent_60%),radial-gradient(circle_at_bottom_right,rgba(251,146,60,0.12),transparent_60%),radial-gradient(circle_at_center,rgba(254,215,170,0.10),transparent_65%),radial-gradient(circle_at_top_right,rgba(255,237,213,0.08),transparent_70%)]" />
           
           <div className="relative mx-auto max-w-4xl text-center">
-            <span className="inline-flex items-center gap-2 rounded-full border border-orange-300/50 bg-orange-200/30 px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-orange-800/80">
+            <span className="inline-flex items-center gap-2 rounded-full border border-orange-300/50 bg-orange-200/30 px-3 sm:px-4 py-1 text-[10px] sm:text-xs font-semibold uppercase tracking-[0.2em] sm:tracking-[0.35em] text-orange-800/80">
               Help & Support • We're Here for You
             </span>
-            <h1 className="mt-6 text-3xl sm:text-4xl lg:text-[2.9rem] font-bold leading-tight text-gray-900">
+            <h1 className="mt-4 sm:mt-6 text-2xl sm:text-3xl md:text-4xl lg:text-[2.9rem] font-bold leading-tight text-gray-900">
               Welcome to Mokogo's Help Centre 👋
             </h1>
-            <p className="mt-5 text-lg sm:text-xl leading-relaxed text-gray-800">
+            <p className="mt-4 sm:mt-5 text-base sm:text-lg md:text-xl leading-relaxed text-gray-800">
               We're here to make finding or listing a place as smooth as possible.
             </p>
-            <p className="mt-2 text-base sm:text-lg leading-relaxed text-gray-700">
+            <p className="mt-2 text-sm sm:text-base md:text-lg leading-relaxed text-gray-700">
               Below you'll find answers to common questions, along with guidance on how to get help if you're stuck.
             </p>
           </div>
         </section>
 
         {/* Main Content */}
-        <section className="relative px-6 md:px-[10%] py-16 sm:py-20">
+        <section className="relative px-4 sm:px-6 md:px-[10%] py-10 sm:py-16 md:py-20">
           <div className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-[#fef4f1] via-transparent to-transparent" />
           
           <div className="relative mx-auto max-w-6xl">
             {/* Quick Links */}
-            <div className="mb-12">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Quick Links</h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="mb-8 sm:mb-12">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6 text-center">Quick Links</h2>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                 {quickLinks.map((link, index) => {
                   const Icon = link.icon
                   const isListYourSpace = link.href === '/listing/wizard'
@@ -244,33 +244,35 @@ const HelpCentre = () => {
                       navigate(link.href)
                     }
                   }
+
+                  const linkClasses = "group relative overflow-hidden rounded-xl md:rounded-2xl border border-orange-200 bg-gradient-to-br from-orange-50 via-white to-orange-50/50 p-4 sm:p-6 shadow-lg shadow-orange-100/40 transform transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-orange-200/50"
                   
                   return isListYourSpace ? (
                     <button
                       key={index}
                       onClick={handleClick}
-                      className="group relative overflow-hidden rounded-2xl border border-orange-200 bg-gradient-to-br from-orange-50 via-white to-orange-50/50 p-6 shadow-lg shadow-orange-100/40 transform transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-orange-200/50"
+                      className={linkClasses}
                     >
                       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(249,115,22,0.12),transparent_55%)]" />
                       <div className="relative text-center">
-                        <div className="w-12 h-12 rounded-full bg-orange-400/10 flex items-center justify-center mx-auto mb-3 group-hover:bg-orange-400/20 transition-colors">
-                          <Icon className="w-6 h-6 text-orange-500" />
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-orange-400/10 flex items-center justify-center mx-auto mb-2 sm:mb-3 group-hover:bg-orange-400/20 transition-colors">
+                          <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-orange-500" />
                         </div>
-                        <p className="text-sm font-semibold text-gray-900">{link.label}</p>
+                        <p className="text-xs sm:text-sm font-semibold text-gray-900">{link.label}</p>
                       </div>
                     </button>
                   ) : (
                     <Link
                       key={index}
                       to={link.href}
-                      className="group relative overflow-hidden rounded-2xl border border-orange-200 bg-gradient-to-br from-orange-50 via-white to-orange-50/50 p-6 shadow-lg shadow-orange-100/40 transform transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-orange-200/50"
+                      className={linkClasses}
                     >
                       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(249,115,22,0.12),transparent_55%)]" />
                       <div className="relative text-center">
-                        <div className="w-12 h-12 rounded-full bg-orange-400/10 flex items-center justify-center mx-auto mb-3 group-hover:bg-orange-400/20 transition-colors">
-                          <Icon className="w-6 h-6 text-orange-500" />
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-orange-400/10 flex items-center justify-center mx-auto mb-2 sm:mb-3 group-hover:bg-orange-400/20 transition-colors">
+                          <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-orange-500" />
                         </div>
-                        <p className="text-sm font-semibold text-gray-900">{link.label}</p>
+                        <p className="text-xs sm:text-sm font-semibold text-gray-900">{link.label}</p>
                       </div>
                     </Link>
                   )
@@ -279,7 +281,7 @@ const HelpCentre = () => {
             </div>
 
             {/* FAQ Sections */}
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               {faqSections.map((section) => {
                 const Icon = section.icon
                 const isExpanded = expandedSections[section.id]
@@ -287,38 +289,40 @@ const HelpCentre = () => {
                 return (
                   <div
                     key={section.id}
-                    className="relative overflow-hidden rounded-[2rem] border border-orange-200 bg-gradient-to-br from-orange-50 via-white to-orange-50/50 shadow-xl shadow-orange-100/40"
+                    className="relative overflow-hidden rounded-xl md:rounded-[2rem] border border-orange-200 bg-gradient-to-br from-orange-50 via-white to-orange-50/50 shadow-xl shadow-orange-100/40"
                   >
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(249,115,22,0.12),transparent_55%)]" />
                     <div className="relative">
                       {/* Section Header - Clickable */}
                       <button
                         onClick={() => toggleSection(section.id)}
-                        className="w-full flex items-center justify-between p-6 md:p-8 hover:bg-orange-50/50 transition-colors"
+                        className="w-full flex items-center justify-between p-4 sm:p-6 md:p-8 hover:bg-orange-50/50 transition-colors gap-3"
                       >
-                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 rounded-xl bg-orange-400/10 flex items-center justify-center">
-                            <Icon className="w-6 h-6 text-orange-500" />
+                        <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+                          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-orange-400/10 flex items-center justify-center flex-shrink-0">
+                            <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-orange-500" />
                           </div>
-                          <h2 className="text-xl md:text-2xl font-semibold text-gray-900">{section.title}</h2>
+                          <h2 className="text-base sm:text-xl md:text-2xl font-semibold text-gray-900 truncate">{section.title}</h2>
                         </div>
-                        {isExpanded ? (
-                          <ChevronUp className="w-6 h-6 text-orange-500" />
-                        ) : (
-                          <ChevronDown className="w-6 h-6 text-orange-500" />
-                        )}
+                        <div className="flex-shrink-0">
+                          {isExpanded ? (
+                            <ChevronUp className="w-5 h-5 sm:w-6 sm:h-6 text-orange-500" />
+                          ) : (
+                            <ChevronDown className="w-5 h-5 sm:w-6 sm:h-6 text-orange-500" />
+                          )}
+                        </div>
                       </button>
 
                       {/* Section Content - Expandable */}
                       {isExpanded && (
-                        <div className="px-6 md:px-8 pb-6 md:pb-8 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                        <div className="px-4 sm:px-6 md:px-8 pb-4 sm:pb-6 md:pb-8 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
                           {section.items.map((item, index) => (
                             <div
                               key={index}
-                              className="bg-white rounded-xl p-5 border border-orange-200 shadow-sm hover:shadow-md transition-shadow"
+                              className="bg-white rounded-xl p-4 sm:p-5 border border-orange-200 shadow-sm hover:shadow-md transition-shadow"
                             >
-                              <h3 className="text-lg font-semibold text-gray-900 mb-3">{item.question}</h3>
-                              <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-3">
+                              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2 sm:mb-3">{item.question}</h3>
+                              <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-2 sm:mb-3">
                                 {item.answer}
                               </p>
                               {(item as FAQItem).subAnswer && (
@@ -353,33 +357,33 @@ const HelpCentre = () => {
             </div>
 
             {/* Need More Help - CTA Card */}
-            <div className="mt-12 relative overflow-hidden rounded-[2rem] border border-[#fde1da] bg-gradient-to-br from-[#fff4f1] via-white to-[#fff9f6] p-8 md:p-10 shadow-xl shadow-[#f8d8cf]/45">
+            <div className="mt-8 sm:mt-12 relative overflow-hidden rounded-xl md:rounded-[2rem] border border-[#fde1da] bg-gradient-to-br from-[#fff4f1] via-white to-[#fff9f6] p-5 sm:p-8 md:p-10 shadow-xl shadow-[#f8d8cf]/45">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(249,115,22,0.12),transparent_60%)]" />
               <div className="relative">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-12 h-12 rounded-xl bg-orange-400/10 flex items-center justify-center">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4 sm:mb-6">
+                  <div className="w-12 h-12 rounded-xl bg-orange-400/10 flex items-center justify-center flex-shrink-0">
                     <MessageSquare className="w-6 h-6 text-orange-500" />
                   </div>
                   <div>
-                    <span className="inline-flex items-center gap-2 rounded-full bg-white/70 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.35em] text-[#f97316]">
+                    <span className="inline-flex items-center gap-2 rounded-full bg-white/70 px-3 sm:px-4 py-1 text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.25em] sm:tracking-[0.35em] text-[#f97316]">
                       Need More Help?
                     </span>
-                    <h2 className="mt-2 text-2xl font-semibold text-gray-900">Still have questions?</h2>
+                    <h2 className="mt-2 text-xl sm:text-2xl font-semibold text-gray-900">Still have questions?</h2>
                   </div>
                 </div>
                 
-                <div className="bg-white rounded-2xl p-6 border border-orange-200 shadow-sm mb-6">
-                  <p className="text-base text-gray-700 mb-4">
+                <div className="bg-white rounded-xl md:rounded-2xl p-4 sm:p-6 border border-orange-200 shadow-sm mb-4 sm:mb-6">
+                  <p className="text-sm sm:text-base text-gray-700 mb-4">
                     If you didn't find what you were looking for, we're happy to help.
                   </p>
-                  <div className="bg-gradient-to-br from-orange-400/10 to-orange-400/5 rounded-xl p-5 border border-orange-400/20 mb-4">
-                    <div className="flex items-center gap-3 mb-3">
-                      <Mail className="w-5 h-5 text-orange-400" />
-                      <span className="text-lg font-semibold text-gray-900">Email us at:</span>
+                  <div className="bg-gradient-to-br from-orange-400/10 to-orange-400/5 rounded-xl p-4 sm:p-5 border border-orange-400/20 mb-4">
+                    <div className="flex items-center gap-3 mb-2 sm:mb-3">
+                      <Mail className="w-5 h-5 text-orange-400 flex-shrink-0" />
+                      <span className="text-base sm:text-lg font-semibold text-gray-900">Email us at:</span>
                     </div>
                     <a 
                       href="mailto:hello@mokogo.in" 
-                      className="text-xl font-bold text-orange-400 hover:text-orange-500 transition-colors ml-8"
+                      className="text-base sm:text-xl font-bold text-orange-400 hover:text-orange-500 transition-colors block break-all ml-0 sm:ml-8"
                     >
                       hello@mokogo.in
                     </a>
@@ -407,15 +411,15 @@ const HelpCentre = () => {
             </div>
 
             {/* One last thing */}
-            <div className="mt-8 relative overflow-hidden rounded-[2rem] border border-orange-200 bg-gradient-to-br from-orange-50 via-white to-orange-50/50 p-8 shadow-xl shadow-orange-100/40">
+            <div className="mt-6 sm:mt-8 relative overflow-hidden rounded-xl md:rounded-[2rem] border border-orange-200 bg-gradient-to-br from-orange-50 via-white to-orange-50/50 p-5 sm:p-8 shadow-xl shadow-orange-100/40">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,rgba(249,115,22,0.12),transparent_60%)]" />
-              <div className="relative flex items-start gap-4">
+              <div className="relative flex flex-col sm:flex-row sm:items-start gap-4">
                 <div className="w-12 h-12 rounded-xl bg-orange-400/20 flex items-center justify-center flex-shrink-0">
                   <Sparkles className="w-6 h-6 text-orange-500" />
                 </div>
-                <div className="flex-1">
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">One last thing</h3>
-                  <p className="text-base leading-relaxed text-gray-700">
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">One last thing</h3>
+                  <p className="text-sm sm:text-base leading-relaxed text-gray-700">
                     Mokogo is still growing, and your feedback really helps. If something feels confusing or broken, let us know — we're listening.
                   </p>
                 </div>

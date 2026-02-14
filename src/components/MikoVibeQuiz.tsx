@@ -305,15 +305,17 @@ const MikoVibeQuiz = ({ isOpen, onClose, onComplete }: MikoVibeQuizProps) => {
             </p>
           </div>
 
-          <div className="w-full flex flex-col items-center gap-4 mt-12 relative">
-            <button
-              onClick={onClose}
-              className="absolute right-0 top-0 text-[#2C2C2C]/75 hover:text-[#B5573E] transition-colors text-xs md:text-sm font-medium"
-              type="button"
-            >
-              Close
-            </button>
-            <h2 className="text-2xl md:text-3xl font-light text-[#2C2C2C] text-center">
+          <div className="w-full flex flex-col items-center gap-4 mt-12">
+            <div className="w-full flex justify-end pr-0 min-h-[1.75rem]">
+              <button
+                onClick={onClose}
+                className="text-[#2C2C2C]/75 hover:text-[#B5573E] transition-colors text-xs md:text-sm font-medium shrink-0"
+                type="button"
+              >
+                Close
+              </button>
+            </div>
+            <h2 className="w-full text-2xl md:text-3xl font-light text-[#2C2C2C] text-center px-2 sm:px-0">
               {typedQuestion}
               <span className={`ml-1 ${showCursor ? 'opacity-100' : 'opacity-0'}`}>
                 |

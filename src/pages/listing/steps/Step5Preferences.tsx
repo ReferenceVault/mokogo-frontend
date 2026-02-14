@@ -32,7 +32,7 @@ const Step5Preferences = ({ data, onChange, error, onClearError }: Step5Preferen
 
   return (
     <div>
-      <h2 className="text-[1.2375rem] font-semibold text-gray-900 mb-1">Preferences</h2>
+      <h2 className="text-lg sm:text-[1.2375rem] font-semibold text-gray-900 mb-1">Preferences</h2>
       <p className="text-[0.825rem] text-gray-600 mb-4">Who are you looking for?</p>
 
       {error && (
@@ -47,7 +47,7 @@ const Step5Preferences = ({ data, onChange, error, onClearError }: Step5Preferen
           <label className="block text-sm font-medium text-stone-700 mb-3">
             Gender Preference <span className="text-red-500">*</span>
           </label>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-2 sm:gap-3">
             {['Male Only', 'Female Only', 'Any Gender'].map((pref) => {
               const value = pref === 'Male Only' ? 'Male' : pref === 'Female Only' ? 'Female' : 'Any'
               return (
@@ -73,7 +73,7 @@ const Step5Preferences = ({ data, onChange, error, onClearError }: Step5Preferen
           <label className="block text-sm font-medium text-stone-700 mb-3">
             Food Preference <span className="text-red-500">*</span>
           </label>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-2 sm:gap-3">
             {['Vegetarian only', 'Non-veg allowed', 'Open'].map((pref) => {
               return (
                 <button
@@ -98,7 +98,7 @@ const Step5Preferences = ({ data, onChange, error, onClearError }: Step5Preferen
           <label className="block text-sm font-medium text-stone-700 mb-3">
             Pet Policy <span className="text-red-500">*</span>
           </label>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-2 sm:gap-3">
             {['Pets allowed', 'Not allowed'].map((pref) => {
               return (
                 <button
@@ -123,7 +123,7 @@ const Step5Preferences = ({ data, onChange, error, onClearError }: Step5Preferen
           <label className="block text-sm font-medium text-stone-700 mb-3">
             Smoking Policy <span className="text-red-500">*</span>
           </label>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-2 sm:gap-3">
             {['Allowed', 'Not allowed', 'No issues'].map((pref) => {
               return (
                 <button
@@ -148,7 +148,7 @@ const Step5Preferences = ({ data, onChange, error, onClearError }: Step5Preferen
           <label className="block text-sm font-medium text-stone-700 mb-3">
             Drinking Policy <span className="text-red-500">*</span>
           </label>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-2 sm:gap-3">
             {['Allowed', 'Not allowed', 'No issues'].map((pref) => {
               return (
                 <button
@@ -173,7 +173,7 @@ const Step5Preferences = ({ data, onChange, error, onClearError }: Step5Preferen
           <label className="block text-sm font-medium text-stone-700 mb-3">
             LGBTQ+ Friendly? <span className="text-gray-400 text-xs">(shown in filters)</span>
           </label>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-2 sm:gap-3">
             <button
               type="button"
               onClick={() => handleChange('lgbtqFriendly', true)}

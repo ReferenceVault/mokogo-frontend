@@ -297,7 +297,7 @@ const Step2Location = ({ data, onChange, error, onClearError }: Step2LocationPro
 
   return (
     <div>
-      <h2 className="text-[1.2375rem] font-semibold text-gray-900 mb-1">Location</h2>
+      <h2 className="text-lg sm:text-[1.2375rem] font-semibold text-gray-900 mb-1">Location</h2>
       <p className="text-[0.825rem] text-gray-600 mb-4">Where is the room located?</p>
 
       {error && (

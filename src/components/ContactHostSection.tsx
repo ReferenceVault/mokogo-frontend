@@ -55,7 +55,7 @@ const ContactHostSection = ({
     }
   }, [location.search, listing?.id])
 
-  const containerClass = 'bg-white/70 backdrop-blur-md rounded-xl shadow-lg border border-white/35 p-4'
+  const containerClass = 'bg-white/70 backdrop-blur-md rounded-xl shadow-lg border border-white/35 p-4 sm:p-5'
   const priceClass = 'text-xl font-bold mb-1'
   const priceSubtextClass = 'text-sm text-gray-600'
   const buttonClass = 'w-full bg-orange-400 text-white font-semibold py-2.5 rounded-lg hover:bg-orange-500 hover:shadow-lg transition-all transform hover:scale-105 mb-3 disabled:opacity-50 disabled:cursor-not-allowed text-sm'

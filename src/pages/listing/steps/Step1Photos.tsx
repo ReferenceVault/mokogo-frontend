@@ -173,7 +173,7 @@ const Step1Photos = ({ data, onChange, error: stepError, onClearError }: Step1Ph
 
   return (
     <div>
-      <h2 className="text-[1.2375rem] font-semibold text-gray-900 mb-1">Photos</h2>
+      <h2 className="text-lg sm:text-[1.2375rem] font-semibold text-gray-900 mb-1">Photos</h2>
       <p className="text-[0.825rem] text-gray-600 mb-4">Add photos of your space</p>
 
       {error && (
@@ -219,7 +219,7 @@ const Step1Photos = ({ data, onChange, error: stepError, onClearError }: Step1Ph
         onDragLeave={handleDrag}
         onDragOver={handleDrag}
         onDrop={handleDrop}
-        className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+        className={`border-2 border-dashed rounded-lg p-6 sm:p-8 text-center transition-colors ${
           dragActive
             ? 'border-mokogo-primary bg-mokogo-info-bg'
             : 'border-mokogo-gray bg-gray-50 hover:border-mokogo-primary hover:bg-mokogo-info-bg/50'

@@ -596,7 +596,7 @@ const ListingDetail = () => {
         <>
           {/* Lister Dashboard Header */}
           <header className="sticky top-0 z-50 bg-white/70 backdrop-blur-md border-b border-stone-200">
-            <div className="max-w-7xl mx-auto px-6 py-3">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2 sm:py-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-8">
                   <Logo />
@@ -689,16 +689,16 @@ const ListingDetail = () => {
       )}
 
       {/* Breadcrumb Navigation */}
-      <section className="py-4 bg-white border-b border-stone-200">
-        <div className="max-w-7xl mx-auto px-6">
-          <nav className="flex items-center space-x-2 text-sm">
+      <section className="py-3 sm:py-4 bg-white border-b border-stone-200 overflow-x-auto">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 min-w-0">
+          <nav className="flex items-center space-x-2 text-xs sm:text-sm flex-nowrap">
             <Link to="/" className="text-orange-400 hover:text-orange-500">Home</Link>
             <ChevronRight className="w-4 h-4 text-gray-400" />
             <Link to="/explore" className="text-orange-400 hover:text-orange-500">Find Rooms</Link>
             <ChevronRight className="w-4 h-4 text-gray-400" />
             <span className="text-orange-400">{listing.city}</span>
             <ChevronRight className="w-4 h-4 text-gray-400" />
-            <span className="text-gray-600">{listing.title}</span>
+            <span className="text-gray-600 truncate max-w-[120px] sm:max-w-none">{listing.title}</span>
           </nav>
         </div>
       </section>
@@ -716,12 +716,16 @@ const ListingDetail = () => {
       />
 
       {/* Photo Gallery Section */}
-      <ListingPhotos listing={listing} />
+      <ListingPhotos 
+        listing={listing}
+        mainImageHeight="h-[280px] sm:h-[350px] lg:h-[500px]"
+        thumbnailHeight="h-[70px] sm:h-[90px] lg:h-[120px]"
+      />
 
       {/* Main Content Section */}
-      <section className="py-8">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className={`grid grid-cols-1 gap-12 ${!isOwner ? 'lg:grid-cols-3' : 'lg:grid-cols-1'}`}>
+      <section className="py-6 sm:py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <div className={`grid grid-cols-1 gap-6 sm:gap-8 lg:gap-12 ${!isOwner ? 'lg:grid-cols-3' : 'lg:grid-cols-1'}`}>
             
             {/* Left Content */}
             <div className={`space-y-8 ${!isOwner ? 'lg:col-span-2' : 'lg:col-span-1'}`}>
@@ -740,7 +744,7 @@ const ListingDetail = () => {
             {/* Right Sidebar - Only show for non-owners */}
             {!isOwner && (
             <div className="lg:col-span-1">
-              <div className="sticky top-24 space-y-6">
+              <div className="lg:sticky lg:top-24 space-y-6">
                 <ContactHostSection
                   listing={listing}
                   user={user}
@@ -762,14 +766,14 @@ const ListingDetail = () => {
 
       {/* Similar Listings Section */}
       {similarListings.length > 0 && (
-        <section className="py-16 bg-white">
-          <div className="max-w-7xl mx-auto px-6">
-            <div className="flex items-center justify-between mb-8">
-              <h2 className="text-3xl font-bold text-gray-900">Similar Rooms in {listing.city}</h2>
-              <Link to="/" className="text-orange-400 hover:text-orange-500 font-semibold">View All</Link>
+        <section className="py-10 sm:py-16 bg-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6 sm:mb-8">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">Similar Rooms in {listing.city}</h2>
+              <Link to="/" className="text-orange-400 hover:text-orange-500 font-semibold text-sm sm:text-base flex-shrink-0">View All</Link>
             </div>
             
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
               {similarListings.map((similar) => {
                 const saved = isListingSaved(similar.id)
                 return (
@@ -826,7 +830,7 @@ const ListingDetail = () => {
                     </div>
 
                     {/* Content */}
-                    <div className="p-4 space-y-3">
+                    <div className="p-3 sm:p-4 space-y-3">
                       <div className="flex items-start justify-between gap-2">
                         <h3 className="font-semibold text-gray-900 line-clamp-1 text-sm">
                           {similar.title.split('·')[0].trim()}
@@ -860,25 +864,25 @@ const ListingDetail = () => {
       )}
 
       {/* FAQ Section */}
-      <section className="py-16 bg-white">
-        <div className="max-w-4xl mx-auto px-6">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">Get answers to common questions about this listing and the rental process</p>
+      <section className="py-10 sm:py-16 bg-white">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6">
+          <div className="text-center mb-8 sm:mb-12">
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">Frequently Asked Questions</h2>
+            <p className="text-sm sm:text-base text-gray-600 max-w-2xl mx-auto">Get answers to common questions about this listing and the rental process</p>
           </div>
           
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {faqs.map((faq) => (
               <div key={faq.id} className="border border-stone-200 rounded-xl">
                 <button 
                   onClick={() => toggleFAQ(faq.id)}
-                  className="w-full flex items-center justify-between p-6 text-left hover:bg-stone-50 transition-colors"
+                  className="w-full flex items-center justify-between p-4 sm:p-6 text-left hover:bg-stone-50 transition-colors gap-3"
                 >
-                  <span className="font-semibold text-gray-900">{faq.question}</span>
-                  <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${expandedFAQ === faq.id ? 'rotate-180' : ''}`} />
+                  <span className="font-semibold text-gray-900 text-sm sm:text-base text-left">{faq.question}</span>
+                  <ChevronDown className={`w-5 h-5 text-gray-400 flex-shrink-0 transition-transform ${expandedFAQ === faq.id ? 'rotate-180' : ''}`} />
                 </button>
                 {expandedFAQ === faq.id && (
-                  <div className="px-6 pb-6 text-gray-700">
+                  <div className="px-4 sm:px-6 pb-4 sm:pb-6 text-sm sm:text-base text-gray-700">
                     {faq.answer}
                   </div>
                 )}
