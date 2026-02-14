@@ -747,6 +747,57 @@ export interface SubscribeResponse {
   message: string
 }
 
+export interface NotificationResponse {
+  _id: string
+  id: string
+  userId: string
+  actorId?: {
+    _id: string
+    name: string
+    email: string
+    profileImageUrl?: string
+  }
+  type: string
+  title: string
+  body: string
+  data: Record<string, any>
+  read: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface ListNotificationsResponse {
+  notifications: NotificationResponse[]
+  total: number
+  unreadCount: number
+}
+
+export interface MarkAllReadResponse {
+  count: number
+}
+
+export const notificationsApi = {
+  list: async (params?: { limit?: number; skip?: number; unreadOnly?: boolean }): Promise<ListNotificationsResponse> => {
+    const queryParams = new URLSearchParams()
+    if (params?.limit) queryParams.append('limit', params.limit.toString())
+    if (params?.skip) queryParams.append('skip', params.skip.toString())
+    if (params?.unreadOnly !== undefined) queryParams.append('unreadOnly', params.unreadOnly.toString())
+    
+    const response = await api.get<ListNotificationsResponse>(`/notifications?${queryParams.toString()}`)
+    return response.data
+  },
+
+  markAsRead: async (notificationId: string): Promise<NotificationResponse> => {
+    const response = await api.post<NotificationResponse>(`/notifications/${notificationId}/mark-read`)
+    return response.data
+  },
+
+  markAllRead: async (): Promise<MarkAllReadResponse> => {
+    const response = await api.post<MarkAllReadResponse>('/notifications/mark-all-read')
+    return response.data
+  },
+}
+
 export const subscriptionsApi = {
   subscribe: async (data: SubscribeRequest): Promise<SubscribeResponse> => {
     const response = await api.post<SubscribeResponse>('/subscriptions', data)
