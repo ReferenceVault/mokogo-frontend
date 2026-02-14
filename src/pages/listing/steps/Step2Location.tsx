@@ -348,7 +348,7 @@ const Step2Location = ({ data, onChange, error, onClearError }: Step2LocationPro
                   setShowSuggestions(true)
                 }
               }}
-              className="w-full px-4 py-3 bg-white/50 backdrop-blur-sm border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400/50 focus:border-orange-400 transition-all duration-200 shadow-sm hover:shadow-md hover:border-orange-300 text-stone-900 font-medium pl-12"
+              className="w-full min-h-[44px] text-base px-4 py-3 bg-white/50 backdrop-blur-sm border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400/50 focus:border-orange-400 transition-all duration-200 shadow-sm hover:shadow-md hover:border-orange-300 text-stone-900 font-medium pl-12"
               placeholder={data.city ? "Start typing locality, area, or landmark..." : "Select a city first"}
               disabled={!data.city}
             />
@@ -370,7 +370,7 @@ const Step2Location = ({ data, onChange, error, onClearError }: Step2LocationPro
             {showSuggestions && suggestions.length > 0 && createPortal(
               <div 
                 ref={suggestionsRef}
-                className="fixed bg-white border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto z-[9999]"
+                className="fixed bg-white border border-gray-200 rounded-xl shadow-lg max-h-[min(50vh,240px)] sm:max-h-60 overflow-y-auto z-[9999]"
                 style={{
                   top: `${dropdownPosition.top}px`,
                   left: `${dropdownPosition.left}px`,
@@ -421,7 +421,7 @@ const Step2Location = ({ data, onChange, error, onClearError }: Step2LocationPro
               type="text"
               value={data.societyName || ''}
               onChange={(e) => handleChange('societyName', e.target.value)}
-              className="w-full px-4 py-3 bg-white/50 backdrop-blur-sm border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400/50 focus:border-orange-400 transition-all duration-200 shadow-sm hover:shadow-md hover:border-orange-300 text-stone-900 font-medium pl-12"
+              className="w-full min-h-[44px] text-base px-4 py-3 bg-white/50 backdrop-blur-sm border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400/50 focus:border-orange-400 transition-all duration-200 shadow-sm hover:shadow-md hover:border-orange-300 text-stone-900 font-medium pl-12"
               placeholder="e.g., Green Valley Apartments, Sunrise Towers"
             />
           </div>
@@ -432,3 +432,4 @@ const Step2Location = ({ data, onChange, error, onClearError }: Step2LocationPro
 }
 
 export default Step2Location
+

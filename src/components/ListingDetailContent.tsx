@@ -411,21 +411,21 @@ const ListingDetailContent = ({ listingId, onBack, onExplore }: ListingDetailCon
     .slice(0, 3)
 
   return (
-    <div className="min-h-screen bg-stone-100">
+    <div className="min-h-screen bg-stone-100 overflow-x-hidden">
       {/* Breadcrumb Navigation */}
       <section className="py-4 bg-white border-b border-stone-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="flex items-center justify-between">
-            <nav className="flex items-center space-x-2 text-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <nav className="flex items-center min-w-0 gap-2 text-sm overflow-x-auto">
               {onBack ? (
-                <button onClick={onBack} className="text-orange-400 hover:text-orange-500">Dashboard</button>
+                <button onClick={onBack} className="text-orange-400 hover:text-orange-500 flex-shrink-0">Dashboard</button>
               ) : (
-                <Link to="/dashboard" className="text-orange-400 hover:text-orange-500">Dashboard</Link>
+                <Link to="/dashboard" className="text-orange-400 hover:text-orange-500 flex-shrink-0">Dashboard</Link>
               )}
-              <ChevronRight className="w-4 h-4 text-gray-400" />
-              <span className="text-orange-400">{listing.city}</span>
-              <ChevronRight className="w-4 h-4 text-gray-400" />
-              <span className="text-gray-600">{listing.title}</span>
+              <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
+              <span className="text-orange-400 flex-shrink-0">{listing.city}</span>
+              <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
+              <span className="text-gray-600 truncate">{listing.title}</span>
             </nav>
             <button
               onClick={() => {
@@ -435,7 +435,7 @@ const ListingDetailContent = ({ listingId, onBack, onExplore }: ListingDetailCon
                   onBack()
                 }
               }}
-              className="flex items-center gap-2 px-4 py-2 bg-orange-50 text-orange-600 rounded-lg text-sm font-semibold hover:bg-orange-100 transition-all duration-300 border border-orange-200 hover:border-orange-300"
+              className="flex items-center justify-center gap-2 px-4 py-2.5 min-h-[44px] w-full sm:w-auto bg-orange-50 text-orange-600 rounded-lg text-sm font-semibold hover:bg-orange-100 transition-all duration-300 border border-orange-200 hover:border-orange-300 flex-shrink-0"
             >
               <Search className="w-4 h-4" />
               Browse More Properties
@@ -485,8 +485,8 @@ const ListingDetailContent = ({ listingId, onBack, onExplore }: ListingDetailCon
             
             {/* Right Sidebar - Only show for non-owners */}
             {!isOwner && (
-            <div className="lg:col-span-1">
-              <div className="sticky top-24 space-y-4">
+            <div className="lg:col-span-1 order-first lg:order-none">
+              <div className="lg:sticky lg:top-24 space-y-4">
                 <ContactHostSection
                   listing={listing}
                   user={user}
@@ -510,12 +510,12 @@ const ListingDetailContent = ({ listingId, onBack, onExplore }: ListingDetailCon
       {similarListings.length > 0 && (
         <section className="py-8 bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-gray-900">Similar Rooms in {listing.city}</h2>
-              <Link to="/explore" className="text-sm text-orange-400 hover:text-orange-500 font-semibold">View All</Link>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+              <h2 className="text-base sm:text-lg font-bold text-gray-900">Similar Rooms in {listing.city}</h2>
+              <Link to="/explore" className="text-sm text-orange-400 hover:text-orange-500 font-semibold flex-shrink-0">View All</Link>
             </div>
             
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
               {similarListings.map((similar) => {
                 const saved = isListingSaved(similar.id)
                 return (

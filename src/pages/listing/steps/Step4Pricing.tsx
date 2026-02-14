@@ -94,7 +94,9 @@ const Step4Pricing = ({ data, onChange, error, onClearError }: Step4PricingProps
         </div>
       )}
 
-      <div className="flex flex-wrap gap-4">
+      <div className="flex flex-col sm:flex-row sm:flex-wrap gap-4">
+        {/* Rent + Deposit row on mobile; all 3 in one row on web */}
+        <div className="flex gap-4 sm:contents">
         {/* Rent */}
         <div className="flex-1 min-w-0 sm:min-w-[200px]">
           <label className="block text-sm font-medium text-stone-700 mb-2">
@@ -108,7 +110,7 @@ const Step4Pricing = ({ data, onChange, error, onClearError }: Step4PricingProps
               type="number"
               value={data.rent || ''}
               onChange={(e) => handleChange('rent', sanitizeAmountInput(e.target.value))}
-              className="w-full px-4 py-3 bg-gradient-to-br from-white via-white to-orange-50/30 border-2 border-orange-200/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-mokogo-primary/50 focus:border-mokogo-primary transition-all duration-200 shadow-sm hover:shadow-md hover:border-orange-300/70 text-gray-700 font-medium pl-12 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              className="w-full min-h-[44px] px-4 py-3 bg-gradient-to-br from-white via-white to-orange-50/30 border-2 border-orange-200/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-mokogo-primary/50 focus:border-mokogo-primary transition-all duration-200 shadow-sm hover:shadow-md hover:border-orange-300/70 text-gray-700 font-medium pl-12 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               placeholder="e.g., 12000"
               min="0"
             />
@@ -128,15 +130,16 @@ const Step4Pricing = ({ data, onChange, error, onClearError }: Step4PricingProps
               type="number"
               value={data.deposit || ''}
               onChange={(e) => handleChange('deposit', sanitizeAmountInput(e.target.value))}
-              className="w-full px-4 py-3 bg-gradient-to-br from-white via-white to-orange-50/30 border-2 border-orange-200/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-mokogo-primary/50 focus:border-mokogo-primary transition-all duration-200 shadow-sm hover:shadow-md hover:border-orange-300/70 text-gray-700 font-medium pl-12 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              className="w-full min-h-[44px] px-4 py-3 bg-gradient-to-br from-white via-white to-orange-50/30 border-2 border-orange-200/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-mokogo-primary/50 focus:border-mokogo-primary transition-all duration-200 shadow-sm hover:shadow-md hover:border-orange-300/70 text-gray-700 font-medium pl-12 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               placeholder="e.g., 24000"
               min="0"
             />
           </div>
         </div>
+        </div>
 
-        {/* Available From */}
-        <div className="flex-1 min-w-0 sm:min-w-[200px]">
+        {/* Available From - full width on mobile, same row on web */}
+        <div className="w-full sm:flex-1 sm:min-w-0 sm:min-w-[200px]">
           <label className="block text-sm font-medium text-stone-700 mb-2">
             Available From <span className="text-red-500">*</span>
           </label>

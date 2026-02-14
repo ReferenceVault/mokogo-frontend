@@ -58,7 +58,7 @@ const ContactHostSection = ({
   const containerClass = 'bg-white/70 backdrop-blur-md rounded-xl shadow-lg border border-white/35 p-4 sm:p-5'
   const priceClass = 'text-xl font-bold mb-1'
   const priceSubtextClass = 'text-sm text-gray-600'
-  const buttonClass = 'w-full bg-orange-400 text-white font-semibold py-2.5 rounded-lg hover:bg-orange-500 hover:shadow-lg transition-all transform hover:scale-105 mb-3 disabled:opacity-50 disabled:cursor-not-allowed text-sm'
+  const buttonClass = 'w-full min-h-[44px] bg-orange-400 text-white font-semibold py-2.5 rounded-lg hover:bg-orange-500 hover:shadow-lg transition-all transform sm:hover:scale-105 mb-3 disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center justify-center'
   const textClass = 'text-xs'
   const inputClass = 'p-2'
   const borderClass = 'border border-stone-300 rounded-lg'
@@ -233,7 +233,7 @@ const ContactHostSection = ({
       {loadingRequestStatus ? (
         <button
           disabled
-          className={`w-full bg-gray-200 text-gray-500 font-semibold py-2.5 rounded-lg cursor-not-allowed mb-3 ${textClass}`}
+          className={`w-full min-h-[44px] bg-gray-200 text-gray-500 font-semibold py-2.5 rounded-lg cursor-not-allowed mb-3 flex items-center justify-center ${textClass}`}
         >
           <div className="w-3.5 h-3.5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin inline-block mr-2"></div>
           Loading...
@@ -241,7 +241,7 @@ const ContactHostSection = ({
       ) : requestStatus.status === 'pending' ? (
         <button
           disabled
-          className={`w-full bg-gray-300 text-gray-600 font-semibold py-2.5 rounded-lg cursor-not-allowed mb-3 ${textClass}`}
+          className={`w-full min-h-[44px] bg-gray-300 text-gray-600 font-semibold py-2.5 rounded-lg cursor-not-allowed mb-3 flex items-center justify-center ${textClass}`}
         >
           <Clock className="w-4 h-4 inline mr-2" />
           Request Sent
@@ -249,7 +249,7 @@ const ContactHostSection = ({
       ) : requestStatus.status === 'approved' ? (
         <button
           onClick={handleStartConversation}
-          className="w-full bg-green-500 text-white font-semibold py-2.5 rounded-lg hover:bg-green-600 hover:shadow-lg transition-all transform hover:scale-105 mb-3"
+          className="w-full min-h-[44px] bg-green-500 text-white font-semibold py-2.5 rounded-lg hover:bg-green-600 hover:shadow-lg transition-all transform sm:hover:scale-105 mb-3 flex items-center justify-center"
         >
           <MessageCircle className="w-4 h-4 inline mr-2" />
           Start Conversation

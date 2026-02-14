@@ -74,7 +74,7 @@ const Step3Details = ({ data, onChange, error, onClearError }: Step3DetailsProps
                 key={type}
                 type="button"
                 onClick={() => handleChange('roomType', type)}
-                className={`flex-1 px-4 py-3 rounded-lg font-medium transition-colors ${
+                className={`flex-1 min-h-[44px] px-4 py-3 rounded-lg font-medium transition-colors ${
                   data.roomType === type
                     ? 'bg-orange-400 text-white border-orange-400'
                     : 'bg-white/30 text-gray-700 border border-stone-200 hover:border-orange-400 hover:text-orange-500'

@@ -91,7 +91,8 @@ const ListingWizard = () => {
   const [isSaving, setIsSaving] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
   const [validatedSteps, setValidatedSteps] = useState<Set<number>>(new Set())
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => typeof window !== 'undefined' && window.innerWidth < 1024)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [showListingLimitModal, setShowListingLimitModal] = useState(false)
   const [listingSavedAsDraft, setListingSavedAsDraft] = useState(false)
   
@@ -1344,6 +1345,7 @@ const ListingWizard = () => {
       {/* Dashboard Header */}
       <DashboardHeader
         activeView="listings"
+        onMenuClick={() => setMobileMenuOpen(true)}
         onViewChange={(view) => {
           if (view === 'overview' || view === 'listings') {
             navigate(`/dashboard?view=${view}`)
@@ -1360,52 +1362,55 @@ const ListingWizard = () => {
         onLogout={() => handleLogoutUtil(navigate)}
       />
 
-      <div className="flex flex-1">
-        {/* Sidebar */}
+      <div className="flex flex-1 relative">
+        {mobileMenuOpen && (
+          <div className="lg:hidden fixed inset-0 bg-black/50 z-40" onClick={() => setMobileMenuOpen(false)} aria-hidden="true" />
+        )}
+        <div className={`lg:relative ${mobileMenuOpen ? 'fixed left-0 top-16 bottom-0 z-50 w-64 lg:static lg:top-0 lg:bottom-auto lg:w-auto' : 'hidden lg:block'}`}>
         <DashboardSidebar
           title="Workspace"
-          collapsed={sidebarCollapsed}
-          onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+          collapsed={mobileMenuOpen ? false : sidebarCollapsed}
+          onToggleCollapse={() => { if (mobileMenuOpen) setMobileMenuOpen(false); else setSidebarCollapsed(!sidebarCollapsed) }}
           activeView="listing-wizard"
           menuItems={[
             {
               id: 'miko',
               label: 'Miko Vibe Search',
               icon: Sparkles,
-              onClick: () => navigate('/dashboard')
+              onClick: () => { navigate('/dashboard'); setMobileMenuOpen(false) }
             },
             {
               id: 'explore',
               label: 'Explore',
               icon: Search,
-              onClick: () => navigate('/dashboard?view=explore')
+              onClick: () => { navigate('/dashboard?view=explore'); setMobileMenuOpen(false) }
             },
             {
               id: 'overview',
               label: 'Overview',
               icon: LayoutGrid,
-              onClick: () => navigate('/dashboard')
+              onClick: () => { navigate('/dashboard'); setMobileMenuOpen(false) }
             },
             {
               id: 'listings',
               label: 'My Listings',
               icon: Home,
               badge: activeListings.length > 0 ? activeListings.length : undefined,
-              onClick: () => navigate('/dashboard?view=listings')
+              onClick: () => { navigate('/dashboard?view=listings'); setMobileMenuOpen(false) }
             },
             {
               id: 'messages',
               label: 'Conversations',
               icon: MessageSquare,
               badge: conversationsCount > 0 ? conversationsCount : undefined,
-              onClick: () => navigate('/dashboard?view=messages')
+              onClick: () => { navigate('/dashboard?view=messages'); setMobileMenuOpen(false) }
             },
             {
               id: 'saved',
               label: 'Saved Properties',
               icon: Bookmark,
               badge: savedListings.length > 0 ? savedListings.length : undefined,
-              onClick: () => navigate('/dashboard?view=saved')
+              onClick: () => { navigate('/dashboard?view=saved'); setMobileMenuOpen(false) }
             },
             // Only show Requests tab if user has listings OR sent requests
             ...(showRequestsTab ? [{
@@ -1413,7 +1418,7 @@ const ListingWizard = () => {
               label: 'Requests',
               icon: Calendar,
               badge: pendingRequestsCount > 0 ? pendingRequestsCount : undefined,
-              onClick: () => navigate('/dashboard?view=requests')
+              onClick: () => { navigate('/dashboard?view=requests'); setMobileMenuOpen(false) }
             }] : [])
           ]}
           quickFilters={[]}
@@ -1428,7 +1433,7 @@ const ListingWizard = () => {
                   <h4 className="text-sm font-semibold text-gray-900 mb-1">Post Your Listing</h4>
                   <p className="text-xs text-gray-600 mb-3">Find your perfect roommate in minutes</p>
                   <button 
-                    onClick={() => navigate('/listing/wizard')}
+                    onClick={() => { navigate('/listing/wizard'); setMobileMenuOpen(false) }}
                     className="text-xs font-semibold text-orange-600 hover:text-orange-700 transition-colors flex items-center gap-1 group-hover:gap-2"
                   >
                     Get Started
@@ -1440,14 +1445,15 @@ const ListingWizard = () => {
           }
           collapsedCtaButton={{
             icon: Plus,
-            onClick: () => navigate('/listing/wizard'),
+            onClick: () => { navigate('/listing/wizard'); setMobileMenuOpen(false) },
             title: 'Post Your Listing'
           }}
         />
+        </div>
 
         {/* Main Content */}
-        <main className="flex-1 bg-stone-100">
-          <div className="max-w-[900px] mx-auto px-4 sm:px-6 md:px-8 py-4">
+        <main className="flex-1 min-w-0 overflow-x-hidden bg-stone-100 px-4 sm:px-0">
+          <div className="max-w-[900px] mx-auto px-0 sm:px-6 md:px-8 py-4 sm:py-6">
           {/* Page Header */}
           <div className="mb-3">
             <h1 className="text-xl sm:text-[1.375rem] font-bold text-gray-900 mb-0.5">

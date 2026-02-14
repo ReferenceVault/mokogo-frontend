@@ -65,7 +65,7 @@ const ListingPhotos = ({
               </>
             )}
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="hidden sm:grid grid-cols-2 gap-4">
             {listing.photos?.slice(1, 5).map((photo, idx) => (
               <div key={idx} className="relative">
                 <img
