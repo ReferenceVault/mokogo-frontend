@@ -29,8 +29,8 @@ const ListingPhotos = ({
   }
 
   return (
-    <section className={`py-8 bg-white ${className}`}>
-      <div className="max-w-7xl mx-auto px-6">
+    <section className={`py-6 sm:py-8 bg-white ${className}`}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 rounded-2xl overflow-hidden">
           <div className="relative">
             {listing.photos && listing.photos.length > 0 ? (
@@ -48,7 +48,7 @@ const ListingPhotos = ({
               <>
                 <button
                   onClick={() => handlePhotoNav('prev')}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-sm w-9 h-9 rounded-full flex items-center justify-center text-gray-700 hover:bg-white transition-colors"
+                  className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-sm w-9 h-9 rounded-full flex items-center justify-center text-gray-700 hover:bg-white transition-colors min-h-[44px] min-w-[44px]"
                   type="button"
                   aria-label="Previous photo"
                 >
@@ -56,7 +56,7 @@ const ListingPhotos = ({
                 </button>
                 <button
                   onClick={() => handlePhotoNav('next')}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-sm w-9 h-9 rounded-full flex items-center justify-center text-gray-700 hover:bg-white transition-colors"
+                  className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-sm w-9 h-9 rounded-full flex items-center justify-center text-gray-700 hover:bg-white transition-colors min-h-[44px] min-w-[44px]"
                   type="button"
                   aria-label="Next photo"
                 >

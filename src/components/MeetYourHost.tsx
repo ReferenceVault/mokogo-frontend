@@ -12,11 +12,10 @@ interface MeetYourHostProps {
 }
 
 const MeetYourHost = ({ listing, hostInfo, className = '' }: MeetYourHostProps) => {
-  const containerClass = 'bg-white/70 backdrop-blur-md rounded-xl shadow-lg border border-white/35 p-5'
+  const containerClass = 'bg-white/70 backdrop-blur-md rounded-xl shadow-lg border border-white/35 p-4 sm:p-5'
   const titleClass = 'text-lg font-bold mb-4'
   const hostNameClass = 'text-base font-bold'
   const hostAboutClass = 'text-sm text-gray-700 mb-3'
-  const spacingClass = 'space-x-4'
 
   const hostAbout =
     hostInfo?.about?.trim() ||
@@ -26,7 +25,7 @@ const MeetYourHost = ({ listing, hostInfo, className = '' }: MeetYourHostProps) 
     <div className={`${containerClass} ${className}`}>
       <h2 className={titleClass}>Meet Your Host</h2>
       
-      <div className={`flex items-start ${spacingClass}`}>
+      <div className={`flex flex-col sm:flex-row items-start gap-3 sm:gap-4`}>
         <div className="flex-shrink-0">
           <UserAvatar
             user={{

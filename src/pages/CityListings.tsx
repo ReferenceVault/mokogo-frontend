@@ -402,8 +402,8 @@ const CityListings = () => {
       
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="w-full bg-gradient-to-br from-mokogo-primary/30 to-mokogo-primary/20 py-4 md:py-5">
-          <div className="max-w-7xl mx-auto px-6 md:px-12">
+        <section className="w-full bg-gradient-to-br from-mokogo-primary/30 to-mokogo-primary/20 py-4 sm:py-5">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <div className="flex items-center gap-3">
                 <button
@@ -416,11 +416,11 @@ const CityListings = () => {
                   Back to Explore
                 </button>
                 <span className="text-gray-400">•</span>
-                <h1 className="text-xl md:text-2xl font-bold text-gray-900">
+                <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
                   Properties in <span className="text-mokogo-primary">{decodedCityName}</span>
                 </h1>
               </div>
-              <p className="text-sm text-gray-700">
+              <p className="text-xs sm:text-sm text-gray-700">
                 {cityListings.length} {cityListings.length === 1 ? 'property' : 'properties'} available
                 {hasActiveFilters && (
                   <span className="text-mokogo-primary ml-1">
@@ -433,8 +433,8 @@ const CityListings = () => {
         </section>
 
         {/* Filters Section */}
-        <section className="relative z-10 w-full bg-white/50 backdrop-blur-sm border-b border-gray-200 py-6">
-          <div className="max-w-7xl mx-auto px-6 md:px-12">
+        <section className="relative z-10 w-full bg-white/50 backdrop-blur-sm border-b border-gray-200 py-4 sm:py-6">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12">
             <div className="flex flex-col md:flex-row md:items-end gap-4">
               <div className="flex-1 relative z-20">
                 <label className="block text-sm font-medium text-stone-700 mb-2">
@@ -505,7 +505,7 @@ const CityListings = () => {
                   ]}
                 />
               </div>
-              <div className="flex items-end gap-3">
+              <div className="flex flex-wrap items-end gap-2 sm:gap-3">
                 {hasActiveFilters && (
                   <div>
                     <label className="block text-sm font-medium text-stone-700 mb-2 opacity-0">
@@ -539,7 +539,7 @@ const CityListings = () => {
           </div>
         </section>
 
-        <div className="py-8 px-6 md:px-12">
+        <div className="py-6 sm:py-8 px-4 sm:px-6 md:px-12">
           <div className="max-w-7xl mx-auto">
             {isLoading ? (
               <div className="text-center py-16 text-gray-600">
@@ -548,7 +548,7 @@ const CityListings = () => {
             ) : cityListings.length > 0 ? (
               <>
                 {/* Listings Grid */}
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                   {cityListings.map((listing) => {
                   return (
                   <Link
@@ -575,7 +575,7 @@ const CityListings = () => {
                       </div>
 
                       {/* Content */}
-                      <div className="p-4 space-y-3">
+                      <div className="p-3 sm:p-4 space-y-3">
                         <div className="flex items-start justify-between gap-2">
                           <h3 className="font-semibold text-gray-900 line-clamp-1 text-sm">
                             {listing.title.split('·')[0].trim()}
@@ -598,7 +598,7 @@ const CityListings = () => {
 
                         <div className="flex items-center justify-between pt-2 border-t border-gray-200">
                           <div>
-                            <p className="text-xl font-bold text-gray-900">{formatRent(listing.rent)}</p>
+                            <p className="text-lg sm:text-xl font-bold text-gray-900">{formatRent(listing.rent)}</p>
                             <p className="text-xs text-gray-600">per month</p>
                           </div>
                           <span className="btn-primary text-sm px-4 py-2 inline-block text-center">
@@ -617,11 +617,11 @@ const CityListings = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                   </svg>
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900">No properties found</h3>
+                <h3 className="text-xl sm:text-2xl font-bold text-gray-900">No properties found</h3>
                 <p className="text-gray-600 max-w-md mx-auto">
                   We don't have any listings in {decodedCityName} at the moment. Check back soon or explore other cities!
                 </p>
-                <div className="flex gap-4 justify-center pt-4">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center pt-4">
                   <button
                     onClick={() => navigate('/explore')}
                     className="btn-secondary"

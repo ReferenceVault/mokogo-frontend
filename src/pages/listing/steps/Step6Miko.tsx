@@ -52,7 +52,7 @@ const Step6Miko = ({ data, onChange, error }: Step6MikoProps) => {
   return (
     <div className="space-y-5">
       <div>
-        <h4 className="text-lg font-semibold text-gray-900">MIKO Vibe Tags</h4>
+        <h4 className="text-base sm:text-lg font-semibold text-gray-900">MIKO Vibe Tags</h4>
         <p className="text-sm text-gray-600">
           Optional — add vibe tags to help seekers find your listing through MIKO.
         </p>

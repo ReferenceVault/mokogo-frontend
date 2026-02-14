@@ -569,7 +569,7 @@ const LandingPage = () => {
       
       <main className="flex-1">
         {/* Hero Section with Search - Full Width Background */}
-        <section className="relative w-full bg-gradient-to-br from-orange-50 via-orange-100/50 to-orange-50 pb-16 md:pb-20 overflow-hidden">
+        <section className="relative w-full bg-gradient-to-br from-orange-50 via-orange-100/50 to-orange-50 pb-12 sm:pb-16 md:pb-20 overflow-hidden">
           {/* Decorative Background Elements */}
           <div className="absolute inset-0 pointer-events-none">
             <div className="absolute top-0 left-1/4 w-96 h-96 bg-orange-200/30 rounded-full blur-3xl animate-pulse" />
@@ -577,14 +577,14 @@ const LandingPage = () => {
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-orange-200/20 rounded-full blur-3xl" />
           </div>
 
-          <div className="relative max-w-7xl mx-auto px-6 md:px-12 pt-5">
-            <div className="relative bg-white/80 backdrop-blur-xl border border-orange-200/50 shadow-2xl rounded-3xl p-8 md:p-12">
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 md:px-12 pt-4 sm:pt-5">
+            <div className="relative bg-white/80 backdrop-blur-xl border border-orange-200/50 shadow-2xl rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-12">
               {/* Inner decorative gradient */}
               <div className="absolute inset-0 bg-gradient-to-br from-orange-50/50 via-transparent to-orange-100/30 pointer-events-none rounded-3xl" />
               
-              <div className="relative space-y-10">
+              <div className="relative space-y-6 sm:space-y-8 md:space-y-10">
                 <div className="text-center space-y-2">
-                  <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 leading-tight">
+                  <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 leading-tight px-1">
                     Find Your Perfect{' '}
                     <span className="relative inline-block">
                       <span className="relative z-10 bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent">
@@ -593,18 +593,22 @@ const LandingPage = () => {
                       <span className="absolute bottom-2 left-0 right-0 h-3 bg-orange-200/40 -z-0 transform -skew-x-12" />
                     </span>
                   </h1>
-                  <p className="text-orange-600 text-sm md:text-base max-w-[773px] mx-auto font-semibold">
-                    ⚡ Verified listings &nbsp; • &nbsp; 🤝 Direct owner contact &nbsp; • &nbsp; 💸 Zero brokerage
+                  <p className="text-orange-600 text-xs sm:text-sm md:text-base max-w-[773px] mx-auto font-semibold flex flex-wrap justify-center gap-x-2 gap-y-1 md:block">
+                    <span>⚡ Verified listings</span>
+                    <span className="hidden sm:inline md:hidden">•</span>
+                    <span>🤝 Direct owner contact</span>
+                    <span className="hidden sm:inline md:hidden">•</span>
+                    <span>💸 Zero brokerage</span>
                   </p>
-                  <p className="text-gray-600 text-sm md:text-base max-w-[773px] mx-auto">
+                  <p className="text-gray-600 text-xs sm:text-sm md:text-base max-w-[773px] mx-auto">
                     Live in Pune. Expanding across India soon.
                   </p>
                 </div>
 
                 {/* Search Card */}
-                <div className="relative bg-white/90 backdrop-blur-md rounded-xl p-5 md:p-7 shadow-xl border border-orange-200/50 hover:shadow-2xl transition-all duration-300 hover:border-orange-300">
-                  <div className="flex flex-wrap items-center gap-3 justify-between mb-5">
-                    <div className="inline-flex rounded-full bg-orange-50 border border-orange-200 p-1 text-sm font-semibold">
+                <div className="relative bg-white/90 backdrop-blur-md rounded-xl p-4 sm:p-5 md:p-7 shadow-xl border border-orange-200/50 hover:shadow-2xl transition-all duration-300 hover:border-orange-300">
+                  <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 sm:justify-between mb-4 sm:mb-5">
+                    <div className="inline-flex rounded-full bg-orange-50 border border-orange-200 p-1 text-sm font-semibold w-full sm:w-auto justify-center">
                       <button
                         type="button"
                         onClick={() => setSearchMode('standard')}
@@ -760,14 +764,14 @@ const LandingPage = () => {
           </div>
         </section>
 
-        <div className="space-y-16 py-12 px-6 md:px-12">
+        <div className="space-y-10 sm:space-y-14 md:space-y-16 py-8 sm:py-10 md:py-12 px-4 sm:px-6 md:px-12">
           {/* Listings Grid */}
           <section className="max-w-7xl mx-auto space-y-6">
-            <div className="flex items-center justify-between gap-3">
-              <h2 className="text-2xl font-bold text-gray-900">
+            <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center justify-between gap-3">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 shrink-0">
                 {isLoadingListings ? 'Loading...' : `${allListings.filter(l => l.status === 'live').length}+ Available Properties`}
               </h2>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
                 <button
                   type="button"
                   onClick={() => setIsFilterOpen(true)}
@@ -802,7 +806,7 @@ const LandingPage = () => {
                 <p className="text-gray-600">No listings available at the moment. Check back soon!</p>
               </div>
             ) : (
-              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                 {displayedListings.map((listing) => {
                   return (
                     <Link
@@ -1253,7 +1257,7 @@ const LandingPage = () => {
         {/* Newsletter */}
         <section className="w-full bg-gradient-to-br from-mokogo-primary/30 to-mokogo-primary/20 py-12 md:py-16">
           <div className="max-w-6xl mx-auto px-6 md:px-12">
-            <div className="relative bg-white/40 backdrop-blur-xl border border-white/60 shadow-2xl rounded-3xl p-8 md:p-12 overflow-hidden">
+            <div className="relative bg-white/40 backdrop-blur-xl border border-white/60 shadow-2xl rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-12 overflow-hidden">
               <div className="relative max-w-[1177px] mx-auto">
                 <div className="text-center space-y-6">
                   <h2 className="text-3xl font-bold text-gray-900">Stay Updated!</h2>

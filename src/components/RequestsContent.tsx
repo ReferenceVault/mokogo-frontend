@@ -356,13 +356,13 @@ const RequestsContent = ({
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50/30 via-white to-orange-50/20">
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-orange-50 via-orange-100/50 to-orange-50 px-8 py-6">
+      <section className="relative overflow-hidden bg-gradient-to-br from-orange-50 via-orange-100/50 to-orange-50 px-4 sm:px-6 md:px-8 py-4 sm:py-6">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(249,115,22,0.15),transparent_60%),radial-gradient(circle_at_bottom_right,rgba(251,146,60,0.12),transparent_60%)]" />
         
         <div className="relative mx-auto max-w-7xl">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
             <div className="flex-1">
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-2">
                 Requests
               </h1>
               <p className="text-sm text-gray-700">
@@ -371,7 +371,7 @@ const RequestsContent = ({
             </div>
 
             {/* Tab Navigation - Only show Received tab if user has listings */}
-            <div className="flex gap-2 bg-white/80 backdrop-blur-sm rounded-xl p-1 border border-orange-200/50 shadow-md">
+            <div className="flex flex-wrap gap-2 bg-white/80 backdrop-blur-sm rounded-xl p-1 border border-orange-200/50 shadow-md">
               {hasListings && (
                 <button
                   onClick={() => setActiveTab('received')}
@@ -411,7 +411,7 @@ const RequestsContent = ({
                 ].map((stat, index) => (
                   <div 
                     key={index}
-                    className="relative bg-white/80 backdrop-blur-sm rounded-lg p-3 border border-orange-200/50 shadow-md hover:shadow-lg hover:scale-105 transition-all duration-300 group flex-1 min-w-[100px]"
+                    className="relative bg-white/80 backdrop-blur-sm rounded-lg p-2.5 sm:p-3 border border-orange-200/50 shadow-md hover:shadow-lg hover:scale-105 transition-all duration-300 group flex-1 min-w-[80px] sm:min-w-[100px]"
                     style={{ animation: `fadeInUp 0.6s ease-out ${index * 0.1}s both` }}
                   >
                     <div className="absolute inset-0 bg-gradient-to-br from-orange-50/50 via-transparent to-transparent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -439,7 +439,7 @@ const RequestsContent = ({
                 ].map((stat, index) => (
                   <div 
                     key={index}
-                    className="relative bg-white/80 backdrop-blur-sm rounded-lg p-3 border border-orange-200/50 shadow-md hover:shadow-lg hover:scale-105 transition-all duration-300 group flex-1 min-w-[100px]"
+                    className="relative bg-white/80 backdrop-blur-sm rounded-lg p-2.5 sm:p-3 border border-orange-200/50 shadow-md hover:shadow-lg hover:scale-105 transition-all duration-300 group flex-1 min-w-[80px] sm:min-w-[100px]"
                     style={{ animation: `fadeInUp 0.6s ease-out ${index * 0.1}s both` }}
                   >
                     <div className="absolute inset-0 bg-gradient-to-br from-orange-50/50 via-transparent to-transparent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -463,11 +463,11 @@ const RequestsContent = ({
       </section>
 
       {/* Requests Section */}
-      <section className="px-8 py-4">
+      <section className="px-4 sm:px-6 md:px-8 py-4">
         <div className="max-w-7xl mx-auto">
           {activeTab === 'received' ? (
             <>
-              <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-4">
+              <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-4">
                 Received Requests
               </h2>
 
@@ -492,14 +492,14 @@ const RequestsContent = ({
                   return (
                     <div
                       key={request._id || request.id}
-                      className="relative bg-white/80 backdrop-blur-sm rounded-lg border border-orange-200/50 p-4 shadow-md hover:shadow-lg transition-all duration-300 group"
+                      className="relative bg-white/80 backdrop-blur-sm rounded-lg border border-orange-200/50 p-3 sm:p-4 shadow-md hover:shadow-lg transition-all duration-300 group"
                       style={{
                         animation: `fadeInUp 0.6s ease-out ${index * 0.1}s both`
                       }}
                     >
                       <div className="absolute inset-0 bg-gradient-to-br from-orange-50/30 via-transparent to-transparent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-                      <div className="relative flex items-start gap-3">
+                      <div className="relative flex flex-col sm:flex-row sm:items-start gap-3">
                         <UserAvatar user={requester} size="lg" />
 
                         <div className="flex-1">
@@ -607,7 +607,7 @@ const RequestsContent = ({
             </>
           ) : (
             <>
-              <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-4">
+              <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-4">
                 Sent Requests
               </h2>
 
@@ -631,7 +631,7 @@ const RequestsContent = ({
                     return (
                       <div
                         key={request._id || request.id}
-                        className="relative bg-white/80 backdrop-blur-sm rounded-lg border border-orange-200/50 p-4 shadow-md hover:shadow-lg transition-all duration-300 group"
+                        className="relative bg-white/80 backdrop-blur-sm rounded-lg border border-orange-200/50 p-3 sm:p-4 shadow-md hover:shadow-lg transition-all duration-300 group"
                         style={{
                           animation: `fadeInUp 0.6s ease-out ${index * 0.1}s both`
                         }}
@@ -641,7 +641,7 @@ const RequestsContent = ({
                         <div className="relative flex flex-col md:flex-row gap-4">
                           {listing.photos && listing.photos.length > 0 && (
                             <div className="flex-shrink-0">
-                              <div className="w-full md:w-48 h-48 rounded-lg overflow-hidden border-2 border-orange-200">
+                              <div className="w-full sm:w-48 h-40 sm:h-48 rounded-lg overflow-hidden border-2 border-orange-200">
                                 <img
                                   src={listing.photos[0]}
                                   alt={listing.title}
@@ -716,16 +716,16 @@ const RequestsContent = ({
 
       {/* Quick Response Templates Section (only for received requests) */}
       {activeTab === 'received' && (
-        <section className="px-8 py-4">
+        <section className="px-4 sm:px-6 md:px-8 py-4">
           <div className="max-w-7xl mx-auto">
-            <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-4">Quick Response Templates</h2>
+            <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-4">Quick Response Templates</h2>
             <p className="text-sm text-gray-600 mb-4">Save time with pre-written responses for common scenarios</p>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
               {responseTemplates.map((template, index) => (
                 <div
                   key={index}
-                  className="relative bg-white/80 backdrop-blur-sm rounded-lg border border-orange-200/50 p-4 shadow-md hover:shadow-lg hover:scale-105 transition-all duration-300 group"
+                  className="relative bg-white/80 backdrop-blur-sm rounded-lg border border-orange-200/50 p-3 sm:p-4 shadow-md hover:shadow-lg hover:scale-105 transition-all duration-300 group"
                 >
                   <div className="absolute inset-0 bg-gradient-to-br from-orange-50/30 via-transparent to-transparent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   <div className="relative">

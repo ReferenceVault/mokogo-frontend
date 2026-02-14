@@ -66,87 +66,87 @@ const HowItWorks = () => {
       
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="relative overflow-hidden bg-gradient-to-br from-orange-50 via-orange-100/50 to-orange-50 px-6 md:px-[10%] pt-14 pb-16 sm:pt-16 sm:pb-20">
+        <section className="relative overflow-hidden bg-gradient-to-br from-orange-50 via-orange-100/50 to-orange-50 px-4 sm:px-6 md:px-[10%] pt-10 sm:pt-14 pb-12 sm:pb-16 md:pt-16 md:pb-20">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(249,115,22,0.15),transparent_60%),radial-gradient(circle_at_bottom_right,rgba(251,146,60,0.12),transparent_60%),radial-gradient(circle_at_center,rgba(254,215,170,0.10),transparent_65%),radial-gradient(circle_at_top_right,rgba(255,237,213,0.08),transparent_70%)]" />
           
           <div className="relative mx-auto max-w-4xl text-center">
-            <span className="inline-flex items-center gap-2 rounded-full border border-orange-300/50 bg-orange-200/30 px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-orange-800/80">
+            <span className="inline-flex items-center gap-2 rounded-full border border-orange-300/50 bg-orange-200/30 px-3 sm:px-4 py-1 text-[10px] sm:text-xs font-semibold uppercase tracking-[0.2em] sm:tracking-[0.35em] text-orange-800/80">
               Simple & Transparent • Step by Step
             </span>
-            <h1 className="mt-6 text-3xl sm:text-4xl lg:text-[2.9rem] font-bold leading-tight text-gray-900">
+            <h1 className="mt-4 sm:mt-6 text-2xl sm:text-3xl md:text-4xl lg:text-[2.9rem] font-bold leading-tight text-gray-900">
               How Mokogo Works
             </h1>
-            <p className="mt-5 text-lg sm:text-xl leading-relaxed text-gray-800">
+            <p className="mt-4 sm:mt-5 text-base sm:text-lg md:text-xl leading-relaxed text-gray-800">
               Mokogo helps people connect to find the right place or flatmate, simply and transparently.
             </p>
           </div>
         </section>
 
         {/* Main Content */}
-        <section className="relative px-6 md:px-[10%] py-16 sm:py-20">
+        <section className="relative px-4 sm:px-6 md:px-[10%] py-10 sm:py-16 md:py-20">
           <div className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-[#fef4f1] via-transparent to-transparent" />
           
           <div className="relative mx-auto max-w-6xl">
             {/* Tabs Section */}
-            <div className="mb-16">
+            <div className="mb-10 sm:mb-16">
               {/* Tab Buttons */}
-              <div className="flex gap-4 mb-10 border-b border-orange-200">
+              <div className="flex gap-2 sm:gap-4 mb-6 sm:mb-10 border-b border-orange-200 overflow-x-auto">
                 <button
                   onClick={() => setActiveTab('seeking')}
-                  className={`flex items-center gap-3 px-6 py-4 border-b-2 transition-all ${
+                  className={`flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-3 sm:py-4 border-b-2 transition-all flex-shrink-0 ${
                     activeTab === 'seeking'
                       ? 'border-orange-500 text-orange-600'
                       : 'border-transparent text-gray-600 hover:text-orange-500'
                   }`}
                 >
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                  <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center ${
                     activeTab === 'seeking'
                       ? 'bg-gradient-to-br from-orange-400 to-orange-500 shadow-lg'
                       : 'bg-orange-100'
                   }`}>
-                    <Home className={`w-5 h-5 ${activeTab === 'seeking' ? 'text-white' : 'text-orange-500'}`} />
+                    <Home className={`w-4 h-4 sm:w-5 sm:h-5 ${activeTab === 'seeking' ? 'text-white' : 'text-orange-500'}`} />
                   </div>
-                  <span className="text-lg font-semibold">For Seekers</span>
+                  <span className="text-base sm:text-lg font-semibold whitespace-nowrap">For Seekers</span>
                 </button>
                 
                 <button
                   onClick={() => setActiveTab('listing')}
-                  className={`flex items-center gap-3 px-6 py-4 border-b-2 transition-all ${
+                  className={`flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-3 sm:py-4 border-b-2 transition-all flex-shrink-0 ${
                     activeTab === 'listing'
                       ? 'border-orange-500 text-orange-600'
                       : 'border-transparent text-gray-600 hover:text-orange-500'
                   }`}
                 >
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                  <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center ${
                     activeTab === 'listing'
                       ? 'bg-gradient-to-br from-orange-400 to-orange-500 shadow-lg'
                       : 'bg-orange-100'
                   }`}>
-                    <Users className={`w-5 h-5 ${activeTab === 'listing' ? 'text-white' : 'text-orange-500'}`} />
+                    <Users className={`w-4 h-4 sm:w-5 sm:h-5 ${activeTab === 'listing' ? 'text-white' : 'text-orange-500'}`} />
                   </div>
-                  <span className="text-lg font-semibold">For Listers</span>
+                  <span className="text-base sm:text-lg font-semibold whitespace-nowrap">For Listers</span>
                 </button>
               </div>
 
               {/* Tab Content */}
-              <div className="relative overflow-hidden rounded-[2rem] border border-orange-200 bg-gradient-to-br from-orange-50 via-white to-orange-50/50 shadow-xl shadow-orange-100/40">
+              <div className="relative overflow-hidden rounded-xl md:rounded-[2rem] border border-orange-200 bg-gradient-to-br from-orange-50 via-white to-orange-50/50 shadow-xl shadow-orange-100/40">
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(249,115,22,0.12),transparent_55%)]" />
-                <div className="relative p-8 md:p-10">
+                <div className="relative p-5 sm:p-8 md:p-10">
                   {activeTab === 'seeking' && (
                     <div>
-                      <div className="mb-8">
-                        <h2 className="text-2xl sm:text-3xl font-semibold text-gray-900 mb-3">Looking for a place?</h2>
-                        <p className="text-gray-700">Follow these simple steps to find your perfect room and flatmate.</p>
+                      <div className="mb-6 sm:mb-8">
+                        <h2 className="text-xl sm:text-2xl md:text-3xl font-semibold text-gray-900 mb-2 sm:mb-3">Looking for a place?</h2>
+                        <p className="text-sm sm:text-base text-gray-700">Follow these simple steps to find your perfect room and flatmate.</p>
                       </div>
-                      <div className="grid gap-6 md:grid-cols-2">
+                      <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
                         {seekingSteps.map((step, index) => (
                           <div
                             key={index}
-                            className={`relative overflow-hidden rounded-[2rem] border border-orange-200 ${
+                            className={`relative overflow-hidden rounded-xl md:rounded-[2rem] border border-orange-200 ${
                               index % 2 === 0
                                 ? 'bg-gradient-to-br from-orange-50 via-white to-orange-50/50 shadow-xl shadow-orange-100/40'
                                 : 'bg-gradient-to-br from-[#fff4f1] via-white to-[#fffafa] shadow-xl shadow-[#f8d8cf]/45'
-                            } p-8 transform transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl`}
+                            } p-5 sm:p-8 transform transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl`}
                           >
                             <div className={`absolute inset-0 ${
                               index % 2 === 0
@@ -154,14 +154,14 @@ const HowItWorks = () => {
                                 : 'bg-[radial-gradient(circle_at_top_left,rgba(249,115,22,0.14),transparent_60%)]'
                             }`} />
                             <div className="relative">
-                              <div className="flex items-start gap-4">
+                              <div className="flex items-start gap-3 sm:gap-4">
                                 <div className="flex-shrink-0">
-                                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center shadow-lg">
-                                    <span className="text-2xl font-bold text-white">{step.number}</span>
+                                  <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center shadow-lg">
+                                    <span className="text-lg sm:text-2xl font-bold text-white">{step.number}</span>
                                   </div>
                                 </div>
-                                <div className="flex-1">
-                                  <h3 className="text-xl font-semibold text-gray-900 mb-3">{step.title}</h3>
+                                <div className="flex-1 min-w-0">
+                                  <h3 className="text-base sm:text-xl font-semibold text-gray-900 mb-2 sm:mb-3">{step.title}</h3>
                                   <p className="text-sm sm:text-base leading-relaxed text-gray-700">
                                     {step.description}
                                   </p>
@@ -176,19 +176,19 @@ const HowItWorks = () => {
 
                   {activeTab === 'listing' && (
                     <div>
-                      <div className="mb-8">
-                        <h2 className="text-2xl sm:text-3xl font-semibold text-gray-900 mb-3">Listing a space?</h2>
-                        <p className="text-gray-700">Get your space listed and connect with potential flatmates in just a few steps.</p>
+                      <div className="mb-6 sm:mb-8">
+                        <h2 className="text-xl sm:text-2xl md:text-3xl font-semibold text-gray-900 mb-2 sm:mb-3">Listing a space?</h2>
+                        <p className="text-sm sm:text-base text-gray-700">Get your space listed and connect with potential flatmates in just a few steps.</p>
                       </div>
-                      <div className="grid gap-6 md:grid-cols-2">
+                      <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
                         {listingSteps.map((step, index) => (
                           <div
                             key={index}
-                            className={`relative overflow-hidden rounded-[2rem] border border-orange-200 ${
+                            className={`relative overflow-hidden rounded-xl md:rounded-[2rem] border border-orange-200 ${
                               index % 2 === 0
                                 ? 'bg-gradient-to-br from-orange-50 via-white to-orange-50/50 shadow-xl shadow-orange-100/40'
                                 : 'bg-gradient-to-br from-[#fff4f1] via-white to-[#fffafa] shadow-xl shadow-[#f8d8cf]/45'
-                            } p-8 transform transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl`}
+                            } p-5 sm:p-8 transform transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl`}
                           >
                             <div className={`absolute inset-0 ${
                               index % 2 === 0
@@ -196,15 +196,15 @@ const HowItWorks = () => {
                                 : 'bg-[radial-gradient(circle_at_top_left,rgba(249,115,22,0.14),transparent_60%)]'
                             }`} />
                             <div className="relative">
-                              <div className="flex items-start gap-4">
+                              <div className="flex items-start gap-3 sm:gap-4">
                                 <div className="flex-shrink-0">
-                                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center shadow-lg">
-                                    <span className="text-2xl font-bold text-white">{step.number}</span>
+                                  <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center shadow-lg">
+                                    <span className="text-lg sm:text-2xl font-bold text-white">{step.number}</span>
                                   </div>
                                 </div>
-                                <div className="flex-1">
-                                  <h3 className="text-xl font-semibold text-gray-900 mb-3">{step.title}</h3>
-                                  <p className="text-sm sm:text-base leading-relaxed text-gray-700 mb-3">
+                                <div className="flex-1 min-w-0">
+                                  <h3 className="text-base sm:text-xl font-semibold text-gray-900 mb-2 sm:mb-3">{step.title}</h3>
+                                  <p className="text-sm sm:text-base leading-relaxed text-gray-700 mb-2 sm:mb-3">
                                     {step.description}
                                   </p>
                                   {step.tip && (
@@ -227,18 +227,18 @@ const HowItWorks = () => {
             </div>
 
             {/* Footer Note */}
-            <div className="relative overflow-hidden rounded-[2rem] border border-[#fde1da] bg-gradient-to-br from-[#fff4f1] via-white to-[#fff9f6] p-8 md:p-10 shadow-xl shadow-[#f8d8cf]/45">
+            <div className="relative overflow-hidden rounded-xl md:rounded-[2rem] border border-[#fde1da] bg-gradient-to-br from-[#fff4f1] via-white to-[#fff9f6] p-5 sm:p-8 md:p-10 shadow-xl shadow-[#f8d8cf]/45">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(249,115,22,0.12),transparent_60%)]" />
-              <div className="relative flex flex-col md:flex-row items-start gap-6">
-                <div className="w-16 h-16 rounded-2xl bg-[#f97316]/20 flex items-center justify-center flex-shrink-0">
-                  <MessageSquare className="w-8 h-8 text-[#f97316]" />
+              <div className="relative flex flex-col md:flex-row items-start gap-4 sm:gap-6">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl md:rounded-2xl bg-[#f97316]/20 flex items-center justify-center flex-shrink-0">
+                  <MessageSquare className="w-6 h-6 sm:w-8 sm:h-8 text-[#f97316]" />
                 </div>
-                <div className="flex-1">
-                  <span className="inline-flex items-center gap-2 rounded-full bg-white/70 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.35em] text-[#f97316]">
+                <div className="flex-1 min-w-0">
+                  <span className="inline-flex items-center gap-2 rounded-full bg-white/70 px-3 sm:px-4 py-1 text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.25em] sm:tracking-[0.35em] text-[#f97316]">
                     A Quick Note
                   </span>
-                  <h3 className="mt-4 text-2xl font-semibold text-[#0f172a]">How Mokogo Works</h3>
-                  <p className="mt-4 text-sm sm:text-base leading-relaxed text-[#3a4a61]">
+                  <h3 className="mt-3 sm:mt-4 text-xl sm:text-2xl font-semibold text-[#0f172a]">How Mokogo Works</h3>
+                  <p className="mt-3 sm:mt-4 text-sm sm:text-base leading-relaxed text-[#3a4a61]">
                     Mokogo is a discovery and connection platform. We help people find each other, but final decisions, visits, and agreements happen directly between users. Take your time, meet in person when possible, and make choices that feel right for you.
                   </p>
                 </div>

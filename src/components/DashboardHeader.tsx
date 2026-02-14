@@ -32,16 +32,16 @@ const DashboardHeader = ({
   return (
     <>
       <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-orange-200/50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 md:px-16 py-4 flex justify-between items-center">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-16 py-3 sm:py-4 flex justify-between items-center">
           {/* Left: Logo */}
-          <div className="flex items-center gap-8">
+          <div className="flex items-center gap-2 sm:gap-8">
             <div className="transform transition-transform duration-300 hover:scale-105">
               <Logo />
             </div>
             
             {/* Middle section with Menu items */}
             {menuItems.length > 0 && (
-              <nav className="hidden md:flex items-center gap-8">
+              <nav className="hidden md:flex items-center gap-2 sm:gap-8">
                 {menuItems.map((item) => (
                   <button 
                     key={item.view}
@@ -66,7 +66,7 @@ const DashboardHeader = ({
           </div>
 
           {/* Right section with Notifications, Heart, and User Menu */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             <button className="relative p-2.5 text-gray-600 hover:text-orange-500 transition-all duration-300 hover:bg-orange-50 rounded-lg">
               <Bell className="w-5 h-5" />
               <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-orange-500 rounded-full ring-2 ring-white"></span>

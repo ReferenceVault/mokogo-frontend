@@ -587,7 +587,7 @@ const Dashboard = () => {
         />
 
         {/* Main Content */}
-        <main className="flex-1 pr-11 lg:pr-14">
+        <main className="flex-1 pr-4 sm:pr-6 lg:pr-14">
           {activeView === 'listing-detail' && viewingListingId ? (
             <ListingDetailContent 
               key={viewingListingId}
@@ -642,11 +642,11 @@ const Dashboard = () => {
               }}
             />
           ) : activeView === 'saved' ? (
-            <section className="px-8 py-8">
+            <section className="px-4 sm:px-6 md:px-8 py-6 sm:py-8">
               <div className="max-w-5xl mx-auto">
-                <div className="flex items-center justify-between mb-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
                   <div>
-                    <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Saved Properties</h1>
+                    <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">Saved Properties</h1>
                     <p className="text-sm text-gray-600">Your saved homes in one place</p>
                   </div>
                   <button
@@ -676,7 +676,7 @@ const Dashboard = () => {
                     </button>
                   </div>
                 ) : (
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 items-stretch">
                     {savedListingItems.map((listing) => {
                       const saved = isListingSaved(listing.id)
                       return (
@@ -730,7 +730,7 @@ const Dashboard = () => {
                           </div>
 
                           {/* Content */}
-                          <div className="p-4 space-y-3 flex-1 flex flex-col">
+                          <div className="p-3 sm:p-4 space-y-3 flex-1 flex flex-col">
                             <div className="flex items-start justify-between gap-2">
                               <h3 className="font-semibold text-gray-900 line-clamp-1 text-sm">
                                 {listing.title || 'Untitled Listing'}
@@ -777,10 +777,10 @@ const Dashboard = () => {
 
             <>
               {/* Hero Stats Section */}
-              <section className="px-8 py-8">
+              <section className="px-4 sm:px-6 md:px-8 py-6 sm:py-8">
                 <div className="max-w-7xl mx-auto">
                   <div className="mb-8">
-                    <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
+                    <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2">
                       Welcome back, <span className="bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent">{userName}</span>
                     </h1>
                     <p className="text-gray-600">Here's what's happening with your listings today</p>
@@ -817,7 +817,7 @@ const Dashboard = () => {
                     </div>
                   )}
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
                     {[
                       { icon: Eye, value: '2,847', label: 'Total Views', change: '+12.5%', changeColor: 'text-green-600' },
                       { icon: Heart, value: '342', label: 'Interested Users', change: '+8.2%', changeColor: 'text-green-600' },
@@ -849,11 +849,11 @@ const Dashboard = () => {
               </section>
 
               {/* Active Listings Section */}
-              <section className="px-8 py-8">
+              <section className="px-4 sm:px-6 md:px-8 py-6 sm:py-8">
                 <div className="max-w-7xl mx-auto">
-                  <div className="flex items-center justify-between mb-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
                     <div>
-                      <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-1">Your Active Listings</h2>
+                      <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-1">Your Active Listings</h2>
                       <p className="text-sm text-gray-600">Manage and track your property listings</p>
                     </div>
                     <button 
@@ -965,7 +965,7 @@ const Dashboard = () => {
               </section>
 
               {/* Quick Actions Section */}
-              <section className="px-8 py-8">
+              <section className="px-4 sm:px-6 md:px-8 py-6 sm:py-8">
                 <div className="max-w-7xl mx-auto">
                   <div className="mb-6">
                     <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-1">Quick Actions</h2>
@@ -1006,11 +1006,10 @@ const Dashboard = () => {
             </>
           ) : (
             /* My Listings View - Show all listings */
-            <section className="px-8 py-8">
+            <section className="px-4 sm:px-6 md:px-8 py-6 sm:py-8">
               <div className="max-w-4xl mx-auto">
-                <div className="flex items-center justify-between mb-6">
-                  <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
-                    Your listings
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                  <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">Your listings
                   </h1>
                   <button 
                     onClick={handleCreateListingWithProfileCheck}
@@ -1023,7 +1022,7 @@ const Dashboard = () => {
 
                 {/* One Active Listing Rule Banner */}
                 {activeListings.length > 0 && (
-                  <div className="relative overflow-hidden bg-gradient-to-br from-orange-100 via-orange-50 to-orange-100 rounded-2xl p-6 mb-6 border border-orange-200 shadow-lg transform hover:scale-[1.01] transition-all duration-300">
+                  <div className="relative overflow-hidden bg-gradient-to-br from-orange-100 via-orange-50 to-orange-100 rounded-2xl p-4 sm:p-6 mb-6 border border-orange-200 shadow-lg transform hover:scale-[1.01] transition-all duration-300">
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.15),transparent_60%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.1),transparent_60%)]" />
                     <div className="relative flex items-start gap-4">
                       <div className="w-12 h-12 rounded-xl bg-orange-200/50 backdrop-blur-sm border border-orange-300/50 flex items-center justify-center flex-shrink-0 shadow-md">
@@ -1075,9 +1074,9 @@ const Dashboard = () => {
                             : 'bg-white/80 backdrop-blur-sm border-gray-200/50'
                         }`}
                       >
-                        <div className="relative flex items-start gap-5">
+                        <div className="relative flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-5">
                           {listing.photos && listing.photos.length > 0 && (
-                            <div className="w-36 h-36 rounded-xl bg-gray-100 flex-shrink-0 overflow-hidden shadow-lg border-2 border-stone-200 group">
+                            <div className="w-full sm:w-36 h-48 sm:h-36 rounded-xl bg-gray-100 flex-shrink-0 overflow-hidden shadow-lg border-2 border-stone-200 group">
                               <img
                                 src={listing.photos[0]}
                                 alt="Listing"

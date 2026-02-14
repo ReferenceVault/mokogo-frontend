@@ -414,7 +414,7 @@ const ListingDetailContent = ({ listingId, onBack, onExplore }: ListingDetailCon
     <div className="min-h-screen bg-stone-100">
       {/* Breadcrumb Navigation */}
       <section className="py-4 bg-white border-b border-stone-200">
-        <div className="max-w-7xl mx-auto px-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="flex items-center justify-between">
             <nav className="flex items-center space-x-2 text-sm">
               {onBack ? (
@@ -466,7 +466,7 @@ const ListingDetailContent = ({ listingId, onBack, onExplore }: ListingDetailCon
 
       {/* Main Content Section */}
       <section className="py-4">
-        <div className="max-w-7xl mx-auto px-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className={`grid grid-cols-1 gap-6 ${!isOwner ? 'lg:grid-cols-3' : 'lg:grid-cols-1'}`}>
             
             {/* Left Content */}
@@ -509,7 +509,7 @@ const ListingDetailContent = ({ listingId, onBack, onExplore }: ListingDetailCon
       {/* Similar Listings Section */}
       {similarListings.length > 0 && (
         <section className="py-8 bg-white">
-          <div className="max-w-7xl mx-auto px-6">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold text-gray-900">Similar Rooms in {listing.city}</h2>
               <Link to="/explore" className="text-sm text-orange-400 hover:text-orange-500 font-semibold">View All</Link>

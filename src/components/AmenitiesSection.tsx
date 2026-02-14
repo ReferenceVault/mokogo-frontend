@@ -23,7 +23,7 @@ interface AmenitiesSectionProps {
 }
 
 const AmenitiesSection = ({ listing, className = '' }: AmenitiesSectionProps) => {
-  const containerClass = 'bg-white/70 backdrop-blur-md rounded-xl shadow-lg border border-white/35 p-5'
+  const containerClass = 'bg-white/70 backdrop-blur-md rounded-xl shadow-lg border border-white/35 p-4 sm:p-5'
   const titleClass = 'text-lg font-bold mb-4'
   const gridClass = 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3'
 

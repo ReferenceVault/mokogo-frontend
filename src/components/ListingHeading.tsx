@@ -26,12 +26,12 @@ const ListingHeading = ({
   showActions = true,
 }: ListingHeadingProps) => {
   return (
-    <section className="py-8 bg-white">
-      <div className="max-w-7xl mx-auto px-6">
+    <section className="py-6 sm:py-8 bg-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6">
           <div className="flex-1">
             <div className="flex items-center mb-4 flex-wrap gap-3">
-              <h1 className="text-3xl lg:text-4xl font-bold text-gray-900">{listing.title}</h1>
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">{listing.title}</h1>
               {showVerified && (
                 <div className="flex items-center space-x-2">
                   <span className="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-semibold">Verified</span>
@@ -90,7 +90,7 @@ const ListingHeading = ({
             </div>
           </div>
           {showActions && (
-            <div className="flex items-center space-x-4 mt-6 lg:mt-0">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-4 sm:mt-6 lg:mt-0">
               {isOwner && listing.status === 'live' && onMarkAsFulfilled && (
                 <button
                   onClick={onMarkAsFulfilled}

@@ -228,17 +228,17 @@ const RequestsList = () => {
       {/* Right Side Social Sidebar */}
       <SocialSidebar position="right" />
 
-      <main className="flex-1 pr-11 lg:pr-14">
+      <main className="flex-1 pr-0 sm:pr-11 lg:pr-14">
         {/* Hero Section */}
-        <section className="relative overflow-hidden bg-gradient-to-br from-orange-50 via-orange-100/50 to-orange-50 px-6 md:px-[10%] pt-11 pb-12 sm:pt-12 sm:pb-16">
+        <section className="relative overflow-hidden bg-gradient-to-br from-orange-50 via-orange-100/50 to-orange-50 px-4 sm:px-6 md:px-[10%] pt-6 pb-8 sm:pt-12 sm:pb-16">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(249,115,22,0.15),transparent_60%),radial-gradient(circle_at_bottom_right,rgba(251,146,60,0.12),transparent_60%)]" />
           
           <div className="relative mx-auto max-w-7xl">
             <div className="mb-8">
-              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-3">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-3">
                 Contact Requests
               </h1>
-              <p className="text-lg text-gray-700">
+              <p className="text-base sm:text-lg text-gray-700">
                 Manage inquiries for your room listings and connect with potential roommates
               </p>
             </div>
@@ -253,7 +253,7 @@ const RequestsList = () => {
               ].map((stat, index) => (
                 <div 
                   key={index}
-                  className="relative bg-white/80 backdrop-blur-sm rounded-xl p-4 border border-orange-200/50 shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 group"
+                  className="relative bg-white/80 backdrop-blur-sm rounded-xl p-3 sm:p-4 border border-orange-200/50 shadow-lg hover:shadow-xl sm:hover:scale-105 transition-all duration-300 group"
                   style={{ animation: `fadeInUp 0.6s ease-out ${index * 0.1}s both` }}
                 >
                   <div className="absolute inset-0 bg-gradient-to-br from-orange-50/50 via-transparent to-transparent rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -263,7 +263,7 @@ const RequestsList = () => {
                         <stat.icon className="w-5 h-5 text-white" />
                       </div>
                     </div>
-                    <h3 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent mb-1">
+                    <h3 className="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent mb-1">
                       {stat.value}
                     </h3>
                     <p className="text-xs text-gray-600 font-medium">{stat.label}</p>
@@ -273,7 +273,7 @@ const RequestsList = () => {
             </div>
 
             {/* Action Bar */}
-            <div className="flex flex-wrap items-center gap-4 mb-6">
+            <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 sm:gap-4 mb-6">
               <div className="flex items-center gap-2">
                 <input 
                   type="checkbox" 
@@ -295,7 +295,7 @@ const RequestsList = () => {
                   </button>
                 </>
               )}
-              <div className="ml-auto flex items-center gap-4">
+              <div className="w-full sm:w-auto sm:ml-auto flex flex-wrap items-center gap-3 sm:gap-4 mt-3 sm:mt-0">
                 <div className="flex items-center gap-2">
                   <Filter className="w-4 h-4 text-gray-500" />
                   <select 
@@ -327,18 +327,18 @@ const RequestsList = () => {
         </section>
 
         {/* Active Listings Section */}
-        <section className="px-6 md:px-[10%] py-8">
+        <section className="px-4 sm:px-6 md:px-[10%] py-6 sm:py-8">
           <div className="max-w-7xl mx-auto">
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-6">Your Active Listings</h2>
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-6">Your Active Listings</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
               {[
-                { title: 'Spacious Room in Baner', status: 'Active', rent: '₹12,000/month', details: '1 Bed • Female Preferred', requests: '8 new requests', color: 'green' },
-                { title: 'Modern Room in Hinjawadi', status: 'Active', rent: '₹15,000/month', details: '1 Bed • Any Gender', requests: '3 new requests', color: 'green' },
-                { title: 'Cozy Room in Wakad', status: 'Paused', rent: '₹9,500/month', details: 'Shared Bath • Male Preferred', requests: '1 pending request', color: 'yellow' }
+                { title: 'Spacious Room in Baner', status: 'Active', rent: 'Γé╣12,000/month', details: '1 Bed ΓÇó Female Preferred', requests: '8 new requests', color: 'green' },
+                { title: 'Modern Room in Hinjawadi', status: 'Active', rent: 'Γé╣15,000/month', details: '1 Bed ΓÇó Any Gender', requests: '3 new requests', color: 'green' },
+                { title: 'Cozy Room in Wakad', status: 'Paused', rent: 'Γé╣9,500/month', details: 'Shared Bath ΓÇó Male Preferred', requests: '1 pending request', color: 'yellow' }
               ].map((listing, index) => (
                 <div
                   key={index}
-                  className="relative bg-white/80 backdrop-blur-sm rounded-xl border border-orange-200/50 p-5 shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300 group"
+                  className="relative bg-white/80 backdrop-blur-sm rounded-xl border border-orange-200/50 p-4 sm:p-5 shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300 group"
                 >
                   <div className="absolute inset-0 bg-gradient-to-br from-orange-50/30 via-transparent to-transparent rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   <div className="relative">
@@ -352,7 +352,7 @@ const RequestsList = () => {
                         {listing.status}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-600 mb-2">{listing.rent} • {listing.details}</p>
+                    <p className="text-sm text-gray-600 mb-2">{listing.rent} ΓÇó {listing.details}</p>
                     <p className={`text-sm font-semibold mb-4 ${
                       listing.color === 'green' ? 'text-green-600' : 'text-yellow-600'
                     }`}>
@@ -377,10 +377,10 @@ const RequestsList = () => {
         </section>
 
         {/* Priority Requests Section */}
-        <section className="px-6 md:px-[10%] py-8">
+        <section className="px-4 sm:px-6 md:px-[10%] py-6 sm:py-8">
           <div className="max-w-7xl mx-auto">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl md:text-3xl font-bold text-gray-900">Priority Requests</h2>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">Priority Requests</h2>
               <p className="text-sm text-gray-600">Verified users and high-match profiles</p>
             </div>
 
@@ -388,12 +388,12 @@ const RequestsList = () => {
               {priorityRequests.map((request, index) => (
                 <div
                   key={request.id}
-                  className="relative bg-white/80 backdrop-blur-sm rounded-2xl border border-orange-200/50 p-6 shadow-lg hover:shadow-xl transition-all duration-300 group"
+                  className="relative bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl border border-orange-200/50 p-4 sm:p-6 shadow-lg hover:shadow-xl transition-all duration-300 group"
                   style={{ animation: `fadeInUp 0.6s ease-out ${index * 0.1}s both` }}
                 >
                   <div className="absolute inset-0 bg-gradient-to-br from-orange-50/30 via-transparent to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   <div className="relative">
-                    <div className="flex items-start gap-4 mb-4">
+                    <div className="flex flex-col sm:flex-row sm:items-start gap-4 mb-4">
                       <div className="relative flex-shrink-0">
                         <input 
                           type="checkbox" 
@@ -409,7 +409,7 @@ const RequestsList = () => {
                         </div>
                       </div>
                       <div className="flex-1">
-                        <div className="flex items-start justify-between mb-2">
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-2">
                           <div>
                             <div className="flex items-center gap-2 mb-2">
                               <h3 className="text-lg font-semibold text-gray-900">Seeker</h3>
@@ -509,10 +509,10 @@ const RequestsList = () => {
         </section>
 
         {/* Recent Requests Section */}
-        <section className="px-6 md:px-[10%] py-8 bg-white/50">
+        <section className="px-4 sm:px-6 md:px-[10%] py-6 sm:py-8 bg-white/50">
           <div className="max-w-7xl mx-auto">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl md:text-3xl font-bold text-gray-900">Recent Requests</h2>
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">Recent Requests</h2>
               <p className="text-sm text-gray-600">10 new requests in the last 24 hours</p>
             </div>
 
@@ -520,11 +520,11 @@ const RequestsList = () => {
               {recentRequests.map((request, index) => (
                 <div
                   key={request.id}
-                  className="relative bg-white/80 backdrop-blur-sm rounded-xl border border-orange-200/50 p-5 shadow-lg hover:shadow-xl transition-all duration-300 group"
+                  className="relative bg-white/80 backdrop-blur-sm rounded-xl border border-orange-200/50 p-4 sm:p-5 shadow-lg hover:shadow-xl transition-all duration-300 group"
                   style={{ animation: `fadeInUp 0.6s ease-out ${index * 0.1}s both` }}
                 >
                   <div className="absolute inset-0 bg-gradient-to-br from-orange-50/30 via-transparent to-transparent rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  <div className="relative flex items-start gap-4">
+                  <div className="relative flex flex-col sm:flex-row sm:items-start gap-4">
                     <div className="relative flex-shrink-0">
                       <input 
                         type="checkbox" 
@@ -633,10 +633,10 @@ const RequestsList = () => {
         </section>
 
         {/* Previously Responded Section */}
-        <section className="px-6 md:px-[10%] py-8">
+        <section className="px-4 sm:px-6 md:px-[10%] py-6 sm:py-8">
           <div className="max-w-7xl mx-auto">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl md:text-3xl font-bold text-gray-900">Previously Responded</h2>
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">Previously Responded</h2>
               <Link to="#" className="text-sm font-semibold text-orange-600 hover:text-orange-700 flex items-center gap-1">
                 View All History <ChevronRight className="w-4 h-4" />
               </Link>
@@ -646,7 +646,7 @@ const RequestsList = () => {
               {previouslyResponded.map((request, index) => (
                 <div
                   key={request.id}
-                  className={`relative overflow-hidden rounded-xl border p-5 shadow-lg ${
+                  className={`relative overflow-hidden rounded-xl border p-4 sm:p-5 shadow-lg ${
                     request.status === 'accepted'
                       ? 'bg-green-50/50 border-green-200/50'
                       : 'bg-red-50/50 border-red-200/50'
@@ -688,12 +688,12 @@ const RequestsList = () => {
                             </span>
                           </div>
                           <p className="text-sm text-gray-600 mb-1">
-                            {request.occupation} • {request.age} years old • {request.location}
+                            {request.occupation} ΓÇó {request.age} years old ΓÇó {request.location}
                           </p>
                           {request.status === 'accepted' ? (
                             <p className="text-sm text-green-700 flex items-center gap-1">
                               <MessageSquare className="w-4 h-4" />
-                              Chat active • Last message {request.lastMessage}
+                              Chat active ΓÇó Last message {request.lastMessage}
                             </p>
                           ) : (
                             <p className="text-sm text-red-700">
@@ -739,7 +739,7 @@ const RequestsList = () => {
                 </div>
               ))}
               <div className="text-center pt-4">
-                <button className="px-6 py-3 bg-gradient-to-r from-orange-400 to-orange-500 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-orange-500/30 hover:scale-105 transition-all duration-300">
+                <button className="px-6 py-3 w-full sm:w-auto min-h-[44px] bg-gradient-to-r from-orange-400 to-orange-500 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-orange-500/30 sm:hover:scale-105 transition-all duration-300">
                   Load More Requests
                 </button>
               </div>
@@ -748,12 +748,12 @@ const RequestsList = () => {
         </section>
 
         {/* Smart Matching Insights Section */}
-        <section className="px-6 md:px-[10%] py-8 bg-gradient-to-br from-orange-50/50 to-white">
+        <section className="px-4 sm:px-6 md:px-[10%] py-6 sm:py-8 bg-gradient-to-br from-orange-50/50 to-white">
           <div className="max-w-7xl mx-auto">
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-6">Smart Matching Insights</h2>
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-6">Smart Matching Insights</h2>
             <p className="text-gray-600 mb-8">AI-powered recommendations to help you make better decisions</p>
 
-            <div className="grid md:grid-cols-3 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               {[
                 {
                   title: 'Match Score Insights',
@@ -771,7 +771,7 @@ const RequestsList = () => {
                 },
                 {
                   title: 'Profile Completeness',
-                  description: 'Seekers with complete profiles (occupation, references) are more serious candidates.',
+                  description: 'Seekers with complete profiles (photo, occupation, references) are more serious candidates.',
                   tip: '8 out of 12 requests have complete profiles',
                   icon: Users,
                   color: 'from-green-400 to-green-500'
@@ -779,7 +779,7 @@ const RequestsList = () => {
               ].map((insight, index) => (
                 <div
                   key={index}
-                  className="relative bg-white/80 backdrop-blur-sm rounded-xl border border-orange-200/50 p-6 shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 group"
+                  className="relative bg-white/80 backdrop-blur-sm rounded-xl border border-orange-200/50 p-4 sm:p-6 shadow-lg hover:shadow-xl sm:hover:scale-105 transition-all duration-300 group"
                 >
                   <div className="absolute inset-0 bg-gradient-to-br from-orange-50/30 via-transparent to-transparent rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   <div className="relative">
@@ -797,12 +797,12 @@ const RequestsList = () => {
         </section>
 
         {/* Quick Response Templates Section */}
-        <section className="px-6 md:px-[10%] py-8">
+        <section className="px-4 sm:px-6 md:px-[10%] py-6 sm:py-8">
           <div className="max-w-7xl mx-auto">
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-6">Quick Response Templates</h2>
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-6">Quick Response Templates</h2>
             <p className="text-gray-600 mb-8">Save time with pre-written responses for common scenarios</p>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-6">
               {responseTemplates.map((template, index) => (
                 <div
                   key={index}
@@ -841,12 +841,12 @@ const RequestsList = () => {
         </section>
 
         {/* Safety Guidelines Section */}
-        <section className="px-6 md:px-[10%] py-8 bg-gradient-to-br from-orange-50/50 to-white">
+        <section className="px-4 sm:px-6 md:px-[10%] py-6 sm:py-8 bg-gradient-to-br from-orange-50/50 to-white">
           <div className="max-w-7xl mx-auto">
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-6">Safety Guidelines for Listers</h2>
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-6">Safety Guidelines for Listers</h2>
             <p className="text-gray-600 mb-8">Best practices to ensure secure interactions with potential roommates</p>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
               {safetyGuidelines.map((guideline, index) => (
                 <div
                   key={index}
@@ -882,9 +882,9 @@ const RequestsList = () => {
         </section>
 
         {/* Listing Performance Section */}
-        <section className="px-6 md:px-[10%] py-8">
+        <section className="px-4 sm:px-6 md:px-[10%] py-6 sm:py-8">
           <div className="max-w-7xl mx-auto">
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-6">Your Listing Performance</h2>
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-6">Your Listing Performance</h2>
             <p className="text-gray-600 mb-8">Track how your listings are performing and optimize for better results</p>
 
             <div className="grid md:grid-cols-2 gap-8 mb-8">
@@ -973,7 +973,7 @@ const RequestsList = () => {
               ].map((stat, index) => (
                 <div 
                   key={index}
-                  className="relative bg-white/80 backdrop-blur-sm rounded-xl border border-orange-200/50 p-5 shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 group text-center"
+                  className="relative bg-white/80 backdrop-blur-sm rounded-xl border border-orange-200/50 p-4 sm:p-5 shadow-lg hover:shadow-xl sm:hover:scale-105 transition-all duration-300 group text-center"
                 >
                   <div className="absolute inset-0 bg-gradient-to-br from-orange-50/30 via-transparent to-transparent rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   <div className="relative">

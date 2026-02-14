@@ -95,11 +95,11 @@ const SafetyTips = () => {
       
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="relative overflow-hidden bg-gradient-to-br from-orange-50 via-orange-100/50 to-orange-50 px-6 md:px-[10%] pt-14 pb-16 sm:pt-16 sm:pb-20">
+        <section className="relative overflow-hidden bg-gradient-to-br from-orange-50 via-orange-100/50 to-orange-50 px-4 sm:px-6 md:px-[10%] pt-10 sm:pt-16 pb-12 sm:pb-20">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(249,115,22,0.15),transparent_60%),radial-gradient(circle_at_bottom_right,rgba(251,146,60,0.12),transparent_60%),radial-gradient(circle_at_center,rgba(254,215,170,0.10),transparent_65%),radial-gradient(circle_at_top_right,rgba(255,237,213,0.08),transparent_70%)]" />
           
           <div className="relative mx-auto max-w-4xl text-center">
-            <span className="inline-flex items-center gap-2 rounded-full border border-orange-300/50 bg-orange-200/30 px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-orange-800/80">
+            <span className="inline-flex items-center gap-2 rounded-full border border-orange-300/50 bg-orange-200/30 px-3 sm:px-4 py-1 text-[10px] sm:text-xs font-semibold uppercase tracking-[0.2em] sm:tracking-[0.35em] text-orange-800/80 text-center">
               Safety First • Your Wellbeing Matters
             </span>
             <div className="mt-6 flex items-center justify-center">
@@ -107,25 +107,25 @@ const SafetyTips = () => {
                 <Shield className="w-8 h-8 text-white" />
               </div>
             </div>
-            <h1 className="mt-6 text-3xl sm:text-4xl lg:text-[2.9rem] font-bold leading-tight text-gray-900">
+            <h1 className="mt-4 sm:mt-6 text-2xl sm:text-4xl lg:text-[2.9rem] font-bold leading-tight text-gray-900">
               Safety Tips
             </h1>
-            <p className="mt-5 text-lg sm:text-xl leading-relaxed text-gray-800">
+            <p className="mt-4 sm:mt-5 text-base sm:text-xl leading-relaxed text-gray-800">
               Finding a room or a flatmate is a big decision
             </p>
-            <p className="mt-2 text-base sm:text-lg leading-relaxed text-gray-700">
+            <p className="mt-2 text-sm sm:text-lg leading-relaxed text-gray-700">
               We want your experience on Mokogo to be smooth and stress-free. While we help people discover and connect, a little caution goes a long way.
             </p>
           </div>
         </section>
 
         {/* Main Content */}
-        <section className="relative px-6 md:px-[10%] py-16 sm:py-20">
+        <section className="relative px-4 sm:px-6 md:px-[10%] py-10 sm:py-16 md:py-20">
           <div className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-[#fef4f1] via-transparent to-transparent" />
           
           <div className="relative mx-auto max-w-6xl">
             {/* Introduction Card */}
-            <div className="relative overflow-hidden rounded-[2rem] border border-orange-200 bg-gradient-to-br from-orange-50 via-white to-orange-50/50 p-8 md:p-10 shadow-xl shadow-orange-100/40 mb-12">
+            <div className="relative overflow-hidden rounded-xl md:rounded-[2rem] border border-orange-200 bg-gradient-to-br from-orange-50 via-white to-orange-50/50 p-5 sm:p-8 md:p-10 shadow-xl shadow-orange-100/40 mb-8 sm:mb-12">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(249,115,22,0.12),transparent_55%)]" />
               <div className="relative text-center">
                 <p className="text-base sm:text-lg leading-relaxed text-gray-700">
@@ -135,60 +135,60 @@ const SafetyTips = () => {
             </div>
 
             {/* Tabs Section */}
-            <div className="mb-12">
+            <div className="mb-8 sm:mb-12">
               {/* Tab Buttons */}
-              <div className="flex gap-4 mb-8 border-b border-orange-200">
+              <div className="flex gap-2 sm:gap-4 mb-6 sm:mb-8 border-b border-orange-200 overflow-x-auto">
                 <button
                   onClick={() => setActiveTab('seeking')}
-                  className={`flex items-center gap-3 px-6 py-4 border-b-2 transition-all ${
+                  className={`flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-3 sm:py-4 border-b-2 transition-all flex-shrink-0 ${
                     activeTab === 'seeking'
                       ? 'border-orange-500 text-orange-600'
                       : 'border-transparent text-gray-600 hover:text-orange-500'
                   }`}
                 >
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                  <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center ${
                     activeTab === 'seeking'
                       ? 'bg-gradient-to-br from-orange-400 to-orange-500 shadow-lg'
                       : 'bg-orange-100'
                   }`}>
-                    <Home className={`w-5 h-5 ${activeTab === 'seeking' ? 'text-white' : 'text-orange-500'}`} />
+                    <Home className={`w-4 h-4 sm:w-5 sm:h-5 ${activeTab === 'seeking' ? 'text-white' : 'text-orange-500'}`} />
                   </div>
-                  <span className="text-lg font-semibold">For Seekers</span>
+                  <span className="text-base sm:text-lg font-semibold whitespace-nowrap">For Seekers</span>
                 </button>
                 
                 <button
                   onClick={() => setActiveTab('listing')}
-                  className={`flex items-center gap-3 px-6 py-4 border-b-2 transition-all ${
+                  className={`flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-3 sm:py-4 border-b-2 transition-all flex-shrink-0 ${
                     activeTab === 'listing'
                       ? 'border-orange-500 text-orange-600'
                       : 'border-transparent text-gray-600 hover:text-orange-500'
                   }`}
                 >
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                  <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center ${
                     activeTab === 'listing'
                       ? 'bg-gradient-to-br from-orange-400 to-orange-500 shadow-lg'
                       : 'bg-orange-100'
                   }`}>
-                    <Users className={`w-5 h-5 ${activeTab === 'listing' ? 'text-white' : 'text-orange-500'}`} />
+                    <Users className={`w-4 h-4 sm:w-5 sm:h-5 ${activeTab === 'listing' ? 'text-white' : 'text-orange-500'}`} />
                   </div>
-                  <span className="text-lg font-semibold">For Listers</span>
+                  <span className="text-base sm:text-lg font-semibold whitespace-nowrap">For Listers</span>
                 </button>
               </div>
 
               {/* Tab Content */}
-              <div className="relative overflow-hidden rounded-[2rem] border border-orange-200 bg-gradient-to-br from-orange-50 via-white to-orange-50/50 shadow-xl shadow-orange-100/40">
+              <div className="relative overflow-hidden rounded-xl md:rounded-[2rem] border border-orange-200 bg-gradient-to-br from-orange-50 via-white to-orange-50/50 shadow-xl shadow-orange-100/40">
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(249,115,22,0.12),transparent_55%)]" />
-                <div className="relative p-8 md:p-10">
+                <div className="relative p-5 sm:p-8 md:p-10">
                   {activeTab === 'seeking' && (
                     <div className="space-y-6">
                       {seekingTips.map((tip, index) => (
-                        <div key={index} className="bg-white/80 rounded-2xl p-6 border border-orange-100 shadow-md hover:shadow-lg transition-all">
-                          <div className="flex items-start gap-4 mb-3">
+                        <div key={index} className="bg-white/80 rounded-xl md:rounded-2xl p-4 sm:p-6 border border-orange-100 shadow-md hover:shadow-lg transition-all">
+                          <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4 mb-3">
                             <div className="w-10 h-10 rounded-lg bg-orange-400/10 flex items-center justify-center flex-shrink-0">
                               <tip.icon className="w-5 h-5 text-orange-500" />
                             </div>
-                            <div className="flex-1">
-                              <h3 className="text-lg font-semibold text-gray-900 mb-2">{tip.title}</h3>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">{tip.title}</h3>
                               <p className="text-sm text-gray-700 leading-relaxed mb-3">{tip.description}</p>
                               
                               {tip.highlights && (
@@ -235,13 +235,13 @@ const SafetyTips = () => {
                   {activeTab === 'listing' && (
                     <div className="space-y-6">
                       {listingTips.map((tip, index) => (
-                        <div key={index} className="bg-white/80 rounded-2xl p-6 border border-orange-100 shadow-md hover:shadow-lg transition-all">
-                          <div className="flex items-start gap-4 mb-3">
+                        <div key={index} className="bg-white/80 rounded-xl md:rounded-2xl p-4 sm:p-6 border border-orange-100 shadow-md hover:shadow-lg transition-all">
+                          <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4 mb-3">
                             <div className="w-10 h-10 rounded-lg bg-orange-400/10 flex items-center justify-center flex-shrink-0">
                               <tip.icon className="w-5 h-5 text-orange-500" />
                             </div>
-                            <div className="flex-1">
-                              <h3 className="text-lg font-semibold text-gray-900 mb-2">{tip.title}</h3>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">{tip.title}</h3>
                               <p className="text-sm text-gray-700 leading-relaxed mb-3">{tip.description}</p>
                               
                               {tip.list && (
@@ -269,15 +269,15 @@ const SafetyTips = () => {
             </div>
 
             {/* Quick Note Card */}
-            <div className="relative overflow-hidden rounded-[2rem] border border-orange-200 bg-gradient-to-br from-orange-50 via-white to-orange-50/50 p-8 md:p-10 shadow-xl shadow-orange-100/40 mb-12">
+            <div className="relative overflow-hidden rounded-xl md:rounded-[2rem] border border-orange-200 bg-gradient-to-br from-orange-50 via-white to-orange-50/50 p-5 sm:p-8 md:p-10 shadow-xl shadow-orange-100/40 mb-8 sm:mb-12">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(249,115,22,0.10),transparent_60%)]" />
               <div className="relative">
-                <div className="flex items-start gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-start gap-4">
                   <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center shadow-lg flex-shrink-0">
                     <AlertCircle className="w-6 h-6 text-white" />
                   </div>
-                  <div className="flex-1">
-                    <h3 className="text-2xl font-semibold text-gray-900 mb-4">A Quick Note for Everyone</h3>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-3 sm:mb-4">A Quick Note for Everyone</h3>
                     <p className="text-base leading-relaxed text-gray-700 mb-4">
                       Mokogo helps people find and connect with each other, but decisions around visits, payments, and move-ins are made directly between users. Take your time, communicate openly, and always do what feels right for you.
                     </p>
@@ -290,15 +290,15 @@ const SafetyTips = () => {
             </div>
 
             {/* Final Thought Card */}
-            <div className="relative overflow-hidden rounded-[2rem] border border-orange-300 bg-gradient-to-br from-orange-400/10 via-orange-50 to-orange-400/5 p-8 md:p-10 shadow-xl shadow-orange-200/40">
+            <div className="relative overflow-hidden rounded-xl md:rounded-[2rem] border border-orange-300 bg-gradient-to-br from-orange-400/10 via-orange-50 to-orange-400/5 p-5 sm:p-8 md:p-10 shadow-xl shadow-orange-200/40">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(249,115,22,0.15),transparent_60%)]" />
               <div className="relative">
-                <div className="flex items-start gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-start gap-4">
                   <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center shadow-lg flex-shrink-0">
                     <Heart className="w-6 h-6 text-white" />
                   </div>
-                  <div className="flex-1">
-                    <h3 className="text-2xl font-semibold text-gray-900 mb-4">Final Thought</h3>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-3 sm:mb-4">Final Thought</h3>
                     <p className="text-base leading-relaxed text-gray-700">
                       Finding the right place or person can take a bit of patience. Stay alert, trust your instincts, and don't rush the process. We're glad you're here, and we hope Mokogo helps you find a place that truly feels right.
                     </p>

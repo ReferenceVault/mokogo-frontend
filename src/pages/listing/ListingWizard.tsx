@@ -1447,10 +1447,10 @@ const ListingWizard = () => {
 
         {/* Main Content */}
         <main className="flex-1 bg-stone-100">
-          <div className="max-w-[900px] mx-auto px-8 py-4">
+          <div className="max-w-[900px] mx-auto px-4 sm:px-6 md:px-8 py-4">
           {/* Page Header */}
           <div className="mb-3">
-            <h1 className="text-[1.375rem] font-bold text-gray-900 mb-0.5">
+            <h1 className="text-xl sm:text-[1.375rem] font-bold text-gray-900 mb-0.5">
               {isEditing ? 'Edit Your Listing' : 'List Your Space'}
             </h1>
             <p className="text-[0.825rem] text-gray-600">
@@ -1503,7 +1503,7 @@ const ListingWizard = () => {
                   {/* Section Header */}
                   <button
                     onClick={() => toggleSection(index)}
-                    className="w-full px-4 py-3 flex items-center justify-between hover:bg-white/50 transition-colors"
+                    className="w-full px-3 sm:px-4 py-3 flex items-center justify-between min-h-[48px] hover:bg-white/50 transition-colors"
                   >
                     <div className="flex items-center gap-3">
                       <div 
@@ -1544,15 +1544,15 @@ const ListingWizard = () => {
 
                   {/* Section Content */}
                   {isExpanded && (
-                    <div className="px-4 pb-4 pt-2 border-t border-gray-100">
+                    <div className="px-3 sm:px-4 pb-4 pt-2 border-t border-gray-100">
                       {renderStepContent(index)}
                       
                       {/* Section Navigation */}
-                      <div className="flex justify-between items-center mt-4 pt-3 border-t border-gray-100">
+                      <div className="flex flex-col-reverse sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-0 mt-4 pt-3 border-t border-gray-100">
                         <button
                           onClick={() => saveDraft(true, true)}
                           disabled={isCreating || isSaving}
-                          className="text-sm px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="text-sm px-4 py-2 text-gray-600 hover:text-gray-900 w-full sm:w-auto hover:bg-gray-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           Save Draft
                         </button>
@@ -1571,7 +1571,7 @@ const ListingWizard = () => {
                               ? 'Please complete all required fields'
                               : undefined
                           }
-                          className="btn-primary text-sm px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="btn-primary text-sm px-4 py-2 disabled:opacity-50 w-full sm:w-auto min-h-[44px] disabled:cursor-not-allowed"
                         >
                           <div className="flex items-center gap-1.5">
                             {isCreating

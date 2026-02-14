@@ -8,7 +8,7 @@ interface RoomDetailsProps {
 }
 
 const RoomDetails = ({ listing, className = '' }: RoomDetailsProps) => {
-  const containerClass = 'bg-white/70 backdrop-blur-md rounded-xl shadow-lg border border-white/35 p-5'
+  const containerClass = 'bg-white/70 backdrop-blur-md rounded-xl shadow-lg border border-white/35 p-4 sm:p-5'
   const titleClass = 'text-lg font-bold'
   const priceClass = 'text-xl font-bold'
   const gridClass = 'grid grid-cols-2 lg:grid-cols-3 gap-4 mb-4'

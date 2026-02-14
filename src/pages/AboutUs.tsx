@@ -56,17 +56,17 @@ const AboutUs = () => {
       
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="relative overflow-hidden bg-gradient-to-br from-orange-50 via-orange-100/50 to-orange-50 px-6 md:px-[10%] pt-14 pb-16 sm:pt-16 sm:pb-20">
+        <section className="relative overflow-hidden bg-gradient-to-br from-orange-50 via-orange-100/50 to-orange-50 px-4 sm:px-6 md:px-[10%] pt-10 sm:pt-14 pb-12 sm:pb-16 md:pt-16 md:pb-20">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(249,115,22,0.15),transparent_60%),radial-gradient(circle_at_bottom_right,rgba(251,146,60,0.12),transparent_60%),radial-gradient(circle_at_center,rgba(254,215,170,0.10),transparent_65%),radial-gradient(circle_at_top_right,rgba(255,237,213,0.08),transparent_70%)]" />
           
           <div className="relative mx-auto max-w-4xl text-center">
-            <span className="inline-flex items-center gap-2 rounded-full border border-orange-300/50 bg-orange-200/30 px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-orange-800/80">
+            <span className="inline-flex items-center gap-2 rounded-full border border-orange-300/50 bg-orange-200/30 px-3 sm:px-4 py-1 text-[10px] sm:text-xs font-semibold uppercase tracking-[0.2em] sm:tracking-[0.35em] text-orange-800/80">
               Our Story • Why We Exist
             </span>
-            <h1 className="mt-6 text-3xl sm:text-4xl lg:text-[2.9rem] font-bold leading-tight text-gray-900">
+            <h1 className="mt-4 sm:mt-6 text-2xl sm:text-3xl md:text-4xl lg:text-[2.9rem] font-bold leading-tight text-gray-900">
               About Mokogo
             </h1>
-            <p className="mt-5 text-lg sm:text-xl leading-relaxed text-gray-800">
+            <p className="mt-4 sm:mt-5 text-base sm:text-lg md:text-xl leading-relaxed text-gray-800">
               Finding a place to live shouldn't feel confusing, rushed, or uncomfortable.
             </p>
             <p className="mt-2 text-base sm:text-lg leading-relaxed text-gray-700">
@@ -76,20 +76,20 @@ const AboutUs = () => {
         </section>
 
         {/* Main Content */}
-        <section className="relative px-6 md:px-[10%] py-16 sm:py-20">
+        <section className="relative px-4 sm:px-6 md:px-[10%] py-10 sm:py-16 md:py-20">
           <div className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-[#fef4f1] via-transparent to-transparent" />
           
           <div className="relative mx-auto max-w-6xl">
             {/* Why Mokogo Exists + What We Believe - Grid Layout */}
-            <div className="grid gap-8 lg:grid-cols-2 mb-12">
+            <div className="grid grid-cols-1 gap-6 sm:gap-8 lg:grid-cols-2 mb-8 sm:mb-12">
               {/* Why Mokogo Exists - Light Card */}
-              <div className="relative overflow-hidden rounded-[2rem] border border-orange-200 bg-gradient-to-br from-orange-50 via-white to-orange-50/50 p-8 md:p-10 shadow-xl shadow-orange-100/40">
+              <div className="relative overflow-hidden rounded-xl md:rounded-[2rem] border border-orange-200 bg-gradient-to-br from-orange-50 via-white to-orange-50/50 p-5 sm:p-8 md:p-10 shadow-xl shadow-orange-100/40">
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(249,115,22,0.12),transparent_55%)]" />
                 <div className="relative">
                   <span className="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-100/50 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.35em] text-orange-700">
                     Why Mokogo Exists
                   </span>
-                  <h3 className="mt-4 text-2xl font-semibold text-gray-900">The Problem We're Solving</h3>
+                  <h3 className="mt-4 text-xl sm:text-2xl font-semibold text-gray-900">The Problem We're Solving</h3>
                   <p className="mt-4 text-sm sm:text-base leading-relaxed text-gray-700 mb-6">
                     Mokogo was built for a simple reason: finding a room or a flatmate today is harder than it needs to be.
                   </p>
@@ -111,13 +111,13 @@ const AboutUs = () => {
               </div>
 
               {/* What We Believe - Gradient Card */}
-              <div className="relative overflow-hidden rounded-[2rem] border border-orange-200 bg-gradient-to-br from-[#fff4f1] via-white to-[#fffafa] p-8 md:p-10 shadow-xl shadow-[#f8d8cf]/45">
+              <div className="relative overflow-hidden rounded-xl md:rounded-[2rem] border border-orange-200 bg-gradient-to-br from-[#fff4f1] via-white to-[#fffafa] p-5 sm:p-8 md:p-10 shadow-xl shadow-[#f8d8cf]/45">
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(249,115,22,0.14),transparent_60%)]" />
                 <div className="relative">
                   <span className="inline-flex items-center gap-2 rounded-full bg-white/60 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.35em] text-[#f97316]">
                     What We Believe
                   </span>
-                  <h3 className="mt-4 text-2xl font-semibold text-[#0f172a]">Our Core Principles</h3>
+                  <h3 className="mt-4 text-xl sm:text-2xl font-semibold text-[#0f172a]">Our Core Principles</h3>
                   <p className="mt-4 text-sm sm:text-base leading-relaxed text-gray-700 mb-6">
                     We believe that finding a place to live is not just a transaction — it's a personal decision.
                   </p>
@@ -139,23 +139,23 @@ const AboutUs = () => {
             </div>
 
             {/* What Mokogo Does - Full Width */}
-            <div className="relative overflow-hidden rounded-[2rem] border border-orange-200 bg-gradient-to-br from-orange-50 via-white to-orange-50/50 p-8 md:p-10 shadow-xl shadow-orange-100/40 mb-12">
+            <div className="relative overflow-hidden rounded-xl md:rounded-[2rem] border border-orange-200 bg-gradient-to-br from-orange-50 via-white to-orange-50/50 p-5 sm:p-8 md:p-10 shadow-xl shadow-orange-100/40 mb-8 sm:mb-12">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,rgba(249,115,22,0.12),transparent_60%)]" />
               <div className="relative">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 rounded-lg bg-orange-400/10 flex items-center justify-center">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4 sm:mb-6">
+                  <div className="w-10 h-10 rounded-lg bg-orange-400/10 flex items-center justify-center flex-shrink-0">
                     <Home className="w-5 h-5 text-orange-500" />
                   </div>
                   <div>
-                    <span className="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-100/50 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.35em] text-orange-700">
+                    <span className="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-100/50 px-3 sm:px-4 py-1 text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.25em] sm:tracking-[0.35em] text-orange-700">
                       What Mokogo Does
                     </span>
-                    <h2 className="mt-2 text-2xl sm:text-3xl font-semibold text-gray-900">Our Mission</h2>
+                    <h2 className="mt-2 text-xl sm:text-2xl md:text-3xl font-semibold text-gray-900">Our Mission</h2>
                   </div>
                 </div>
                 
-                <div className="grid md:grid-cols-2 gap-6 mb-6">
-                  <div className="bg-white rounded-2xl p-6 border border-orange-200 shadow-sm">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
+                  <div className="bg-white rounded-xl md:rounded-2xl p-4 sm:p-6 border border-orange-200 shadow-sm">
                     <h4 className="text-lg font-semibold text-gray-900 mb-4">Mokogo helps people:</h4>
                     <ul className="space-y-3 text-sm sm:text-base leading-relaxed text-gray-700">
                       {whatWeDo.map((item, index) => (
@@ -169,7 +169,7 @@ const AboutUs = () => {
                     </ul>
                   </div>
 
-                  <div className="bg-gradient-to-br from-orange-50 to-orange-100/30 rounded-2xl p-6 border border-orange-200 shadow-sm">
+                  <div className="bg-gradient-to-br from-orange-50 to-orange-100/30 rounded-xl md:rounded-2xl p-4 sm:p-6 border border-orange-200 shadow-sm">
                     <div className="flex items-start gap-3 mb-4">
                       <div className="w-8 h-8 rounded-lg bg-orange-400/20 flex items-center justify-center flex-shrink-0">
                         <Shield className="w-4 h-4 text-orange-500" />
@@ -195,15 +195,15 @@ const AboutUs = () => {
             </div>
 
             {/* Built from Real Experience + Today & What's Ahead - Grid Layout */}
-            <div className="grid gap-8 lg:grid-cols-2 mb-12">
+            <div className="grid grid-cols-1 gap-6 sm:gap-8 lg:grid-cols-2 mb-8 sm:mb-12">
               {/* Built from Real Experience - Light Card */}
-              <div className="relative overflow-hidden rounded-[2rem] border border-orange-200 bg-gradient-to-br from-orange-50 via-white to-orange-50/50 p-8 md:p-10 shadow-xl shadow-orange-100/40">
+              <div className="relative overflow-hidden rounded-xl md:rounded-[2rem] border border-orange-200 bg-gradient-to-br from-orange-50 via-white to-orange-50/50 p-5 sm:p-8 md:p-10 shadow-xl shadow-orange-100/40">
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(249,115,22,0.12),transparent_55%)]" />
                 <div className="relative">
                   <span className="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-100/50 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.35em] text-orange-700">
                     Built from Real Experience
                   </span>
-                  <h3 className="mt-4 text-2xl font-semibold text-gray-900">Our Story</h3>
+                  <h3 className="mt-4 text-xl sm:text-2xl font-semibold text-gray-900">Our Story</h3>
                   <p className="mt-4 text-sm sm:text-base leading-relaxed text-gray-700 mb-6">
                     Mokogo is built by people who've personally experienced:
                   </p>
@@ -224,13 +224,13 @@ const AboutUs = () => {
               </div>
 
               {/* Today & What's Ahead - Gradient Card */}
-              <div className="relative overflow-hidden rounded-[2rem] border border-orange-200 bg-gradient-to-br from-[#fff4f1] via-white to-[#fffafa] p-8 md:p-10 shadow-xl shadow-[#f8d8cf]/45">
+              <div className="relative overflow-hidden rounded-xl md:rounded-[2rem] border border-orange-200 bg-gradient-to-br from-[#fff4f1] via-white to-[#fffafa] p-5 sm:p-8 md:p-10 shadow-xl shadow-[#f8d8cf]/45">
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(249,115,22,0.14),transparent_60%)]" />
                 <div className="relative">
                   <span className="inline-flex items-center gap-2 rounded-full bg-white/60 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.35em] text-[#f97316]">
                     Today & What's Ahead
                   </span>
-                  <h3 className="mt-4 text-2xl font-semibold text-[#0f172a]">Our Journey</h3>
+                  <h3 className="mt-4 text-xl sm:text-2xl font-semibold text-[#0f172a]">Our Journey</h3>
                   <p className="mt-4 text-sm sm:text-base leading-relaxed text-gray-700 mb-6">
                     We're starting in India, where this problem is especially common — but our thinking isn't limited by geography.
                   </p>
@@ -248,17 +248,17 @@ const AboutUs = () => {
             </div>
 
             {/* A Small Promise - Final Card */}
-            <div className="relative overflow-hidden rounded-[2rem] border border-[#fde1da] bg-gradient-to-br from-[#fff4f1] via-white to-[#fff9f6] p-8 md:p-10 shadow-xl shadow-[#f8d8cf]/45">
+            <div className="relative overflow-hidden rounded-xl md:rounded-[2rem] border border-[#fde1da] bg-gradient-to-br from-[#fff4f1] via-white to-[#fff9f6] p-5 sm:p-8 md:p-10 shadow-xl shadow-[#f8d8cf]/45">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(249,115,22,0.12),transparent_60%)]" />
-              <div className="relative flex flex-col md:flex-row items-start gap-6">
-                <div className="w-16 h-16 rounded-2xl bg-[#f97316]/20 flex items-center justify-center flex-shrink-0">
-                  <HandHeart className="w-8 h-8 text-[#f97316]" />
+              <div className="relative flex flex-col md:flex-row items-start gap-4 sm:gap-6">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl md:rounded-2xl bg-[#f97316]/20 flex items-center justify-center flex-shrink-0">
+                  <HandHeart className="w-6 h-6 sm:w-8 sm:h-8 text-[#f97316]" />
                 </div>
-                <div className="flex-1">
-                  <span className="inline-flex items-center gap-2 rounded-full bg-white/70 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.35em] text-[#f97316]">
+                <div className="flex-1 min-w-0">
+                  <span className="inline-flex items-center gap-2 rounded-full bg-white/70 px-3 sm:px-4 py-1 text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.25em] sm:tracking-[0.35em] text-[#f97316]">
                     A Small Promise
                   </span>
-                  <h3 className="mt-4 text-2xl font-semibold text-[#0f172a]">Our Commitment to You</h3>
+                  <h3 className="mt-3 sm:mt-4 text-xl sm:text-2xl font-semibold text-[#0f172a]">Our Commitment to You</h3>
                   <p className="mt-4 text-sm sm:text-base leading-relaxed text-[#3a4a61] mb-6">
                     We promise to:
                   </p>
