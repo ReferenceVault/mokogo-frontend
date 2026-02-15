@@ -698,8 +698,9 @@ export interface CreateMessageRequest {
 }
 
 export const messagesApi = {
-  getAllConversations: async (): Promise<ConversationResponse[]> => {
-    const response = await api.get<ConversationResponse[]>('/messages/conversations')
+  getAllConversations: async (archived?: boolean): Promise<ConversationResponse[]> => {
+    const queryParams = archived !== undefined ? `?archived=${archived}` : ''
+    const response = await api.get<ConversationResponse[]>(`/messages/conversations${queryParams}`)
     return response.data || []
   },
 
@@ -736,6 +737,14 @@ export const messagesApi = {
   getOnlineUsers: async (): Promise<string[]> => {
     const response = await api.get<{ onlineUsers: string[] }>('/messages/online-users')
     return response.data.onlineUsers || []
+  },
+
+  archiveConversation: async (conversationId: string): Promise<void> => {
+    await api.post(`/messages/conversations/${conversationId}/archive`)
+  },
+
+  unarchiveConversation: async (conversationId: string): Promise<void> => {
+    await api.post(`/messages/conversations/${conversationId}/unarchive`)
   },
 }
 
@@ -795,6 +804,129 @@ export const notificationsApi = {
   markAllRead: async (): Promise<MarkAllReadResponse> => {
     const response = await api.post<MarkAllReadResponse>('/notifications/mark-all-read')
     return response.data
+  },
+}
+
+export enum ReportReason {
+  SPAM_SCAM = 'spam_scam',
+  HARASSMENT = 'harassment',
+  FAKE_LISTING = 'fake_listing',
+  INAPPROPRIATE_CONTENT = 'inappropriate_content',
+  ASKING_MONEY_OUTSIDE = 'asking_money_outside',
+  DISCRIMINATION = 'discrimination',
+  OTHER = 'other',
+}
+
+export interface CreateReportRequest {
+  reportedUserId: string
+  listingId?: string
+  conversationId?: string
+  reasonCode: ReportReason
+  description?: string
+}
+
+export interface ReportResponse {
+  _id: string
+  id: string
+  reporterUserId: string
+  reportedUserId: string
+  listingId?: string
+  conversationId?: string
+  reasonCode: ReportReason
+  description?: string
+  severity: string
+  reviewed: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface ReportResponseWithDetails extends ReportResponse {
+  reporterUserId?: {
+    _id: string
+    name: string
+    email: string
+  }
+  reportedUserId?: {
+    _id: string
+    name: string
+    email: string
+  }
+  listingId?: {
+    _id: string
+    title: string
+  }
+}
+
+export const reportsApi = {
+  create: async (data: CreateReportRequest): Promise<ReportResponse> => {
+    const response = await api.post<ReportResponse>('/reports', data)
+    return response.data
+  },
+
+  getAll: async (userId?: string, reportedUserId?: string): Promise<ReportResponseWithDetails[]> => {
+    const queryParams = new URLSearchParams()
+    if (userId) queryParams.append('userId', userId)
+    if (reportedUserId) queryParams.append('reportedUserId', reportedUserId)
+    const queryString = queryParams.toString()
+    const response = await api.get<ReportResponseWithDetails[]>(`/reports${queryString ? `?${queryString}` : ''}`)
+    return response.data
+  },
+
+  getById: async (id: string): Promise<ReportResponseWithDetails> => {
+    const response = await api.get<ReportResponseWithDetails>(`/reports/${id}`)
+    return response.data
+  },
+}
+
+export interface CreateBlockRequest {
+  blockedUserId: string
+}
+
+export interface BlockResponse {
+  _id: string
+  id: string
+  blockerId: string
+  blockedId: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface BlockedUsersResponse {
+  blockedUserIds: string[]
+}
+
+export interface CheckBlockResponse {
+  isBlocked: boolean
+}
+
+export const blocksApi = {
+  block: async (data: CreateBlockRequest): Promise<BlockResponse> => {
+    const response = await api.post<BlockResponse>('/blocks', data)
+    return response.data
+  },
+
+  unblock: async (blockedUserId: string): Promise<void> => {
+    await api.delete(`/blocks/${blockedUserId}`)
+  },
+
+  getBlockedUsers: async (): Promise<string[]> => {
+    const response = await api.get<BlockedUsersResponse>('/blocks/blocked')
+    return response.data.blockedUserIds
+  },
+
+  checkBlock: async (userId: string): Promise<boolean> => {
+    const response = await api.get<CheckBlockResponse>(`/blocks/check/${userId}`)
+    return response.data.isBlocked
+  },
+
+  getAllBlockedUserIds: async (): Promise<string[]> => {
+    try {
+      const response = await api.get<BlockedUsersResponse>('/blocks/all-blocked')
+      return response.data.blockedUserIds
+    } catch (error) {
+      console.error('Error fetching all blocked user IDs:', error)
+      return []
+    }
   },
 }
 

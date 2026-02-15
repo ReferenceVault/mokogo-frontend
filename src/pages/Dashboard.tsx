@@ -1075,7 +1075,7 @@ const Dashboard = () => {
                       <p className="text-gray-600 mb-6">It takes less than 4 minutes.</p>
                       <button 
                         onClick={handleCreateListingWithProfileCheck} 
-                        className="px-6 py-3 w-full sm:w-auto min-h-[44px] bg-gradient-to-r from-orange-400 to-orange-500 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-orange-500/30 sm:hover:scale-105 active:scale-95 transition-all duration-300 flex items-center justify-center gap-2"
+                        className="px-6 py-3 w-full sm:w-auto min-h-[44px] bg-gradient-to-r from-orange-400 to-orange-500 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-orange-500/30 sm:hover:scale-105 active:scale-95 transition-all duration-300 flex items-center justify-center gap-2 m-auto"
                       >
                         Create your first listing
                       </button>

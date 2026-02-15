@@ -4,7 +4,7 @@ import Footer from '@/components/Footer'
 import SocialSidebar from '@/components/SocialSidebar'
 import DashboardHeader from '@/components/DashboardHeader'
 import DashboardSidebar from '@/components/DashboardSidebar'
-import { usersApi } from '@/services/api'
+import { usersApi, reportsApi, ReportResponseWithDetails, ReportReason } from '@/services/api'
 import { 
   LayoutGrid, 
   Home, 
@@ -48,10 +48,58 @@ const AdminDashboard = () => {
     phoneNumber: '',
     password: '',
   })
+  const [reports, setReports] = useState<ReportResponseWithDetails[]>([])
+  const [reportsLoading, setReportsLoading] = useState(false)
+  const [reportsFilter, setReportsFilter] = useState<'all' | 'reviewed' | 'unreviewed'>('all')
+  const [reportsReasonFilter, setReportsReasonFilter] = useState<string>('all')
 
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [])
+
+  // Fetch reports when reports view is active
+  useEffect(() => {
+    if (activeView === 'reports') {
+      fetchReports()
+    }
+  }, [activeView, reportsFilter, reportsReasonFilter])
+
+  const fetchReports = async () => {
+    setReportsLoading(true)
+    try {
+      const data = await reportsApi.getAll()
+      setReports(data)
+    } catch (error) {
+      console.error('Error fetching reports:', error)
+    } finally {
+      setReportsLoading(false)
+    }
+  }
+
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+    
+    if (diffInSeconds < 60) return 'Just now'
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`
+    return date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })
+  }
+
+  const getReasonLabel = (reasonCode: ReportReason) => {
+    const reasonMap: Record<ReportReason, string> = {
+      [ReportReason.SPAM_SCAM]: 'Spam / Scam',
+      [ReportReason.HARASSMENT]: 'Harassment',
+      [ReportReason.FAKE_LISTING]: 'Fake listing',
+      [ReportReason.INAPPROPRIATE_CONTENT]: 'Inappropriate content',
+      [ReportReason.ASKING_MONEY_OUTSIDE]: 'Asking for money outside platform',
+      [ReportReason.DISCRIMINATION]: 'Discrimination',
+      [ReportReason.OTHER]: 'Other',
+    }
+    return reasonMap[reasonCode] || reasonCode
+  }
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -171,6 +219,12 @@ const AdminDashboard = () => {
               label: 'Requests',
               icon: MessageSquare,
               onClick: () => setActiveView('requests')
+            },
+            {
+              id: 'reports',
+              label: 'Reports',
+              icon: Flag,
+              onClick: () => setActiveView('reports')
             },
             {
               id: 'settings',
@@ -1359,6 +1413,178 @@ const AdminDashboard = () => {
                     </div>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {activeView === 'reports' && (
+              <div>
+                {/* Reports Header */}
+                <div className="mb-6">
+                  <h1 className="text-2xl font-bold text-gray-900 mb-1">User Reports</h1>
+                  <p className="text-sm text-gray-600">Review reports submitted by users about listings and other users.</p>
+                </div>
+
+                {/* Summary Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                  <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6">
+                    <p className="text-sm text-gray-600 mb-2">Total Reports</p>
+                    <p className="text-3xl font-bold text-gray-900">{reports.length}</p>
+                  </div>
+                  <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6">
+                    <p className="text-sm text-gray-600 mb-2">Unreviewed</p>
+                    <p className="text-3xl font-bold text-orange-600">
+                      {reports.filter(r => !r.reviewed).length}
+                    </p>
+                  </div>
+                  <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6">
+                    <p className="text-sm text-gray-600 mb-2">Reviewed</p>
+                    <p className="text-3xl font-bold text-gray-900">
+                      {reports.filter(r => r.reviewed).length}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Filter Bar */}
+                <div className="flex items-center gap-3 mb-6">
+                  <select 
+                    value={reportsFilter}
+                    onChange={(e) => setReportsFilter(e.target.value as 'all' | 'reviewed' | 'unreviewed')}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent"
+                  >
+                    <option value="all">All Reports</option>
+                    <option value="unreviewed">Unreviewed</option>
+                    <option value="reviewed">Reviewed</option>
+                  </select>
+                  <select 
+                    value={reportsReasonFilter}
+                    onChange={(e) => setReportsReasonFilter(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent"
+                  >
+                    <option value="all">All Reasons</option>
+                    <option value={ReportReason.SPAM_SCAM}>Spam / Scam</option>
+                    <option value={ReportReason.HARASSMENT}>Harassment</option>
+                    <option value={ReportReason.FAKE_LISTING}>Fake listing</option>
+                    <option value={ReportReason.INAPPROPRIATE_CONTENT}>Inappropriate content</option>
+                    <option value={ReportReason.ASKING_MONEY_OUTSIDE}>Asking for money outside platform</option>
+                    <option value={ReportReason.DISCRIMINATION}>Discrimination</option>
+                    <option value={ReportReason.OTHER}>Other</option>
+                  </select>
+                </div>
+
+                {/* Reports List */}
+                {reportsLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="w-8 h-8 border-2 border-orange-400 border-t-transparent rounded-full animate-spin"></div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {reports
+                      .filter(report => {
+                        if (reportsFilter === 'reviewed' && !report.reviewed) return false
+                        if (reportsFilter === 'unreviewed' && report.reviewed) return false
+                        if (reportsReasonFilter !== 'all' && report.reasonCode !== reportsReasonFilter) return false
+                        return true
+                      })
+                      .map((report) => {
+                        const reporterName = typeof report.reporterUserId === 'object' 
+                          ? report.reporterUserId?.name || 'Unknown'
+                          : 'Unknown'
+                        const reporterEmail = typeof report.reporterUserId === 'object'
+                          ? report.reporterUserId?.email || ''
+                          : ''
+                        const reportedName = typeof report.reportedUserId === 'object'
+                          ? report.reportedUserId?.name || 'Unknown'
+                          : 'Unknown'
+                        const reportedEmail = typeof report.reportedUserId === 'object'
+                          ? report.reportedUserId?.email || ''
+                          : ''
+                        const listingTitle = typeof report.listingId === 'object'
+                          ? report.listingId?.title || 'N/A'
+                          : report.listingId || 'N/A'
+                        const severityColor = report.severity === 'high' 
+                          ? 'bg-red-100 text-red-700' 
+                          : report.severity === 'medium'
+                          ? 'bg-orange-100 text-orange-700'
+                          : 'bg-gray-100 text-gray-700'
+
+                        return (
+                          <div key={report._id || report.id} className="bg-white rounded-xl shadow-md border border-gray-200 p-5">
+                            <div className="flex items-start justify-between mb-3">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                {report.listingId && (
+                                  <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                                    Listing
+                                  </span>
+                                )}
+                                {!report.reviewed && (
+                                  <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-orange-500 text-white">
+                                    New
+                                  </span>
+                                )}
+                                {report.reviewed && (
+                                  <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                                    Reviewed
+                                  </span>
+                                )}
+                                <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${severityColor}`}>
+                                  {report.severity.toUpperCase()}
+                                </span>
+                              </div>
+                              <span className="text-xs text-gray-500">{formatTimeAgo(report.createdAt)}</span>
+                            </div>
+                            <h3 className="text-base font-semibold text-gray-900 mb-3">
+                              {getReasonLabel(report.reasonCode)}
+                            </h3>
+                            {report.description && (
+                              <p className="text-sm text-gray-600 mb-3 bg-gray-50 p-3 rounded-lg">
+                                {report.description}
+                              </p>
+                            )}
+                            <div className="flex items-center justify-between gap-4 flex-wrap">
+                              <div className="flex flex-col gap-2">
+                                <div className="flex flex-col gap-1">
+                                  <p className="text-sm text-gray-600">
+                                    <span className="font-medium">Reported by:</span> {reporterName}
+                                    {reporterEmail && <span className="text-gray-500"> ({reporterEmail})</span>}
+                                  </p>
+                                  <p className="text-sm text-gray-600">
+                                    <span className="font-medium">Reported user:</span> {reportedName}
+                                    {reportedEmail && <span className="text-gray-500"> ({reportedEmail})</span>}
+                                  </p>
+                                  {report.listingId && (
+                                    <p className="text-sm text-gray-600">
+                                      <span className="font-medium">Listing:</span> {listingTitle}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <button className="bg-gradient-to-r from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors shadow-md shadow-orange-500/30">
+                                  View Details
+                                </button>
+                                {!report.reviewed && (
+                                  <button className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+                                    Mark as Reviewed
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    {reports.filter(report => {
+                      if (reportsFilter === 'reviewed' && !report.reviewed) return false
+                      if (reportsFilter === 'unreviewed' && report.reviewed) return false
+                      if (reportsReasonFilter !== 'all' && report.reasonCode !== reportsReasonFilter) return false
+                      return true
+                    }).length === 0 && (
+                      <div className="bg-white rounded-xl shadow-md border border-gray-200 p-12 text-center">
+                        <Flag className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                        <p className="text-gray-600">No reports found</p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
