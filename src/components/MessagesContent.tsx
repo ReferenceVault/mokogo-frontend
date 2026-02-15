@@ -50,6 +50,7 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
   const [archivedConversations, setArchivedConversations] = useState<ConversationResponse[]>([])
   const [blockedUserIds, setBlockedUserIds] = useState<string[]>([])
   const [blockedConversations, setBlockedConversations] = useState<ConversationResponse[]>([])
+  const [currentUserMessagingRestricted, setCurrentUserMessagingRestricted] = useState<boolean>(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const conversationsLoadedRef = useRef(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -248,6 +249,12 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
 
   useEffect(() => {
     if (initialConversationId) {
+      // Clear old state when redirecting to a new conversation
+      setMessages([])
+      setProperty(null)
+      setProfileToShow(null)
+      setConversationFromUrl(null)
+      lastFetchedListingIdRef.current = null
       setSelectedConversationId(initialConversationId)
     }
   }, [initialConversationId])
@@ -280,6 +287,9 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
 
   useEffect(() => {
     if (selectedConversationId) {
+      // Clear messages first when switching conversations
+      setMessages([])
+      // Then fetch new messages
       fetchMessages(selectedConversationId)
       websocketService.emit('join_conversation', { conversationId: selectedConversationId })
       
@@ -298,6 +308,9 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
       messagesApi.markAsRead(selectedConversationId).catch(err => {
         console.error('Error marking conversation as read:', err)
       })
+    } else {
+      // Clear messages when no conversation is selected
+      setMessages([])
     }
   }, [selectedConversationId])
 
@@ -311,8 +324,34 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
         return
       }
 
-      // Find conversation from current conversations state (accessed from closure, not dependency)
-      const conversation = conversations.find(c => (c._id || c.id) === selectedConversationId) || (conversationFromUrl && (conversationFromUrl._id || conversationFromUrl.id) === selectedConversationId ? conversationFromUrl : null)
+      // Find conversation from current conversations state or conversationFromUrl
+      // Wait a bit for conversationFromUrl to be fetched if it's not in the list yet
+      let conversation = conversations.find(c => (c._id || c.id) === selectedConversationId)
+      if (!conversation && conversationFromUrl && (conversationFromUrl._id || conversationFromUrl.id) === selectedConversationId) {
+        conversation = conversationFromUrl
+      }
+      
+      // If conversation is still not found, try fetching it
+      if (!conversation) {
+        try {
+          const fetchedConv = await messagesApi.getConversationById(selectedConversationId)
+          conversation = fetchedConv
+          // Set conversationFromUrl to trigger re-render
+          setConversationFromUrl(fetchedConv)
+          // Add to conversations list if not already there
+          setConversations(prev => {
+            if (prev.some(c => (c._id || c.id) === selectedConversationId)) return prev
+            return [fetchedConv, ...prev]
+          })
+        } catch (error) {
+          console.error('Error fetching conversation:', error)
+          setProperty(null)
+          setProfileToShow(null)
+          lastFetchedListingIdRef.current = null
+          return
+        }
+      }
+      
       if (!conversation) {
         setProperty(null)
         setProfileToShow(null)
@@ -332,13 +371,15 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
         return
       }
 
-      // Guard: Skip if already fetching or if this listing is already loaded
+      // Guard: Skip if already fetching
       if (isFetchingRef.current) {
         return
       }
 
+      // Skip if we've already loaded this exact listing for the current conversation
+      // But only if we're still on the same conversation (check by comparing listingId)
       if (lastFetchedListingIdRef.current === listingId && property?._id === listingId) {
-        // Already loaded this listing, skip refetch
+        // Same listing already loaded - skip refetch
         return
       }
 
@@ -397,7 +438,7 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
     }
 
     fetchPropertyAndProfile()
-  }, [selectedConversationId, user, conversationFromUrl]) // conversationFromUrl triggers when fetched by deep link
+  }, [selectedConversationId, user, conversationFromUrl, conversations]) // Include conversations so it re-runs when list is loaded
 
   useEffect(() => {
     //messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -406,6 +447,27 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
     messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight
   }
   }, [messages])
+
+  // Fetch current user's messaging restriction status
+  useEffect(() => {
+    const fetchUserMessagingStatus = async () => {
+      if (!user?.id) {
+        setCurrentUserMessagingRestricted(false)
+        return
+      }
+
+      try {
+        const profile = await usersApi.getMyProfile()
+        setCurrentUserMessagingRestricted(profile.messagingRestricted || false)
+      } catch (error) {
+        console.error('Error fetching user messaging status:', error)
+        // Default to false if fetch fails
+        setCurrentUserMessagingRestricted(false)
+      }
+    }
+
+    fetchUserMessagingStatus()
+  }, [user?.id])
 
   const fetchConversations = async () => {
     if (!user) return
@@ -448,9 +510,9 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
       // Normalize blocked IDs to strings for comparison
       const normalizedBlockedIds = blockedIds.map(id => {
         if (typeof id === 'string') return id
-        if (typeof id === 'object' && id._id) return id._id.toString()
-        if (typeof id === 'object' && id.id) return id.id.toString()
-        return id.toString()
+        if (typeof id === 'object' && id && '_id' in id) return (id as any)._id.toString()
+        if (typeof id === 'object' && id && 'id' in id) return (id as any).id.toString()
+        return String(id)
       })
       
       // Debug logging
@@ -677,10 +739,11 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
           _id: conversation.user2Id._id,
           name: conversation.user2Id.name,
           email: conversation.user2Id.email,
-          profileImageUrl: conversation.user2Id.profileImageUrl
+          profileImageUrl: conversation.user2Id.profileImageUrl,
+          messagingRestricted: conversation.user2Id.messagingRestricted || false
         }
       }
-      return { _id: conversation.user2Id, name: 'Unknown', email: '', profileImageUrl: undefined }
+      return { _id: conversation.user2Id, name: 'Unknown', email: '', profileImageUrl: undefined, messagingRestricted: false }
     }
     
     if (typeof conversation.user1Id === 'object') {
@@ -688,10 +751,11 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
         _id: conversation.user1Id._id,
         name: conversation.user1Id.name,
         email: conversation.user1Id.email,
-        profileImageUrl: conversation.user1Id.profileImageUrl
+        profileImageUrl: conversation.user1Id.profileImageUrl,
+        messagingRestricted: conversation.user1Id.messagingRestricted || false
       }
     }
-    return { _id: conversation.user1Id, name: 'Unknown', email: '', profileImageUrl: undefined }
+    return { _id: conversation.user1Id, name: 'Unknown', email: '', profileImageUrl: undefined, messagingRestricted: false }
   }
 
 
@@ -1079,6 +1143,12 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
                     {didCurrentUserBlock 
                       ? 'You have blocked this user' 
                       : 'This conversation is no longer available.'}
+                  </p>
+                </div>
+              ) : currentUserMessagingRestricted ? (
+                <div className="flex items-center justify-center py-3">
+                  <p className="text-sm text-gray-500 text-center">
+                    Messaging restricted for you. Contact support.
                   </p>
                 </div>
               ) : (

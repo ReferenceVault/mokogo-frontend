@@ -530,6 +530,7 @@ export interface UserProfile {
   smoking?: string
   drinking?: string
   foodPreference?: string
+  messagingRestricted?: boolean
 }
 
 export interface UpdateProfileRequest {
@@ -669,8 +670,8 @@ export const requestsApi = {
 export interface ConversationResponse {
   _id: string
   id: string
-  user1Id: string | { _id: string; name: string; email: string; profileImageUrl?: string }
-  user2Id: string | { _id: string; name: string; email: string; profileImageUrl?: string }
+  user1Id: string | { _id: string; name: string; email: string; profileImageUrl?: string; messagingRestricted?: boolean }
+  user2Id: string | { _id: string; name: string; email: string; profileImageUrl?: string; messagingRestricted?: boolean }
   listingId: string | { _id: string; title: string; city: string; locality: string; photos?: string[] }
   lastMessageId?: string | MessageResponse
   lastMessageAt: string
