@@ -534,6 +534,51 @@ const ListingDetail = () => {
     alert('Report functionality will be implemented')
   }
 
+  const handleMarkAsFulfilled = async () => {
+    if (!listing || !listingId) return
+    
+    if (!confirm('Are you sure you want to mark this listing as fulfilled? This will disable all conversations for this listing.')) {
+      return
+    }
+
+    try {
+      const updatedListing = await listingsApi.markAsFulfilled(listingId)
+      // Map API response to frontend format
+      const mappedListing: Listing = {
+        id: updatedListing._id || updatedListing.id,
+        title: updatedListing.title,
+        city: updatedListing.city || '',
+        locality: updatedListing.locality || '',
+        societyName: updatedListing.societyName,
+        bhkType: updatedListing.bhkType || '',
+        roomType: updatedListing.roomType || '',
+        rent: updatedListing.rent || 0,
+        deposit: updatedListing.deposit || 0,
+        moveInDate: updatedListing.moveInDate || '',
+        furnishingLevel: updatedListing.furnishingLevel || '',
+        bathroomType: updatedListing.bathroomType,
+        flatAmenities: updatedListing.flatAmenities || [],
+        societyAmenities: updatedListing.societyAmenities || [],
+        preferredGender: updatedListing.preferredGender || '',
+        foodPreference: updatedListing.foodPreference,
+        petPolicy: updatedListing.petPolicy,
+        smokingPolicy: updatedListing.smokingPolicy,
+        drinkingPolicy: updatedListing.drinkingPolicy,
+        description: updatedListing.description,
+        photos: updatedListing.photos || [],
+        status: updatedListing.status,
+        createdAt: updatedListing.createdAt,
+        updatedAt: updatedListing.updatedAt,
+        mikoTags: updatedListing.mikoTags,
+        lgbtqFriendly: updatedListing.lgbtqFriendly,
+      }
+      setListing(mappedListing)
+    } catch (error: any) {
+      console.error('Error marking listing as fulfilled:', error)
+      alert(error?.response?.data?.message || 'Failed to mark listing as fulfilled. Please try again.')
+    }
+  }
+
   const handleContactHostSuccess = () => {
     setShowSuccessToast(true)
   }
@@ -711,6 +756,7 @@ const ListingDetail = () => {
         onSave={handleSave}
         onShare={handleShare}
         onReport={handleReport}
+        onMarkAsFulfilled={handleMarkAsFulfilled}
         showVerified={false}
         showActions={true}
       />

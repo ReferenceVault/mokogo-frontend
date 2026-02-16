@@ -1059,7 +1059,7 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
               <div className="px-4 py-2 bg-orange-50 border-b border-orange-200">
                 <div className="flex items-center gap-2 text-sm text-orange-800">
                   <span>🔕</span>
-                  <span>This listing is no longer active</span>
+                  <span>Listing is no longer available</span>
                 </div>
               </div>
             )}
@@ -1144,7 +1144,7 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
             <div className="p-4 border-t border-gray-200 bg-white">
               {selectedConversation?.isDisabled ? (
                 <div className="flex items-center justify-center py-3">
-                  <p className="text-sm text-gray-500">Listing no longer available</p>
+                  <p className="text-sm text-gray-500">Listing is no longer available</p>
                 </div>
               ) : isBlockedConversation ? (
                 <div className="flex items-center justify-center py-3">

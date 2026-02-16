@@ -27,7 +27,7 @@ interface ListingDetailContentProps {
 }
 
 const ListingDetailContent = ({ listingId, onBack, onExplore }: ListingDetailContentProps) => {
-  const { allListings, user, currentListing, setAllListings, toggleSavedListing, isListingSaved, savedListings, setSavedListings } = useStore()
+  const { allListings, user, currentListing, setAllListings, setCurrentListing, toggleSavedListing, isListingSaved, savedListings, setSavedListings } = useStore()
   const [isSaved, setIsSaved] = useState(false)
   const [listing, setListing] = useState<Listing | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -392,16 +392,54 @@ const ListingDetailContent = ({ listingId, onBack, onExplore }: ListingDetailCon
     }
   }
 
-  const handleMarkAsFulfilled = () => {
-    if (listing) {
-      const updatedListing = { ...listing, status: 'fulfilled' as const, updatedAt: new Date().toISOString() }
-      const updatedListings = allListings.map(l => l.id === listing.id ? updatedListing : l)
+  const handleMarkAsFulfilled = async () => {
+    if (!listing || !listingId) return
+    
+    if (!confirm('Are you sure you want to mark this listing as fulfilled? This will disable all conversations for this listing.')) {
+      return
+    }
+
+    try {
+      const updatedListing = await listingsApi.markAsFulfilled(listingId)
+      // Map API response to frontend format
+      const mappedListing: Listing = {
+        id: updatedListing._id || updatedListing.id,
+        title: updatedListing.title,
+        city: updatedListing.city || '',
+        locality: updatedListing.locality || '',
+        societyName: updatedListing.societyName,
+        buildingType: updatedListing.buildingType,
+        bhkType: updatedListing.bhkType || '',
+        roomType: updatedListing.roomType || '',
+        rent: updatedListing.rent || 0,
+        deposit: updatedListing.deposit || 0,
+        moveInDate: updatedListing.moveInDate || '',
+        furnishingLevel: updatedListing.furnishingLevel || '',
+        bathroomType: updatedListing.bathroomType,
+        flatAmenities: updatedListing.flatAmenities || [],
+        societyAmenities: updatedListing.societyAmenities || [],
+        preferredGender: updatedListing.preferredGender || '',
+        foodPreference: updatedListing.foodPreference,
+        petPolicy: updatedListing.petPolicy,
+        smokingPolicy: updatedListing.smokingPolicy,
+        drinkingPolicy: updatedListing.drinkingPolicy,
+        description: updatedListing.description,
+        photos: updatedListing.photos || [],
+        status: updatedListing.status,
+        createdAt: updatedListing.createdAt,
+        updatedAt: updatedListing.updatedAt,
+        lgbtqFriendly: updatedListing.lgbtqFriendly,
+      }
+      setListing(mappedListing)
+      const updatedListings = allListings.map(l => l.id === listingId ? mappedListing : l)
       setAllListings(updatedListings)
       // Also update currentListing if it matches
-      if (currentListing?.id === listing.id) {
-        // We'd need setCurrentListing here, but it's not in the destructured values
-        // The listing will be updated in allListings which should be sufficient
+      if (currentListing?.id === listingId) {
+        setCurrentListing(mappedListing)
       }
+    } catch (error: any) {
+      console.error('Error marking listing as fulfilled:', error)
+      alert(error?.response?.data?.message || 'Failed to mark listing as fulfilled. Please try again.')
     }
   }
 

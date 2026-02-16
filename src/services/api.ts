@@ -481,6 +481,13 @@ export const listingsApi = {
     })
   },
 
+  markAsFulfilled: async (id: string): Promise<ListingResponse> => {
+    return listingsApi.retryOnThrottle(async () => {
+      const response = await api.post<ListingResponse>(`/listings/${id}/fulfill`)
+      return response.data
+    })
+  },
+
   delete: async (id: string): Promise<void> => {
     await api.delete(`/listings/${id}`)
   },
