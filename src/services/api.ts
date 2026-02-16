@@ -848,7 +848,7 @@ export interface ReportResponse {
   updatedAt: string
 }
 
-export interface ReportResponseWithDetails extends ReportResponse {
+export interface ReportResponseWithDetails extends Omit<ReportResponse, 'reporterUserId' | 'reportedUserId' | 'listingId'> {
   reporterUserId?: {
     _id: string
     name: string
