@@ -423,9 +423,9 @@ export const listingsApi = {
       if (filters.radiusKm != null) searchParams.set('radiusKm', String(filters.radiusKm))
     }
     try {
-      // Use axios directly for public endpoint (no auth token needed)
-      const url = `${API_BASE_URL}/listings/public${searchParams.toString() ? `?${searchParams.toString()}` : ''}`
-      const response = await axios.get<ListingResponse[]>(url, { timeout: 10000 })
+      // Use api instance to include auth token if user is logged in (for block filtering)
+      const url = `/listings/public${searchParams.toString() ? `?${searchParams.toString()}` : ''}`
+      const response = await api.get<ListingResponse[]>(url, { timeout: 10000 })
       return response.data || []
     } catch (error: any) {
       console.error('Error in getAllPublic API call:', error)
@@ -440,23 +440,23 @@ export const listingsApi = {
   },
 
   getByIdPublic: async (id: string): Promise<ListingResponse> => {
-    // Use axios directly for public endpoint (no auth token needed)
+    // Use api instance to include auth token if user is logged in (for block filtering)
     // Try /listings/public/:id first, if that doesn't work, use /listings/public with filter
-    const url = `${API_BASE_URL}/listings/public/${id}`
+    const url = `/listings/public/${id}`
     console.log('getByIdPublic: Calling URL:', url)
     
     try {
-      const response = await axios.get<ListingResponse>(url, { timeout: 10000 })
+      const response = await api.get<ListingResponse>(url, { timeout: 10000 })
       console.log('getByIdPublic: Success from /listings/public/:id')
       return response.data
     } catch (error: any) {
       // If /listings/public/:id doesn't exist (404), try using /listings/public with status filter
       if (error?.response?.status === 404) {
         console.log('getByIdPublic: /listings/public/:id not found, trying /listings/public?status=live')
-        const publicUrl = `${API_BASE_URL}/listings/public?status=live`
+        const publicUrl = `/listings/public?status=live`
         console.log('getByIdPublic: Calling URL:', publicUrl)
         
-        const publicResponse = await axios.get<ListingResponse[]>(publicUrl, { timeout: 10000 })
+        const publicResponse = await api.get<ListingResponse[]>(publicUrl, { timeout: 10000 })
         const listings = publicResponse.data || []
         const listing = listings.find((l: ListingResponse) => (l._id || l.id) === id)
         
