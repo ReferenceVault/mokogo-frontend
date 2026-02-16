@@ -263,8 +263,12 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
   const [conversationFromUrl, setConversationFromUrl] = useState<ConversationResponse | null>(null)
   useEffect(() => {
     if (!selectedConversationId || loading) return
-    const inList = conversations.some(c => (c._id || c.id) === selectedConversationId)
-    if (inList) {
+    const inActiveList = conversations.some(c => (c._id || c.id) === selectedConversationId)
+    const inArchivedList = archivedConversations.some(c => (c._id || c.id) === selectedConversationId)
+    const inBlockedList = blockedConversations.some(c => (c._id || c.id) === selectedConversationId)
+    const inAnyList = inActiveList || inArchivedList || inBlockedList
+
+    if (inAnyList) {
       setConversationFromUrl(null)
       return
     }
@@ -283,7 +287,7 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
         if (!cancelled) setConversationFromUrl(null)
       })
     return () => { cancelled = true }
-  }, [selectedConversationId, loading, conversations.length])
+  }, [selectedConversationId, loading, conversations.length, archivedConversations.length, blockedConversations.length])
 
   useEffect(() => {
     if (selectedConversationId) {
@@ -326,7 +330,10 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
 
       // Find conversation from current conversations state or conversationFromUrl
       // Wait a bit for conversationFromUrl to be fetched if it's not in the list yet
-      let conversation = conversations.find(c => (c._id || c.id) === selectedConversationId)
+      let conversation =
+        conversations.find(c => (c._id || c.id) === selectedConversationId) ||
+        archivedConversations.find(c => (c._id || c.id) === selectedConversationId) ||
+        blockedConversations.find(c => (c._id || c.id) === selectedConversationId)
       if (!conversation && conversationFromUrl && (conversationFromUrl._id || conversationFromUrl.id) === selectedConversationId) {
         conversation = conversationFromUrl
       }
@@ -912,7 +919,9 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
               return (
                 <div
                   key={convId}
-                  onClick={() => setSelectedConversationId(convId)}
+                  onClick={() => {
+                    setSelectedConversationId(convId)
+                  }}
                   className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors relative ${
                     isSelected ? 'bg-orange-50 border-l-4 border-l-orange-400' : ''
                   }`}
