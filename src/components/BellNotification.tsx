@@ -242,7 +242,7 @@ const BellNotification = ({ className = '' }: BellNotificationProps) => {
           </div>
 
           {/* Footer */}
-          {notifications.length > 0 && (
+          {/* {notifications.length > 0 && (
             <div className="px-4 py-2 border-t border-orange-100 text-center">
               <button
                 onClick={() => {
@@ -254,7 +254,7 @@ const BellNotification = ({ className = '' }: BellNotificationProps) => {
                 View all notifications
               </button>
             </div>
-          )}
+          )} */}
         </div>
       )}
 

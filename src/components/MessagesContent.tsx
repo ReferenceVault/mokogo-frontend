@@ -830,7 +830,7 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
 
   return (
     // <div className="h-[calc(100vh-4rem)] sm:h-[calc(100vh-120px)] flex bg-gray-50">
-      <div className="h-[calc(100dvh-4rem)] sm:h-[calc(100vh-120px)] min-h-[400px] flex flex-col lg:flex-row bg-gray-50 overflow-hidden">
+      <div className="h-[calc(100dvh-4rem)] sm:h-[calc(100vh-120px)] min-h-[400px] flex flex-col lg:flex-row lg:items-stretch bg-gray-50">
 
       {/* Backdrop for profile overlay on mobile */}
       {selectedConversation && showProfile && (
@@ -842,7 +842,7 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
       )}
 
       {/* Left Panel - Messages List */}
-      <div className={`flex flex-col w-full lg:w-80 border-r border-gray-200 bg-white flex-shrink-0 ${selectedConversationId ? 'hidden lg:flex' : 'flex'}`}>
+      <div className={`flex flex-col w-full lg:w-80 lg:min-h-screen lg:sticky lg:top-16 lg:border-r lg:border-gray-200 bg-white flex-shrink-0 ${selectedConversationId ? 'hidden lg:flex' : 'flex'}`}>
         {/* Header */}
         <div className="p-4 border-b border-gray-200">
           <h2 className="text-lg font-bold text-gray-900">Messages</h2>
@@ -1002,7 +1002,7 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
       </div>
 
       {/* Center Panel - Chat Window */}
-      <div className={`flex-1 flex flex-col min-h-0 bg-white min-w-0 ${!selectedConversationId ? 'hidden lg:flex' : 'flex'}`}>
+      <div className={`flex-1 flex flex-col lg:min-h-screen lg:sticky lg:top-16 bg-white min-w-0 ${!selectedConversationId ? 'hidden lg:flex' : 'flex'}`}>
         {selectedConversation && otherUser ? (
           <>
             {/* Chat Header */}
@@ -1219,7 +1219,7 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
 
       {/* Right Panel - Property & User Profile */}
       {selectedConversation && showProfile && (
-        <div className="fixed lg:relative inset-y-0 right-0 z-40 w-full max-w-sm lg:max-w-none lg:w-80 border-l border-gray-200 bg-white overflow-y-auto shadow-xl lg:shadow-none">
+        <div className="fixed lg:relative inset-y-0 right-0 z-40 w-full max-w-sm lg:max-w-none lg:w-80 lg:min-h-screen lg:sticky lg:top-16 border-l border-gray-200 bg-white overflow-y-auto shadow-xl lg:shadow-none">
           {/* Header with Close Button */}
           <div className="p-4 border-b border-gray-200">
             <div className="flex items-center justify-between">
