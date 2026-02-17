@@ -833,6 +833,8 @@ export interface CreateReportRequest {
   description?: string
 }
 
+export type ReportStatus = 'new' | 'under_review' | 'resolved' | 'escalated'
+
 export interface ReportResponse {
   _id: string
   id: string
@@ -844,6 +846,8 @@ export interface ReportResponse {
   description?: string
   severity: string
   reviewed: boolean
+  reportStatus?: ReportStatus
+  adminNotes?: string
   createdAt: string
   updatedAt: string
 }
@@ -884,6 +888,233 @@ export const reportsApi = {
     const response = await api.get<ReportResponseWithDetails>(`/reports/${id}`)
     return response.data
   },
+}
+
+export interface AdminStatsActiveListersResponse {
+  activeListers: number
+}
+
+export interface AdminStatsActiveSeekersResponse {
+  activeSeekers: number
+}
+
+export const adminApi = {
+  getActiveListersCount: async (): Promise<number> => {
+    const response = await api.get<AdminStatsActiveListersResponse>('/admin/stats/active-listers')
+    return response.data.activeListers
+  },
+
+  getActiveSeekersCount: async (): Promise<number> => {
+    const response = await api.get<AdminStatsActiveSeekersResponse>('/admin/stats/active-seekers')
+    return response.data.activeSeekers
+  },
+
+  getLiveListingsCount: async (): Promise<number> => {
+    const response = await api.get<{ liveListings: number }>('/admin/stats/live-listings')
+    return response.data.liveListings
+  },
+
+  getRequestsSentCount: async (days?: number): Promise<number> => {
+    const params = days != null ? `?days=${days}` : ''
+    const response = await api.get<{ requestsSent: number }>(`/admin/stats/requests-sent${params}`)
+    return response.data.requestsSent
+  },
+
+  getSuccessfulConnectionsCount: async (days?: number): Promise<number> => {
+    const params = days != null ? `?days=${days}` : ''
+    const response = await api.get<{ successfulConnections: number }>(`/admin/stats/successful-connections${params}`)
+    return response.data.successfulConnections
+  },
+
+  getMedianTimeToFulfillment: async (): Promise<number | null> => {
+    const response = await api.get<{ medianDays: number | null }>('/admin/stats/median-time-to-fulfillment')
+    return response.data.medianDays
+  },
+
+  getListingsFulfilledStats: async (): Promise<{ fulfilled: number; total: number }> => {
+    const response = await api.get<{ fulfilled: number; total: number }>('/admin/stats/listings-fulfilled')
+    return response.data
+  },
+
+  getListingsRejectedCount: async (): Promise<number> => {
+    const response = await api.get<{ rejected: number }>('/admin/stats/listings-rejected')
+    return response.data.rejected
+  },
+
+  getTotalUsersCount: async (): Promise<number> => {
+    const response = await api.get<{ total: number }>('/admin/stats/total-users')
+    return response.data.total
+  },
+
+  getListingsCreatedCount: async (days?: number): Promise<number> => {
+    const params = days != null ? `?days=${days}` : ''
+    const response = await api.get<{ count: number }>(`/admin/stats/listings-created${params}`)
+    return response.data.count
+  },
+
+  getListingsApprovedCount: async (days?: number): Promise<number> => {
+    const params = days != null ? `?days=${days}` : ''
+    const response = await api.get<{ count: number }>(`/admin/stats/listings-approved${params}`)
+    return response.data.count
+  },
+
+  getListingsByCity: async (): Promise<ListingsByCityItem[]> => {
+    const response = await api.get<ListingsByCityItem[]>('/admin/stats/listings-by-city')
+    return response.data
+  },
+
+  getActiveListingsByArea: async (): Promise<ActiveListingsByAreaItem[]> => {
+    const response = await api.get<ActiveListingsByAreaItem[]>('/admin/stats/active-listings-by-area')
+    return response.data
+  },
+
+  getReportedUsersCount: async (): Promise<number> => {
+    const response = await api.get<{ count: number }>('/admin/stats/reported-users-count')
+    return response.data.count
+  },
+
+  getBlockedUsersCount: async (): Promise<number> => {
+    const response = await api.get<{ count: number }>('/admin/stats/blocked-users-count')
+    return response.data.count
+  },
+
+  getMaleUsersCount: async (): Promise<number> => {
+    const response = await api.get<{ count: number }>('/admin/stats/male-users-count')
+    return response.data.count
+  },
+
+  getFemaleUsersCount: async (): Promise<number> => {
+    const response = await api.get<{ count: number }>('/admin/stats/female-users-count')
+    return response.data.count
+  },
+
+  getCompletedProfilesCount: async (): Promise<number> => {
+    const response = await api.get<{ count: number }>('/admin/stats/completed-profiles-count')
+    return response.data.count
+  },
+
+  // Listing tab (admin)
+  getListingTabTopBar: async (): Promise<{ pendingReviewCount: number; changesRequestedCount: number; avgApprovalTimeHrs: number | null }> => {
+    const response = await api.get('/admin/listing-tab/top-bar')
+    return response.data
+  },
+  getListingTabModerationEfficiency: async (): Promise<{
+    avgApprovalTimeHrs: number | null
+    listingsPendingOver24h: number
+    approvalRatePct: number | null
+    pctNeedingRevision: number | null
+  }> => {
+    const response = await api.get('/admin/listing-tab/moderation-efficiency')
+    return response.data
+  },
+  getListingTabQualityMetrics: async (): Promise<{
+    pctReportedAfterApproval: number | null
+    pctZeroInquiriesAfter14d: number | null
+    avgPhotosPerListing: number | null
+    pctCompleteDetails: number | null
+  }> => {
+    const response = await api.get('/admin/listing-tab/quality-metrics')
+    return response.data
+  },
+  getListingTabMarketplaceHealth: async (): Promise<{
+    activeWithAtLeastOneRequest: number
+    listingToInquiryRatio: number | null
+    pctStaleListings: number | null
+    areaWiseDemand: { area: string; activeListings: number; listingsWithRequest: number }[]
+  }> => {
+    const response = await api.get('/admin/listing-tab/marketplace-health')
+    return response.data
+  },
+  getListingsForAdmin: async (params: { status?: string; page?: number; limit?: number }): Promise<{ listings: AdminListingItem[]; total: number }> => {
+    const searchParams = new URLSearchParams()
+    if (params.status) searchParams.set('status', params.status)
+    if (params.page != null) searchParams.set('page', String(params.page))
+    if (params.limit != null) searchParams.set('limit', String(params.limit))
+    const response = await api.get(`/admin/listings?${searchParams.toString()}`)
+    return response.data
+  },
+  updateListingStatus: async (
+    listingId: string,
+    action: 'approve' | 'request_changes' | 'archive' | 'remove',
+    payload?: { category?: string; feedback?: string; archiveReason?: string; removalReasons?: string[] }
+  ): Promise<void> => {
+    await api.patch(`/admin/listings/${listingId}/status`, { action, ...payload })
+  },
+
+  // Admin Users tab
+  getUsersForAdmin: async (params: { search?: string; status?: string; page?: number; limit?: number }): Promise<{ users: AdminUserItem[]; total: number }> => {
+    const searchParams = new URLSearchParams()
+    if (params.search) searchParams.set('search', params.search)
+    if (params.status) searchParams.set('status', params.status)
+    if (params.page != null) searchParams.set('page', String(params.page))
+    if (params.limit != null) searchParams.set('limit', String(params.limit))
+    const response = await api.get(`/admin/users?${searchParams.toString()}`)
+    return response.data
+  },
+  getUserProfileForAdmin: async (userId: string): Promise<AdminUserProfile> => {
+    const response = await api.get(`/admin/users/${userId}`)
+    return response.data
+  },
+  updateUserStatus: async (userId: string, status: 'ACTIVE' | 'PAUSED' | 'SUSPENDED'): Promise<void> => {
+    await api.patch(`/admin/users/${userId}/status`, { status })
+  },
+
+  reportAction: async (reportId: string, action: 'review' | 'pause_account' | 'suspend_account' | 'mark_resolved', internalNote: string): Promise<void> => {
+    await api.patch(`/admin/reports/${reportId}/action`, { action, internalNote })
+  },
+}
+
+export interface AdminUserItem {
+  _id: string
+  name: string
+  email: string
+  phoneNumber?: string
+  gender?: string
+  currentCity?: string
+  area?: string
+  createdAt: string
+  status: string
+  reportCount: number
+}
+
+export interface AdminUserProfile extends AdminUserItem {
+  profileImageUrl?: string
+  dateOfBirth?: string
+  occupation?: string
+  companyName?: string
+  about?: string
+  smoking?: string
+  drinking?: string
+  foodPreference?: string
+  listingsCreated: number
+  requestsSent: number
+  requestsAccepted: number
+}
+
+export interface AdminListingItem {
+  _id: string
+  title: string
+  city?: string
+  locality?: string
+  rent?: number
+  photos: string[]
+  status: string
+  ownerId: { _id: string; name?: string; email?: string }
+  createdAt: string
+  adminApprovedAt?: string
+}
+
+export interface ListingsByCityItem {
+  city: string
+  activeListings: number
+  listingsCreatedLast7Days: number
+  listingsFulfilledLast30Days: number
+  listingsWithZeroRequests: number
+}
+
+export interface ActiveListingsByAreaItem {
+  area: string
+  activeListings: number
 }
 
 export interface CreateBlockRequest {

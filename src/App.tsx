@@ -24,6 +24,7 @@ import AboutUs from './pages/AboutUs'
 import Contact from './pages/Contact'
 import AdminLogin from './pages/admin/AdminLogin'
 import AdminDashboard from './pages/admin/AdminDashboard'
+import AdminUserProfile from './pages/admin/AdminUserProfile'
 import CookieConsent from './components/CookieConsent'
 import ProtectedRoute from './components/ProtectedRoute'
 import { trackPageView, initializeGADisableFlag } from './utils/analytics'
@@ -109,6 +110,14 @@ function App() {
           element={
             <ProtectedRoute>
               <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/dashboard/user/:userId"
+          element={
+            <ProtectedRoute>
+              <AdminUserProfile />
             </ProtectedRoute>
           }
         />
