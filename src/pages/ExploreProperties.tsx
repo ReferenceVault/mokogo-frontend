@@ -3,8 +3,6 @@ import { useEffect, useMemo, useState } from 'react'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import SocialSidebar from '@/components/SocialSidebar'
-import { useStore } from '@/store/useStore'
-import { MapPin, TrendingUp, Users, Clock } from 'lucide-react'
 import { listingsApi, ListingResponse } from '@/services/api'
 import { Listing, VibeTagId } from '@/types'
 import { formatRent } from '@/utils/formatters'
@@ -16,7 +14,6 @@ import CustomSelect from '@/components/CustomSelect'
 const ExploreProperties = () => {
   const location = useLocation()
   const navigate = useNavigate()
-  const { allListings } = useStore()
   const [exploreListings, setExploreListings] = useState<Listing[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isFilterOpen, setIsFilterOpen] = useState(false)
@@ -72,7 +69,8 @@ const ExploreProperties = () => {
       try {
         // Build backend filter object
         const backendFilters: any = {}
-        if (filters.city) backendFilters.city = filters.city
+        // Default to Pune when no city selected (Pune is the only active city)
+        backendFilters.city = filters.city || 'Pune'
         if (filters.area) backendFilters.area = filters.area
         if (filters.areaLat != null) backendFilters.areaLat = filters.areaLat
         if (filters.areaLng != null) backendFilters.areaLng = filters.areaLng
@@ -228,64 +226,41 @@ const ExploreProperties = () => {
     )
   }, [filteredListings, sortOption])
 
-  // Calculate listings count per city from actual listings
+  // Calculate listings count per city from actual fetched listings (no exaggerated fallbacks)
   const getCityListingsCount = (cityName: string) => {
-    return allListings.filter(l => l.city === cityName && l.status === 'live').length
+    return exploreListings.filter(l => l.city === cityName && l.status === 'live').length
   }
 
   const cities = [
     { 
       name: 'Pune', 
       image: '/pune-city.png', 
-      listings: getCityListingsCount('Pune') || 156,
+      listings: getCityListingsCount('Pune'),
       active: true
     },
     { 
       name: 'Mumbai', 
       image: '/mumbai-city.png', 
-      listings: getCityListingsCount('Mumbai') || 245,
+      listings: getCityListingsCount('Mumbai'),
       active: false
     },
     { 
       name: 'Hyderabad', 
       image: '/hyderabad-city.png', 
-      listings: getCityListingsCount('Hyderabad') || 98,
+      listings: getCityListingsCount('Hyderabad'),
       active: false
     },
     { 
       name: 'Bangalore', 
       image: '/bangalore-city.png', 
-      listings: getCityListingsCount('Bangalore') || 189,
+      listings: getCityListingsCount('Bangalore'),
       active: false
     },
     {
       name: 'Delhi NCR',
       image: '/delhi-city.png',
-      listings: getCityListingsCount('Delhi NCR') || 0,
+      listings: getCityListingsCount('Delhi NCR'),
       active: false
-    }
-  ]
-
-  const stats = [
-    { 
-      value: allListings.filter(l => l.status === 'live').length, 
-      label: 'Active Listings', 
-      icon: TrendingUp 
-    },
-    { 
-      value: cities.length, 
-      label: 'Cities', 
-      icon: MapPin 
-    },
-    { 
-      value: '10,000+', 
-      label: 'Happy Users', 
-      icon: Users 
-    },
-    { 
-      value: '24hrs', 
-      label: 'Avg Response', 
-      icon: Clock 
     }
   ]
 
@@ -385,7 +360,7 @@ const ExploreProperties = () => {
                           <div className="flex items-center gap-2">
                             <div className="w-1.5 h-1.5 rounded-full bg-orange-400 group-hover:bg-orange-300 transition-colors duration-300" />
                             <p className="text-sm text-white/90 font-medium">
-                              {city.listings}+ Properties
+                              {city.listings} Properties
                             </p>
                           </div>
                         ) : (
@@ -441,7 +416,7 @@ const ExploreProperties = () => {
             <div className="mb-16">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
-                  {isLoading ? 'Loading...' : `${sortedListings.length}+ Available Properties`}
+                  {isLoading ? 'Loading...' : `${sortedListings.length} Available Properties`}
                 </h2>
                 <div className="flex items-center gap-3">
                   <div className="hidden sm:flex items-center gap-2 text-xs md:text-sm">
@@ -553,35 +528,6 @@ const ExploreProperties = () => {
                   })}
                 </div>
               )}
-            </div>
-
-            {/* Stats Section */}
-            <div className="relative overflow-hidden rounded-[2rem] border border-orange-200 bg-gradient-to-br from-orange-50 via-white to-orange-50/50 p-8 md:p-10 shadow-xl shadow-orange-100/40">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(249,115,22,0.10),transparent_60%)]" />
-              <div className="relative">
-                <div className="text-center mb-8">
-                  <span className="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-100/50 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.35em] text-orange-700">
-                    Platform Statistics
-                  </span>
-                  <h3 className="mt-4 text-2xl font-semibold text-gray-900">Our Growing Community</h3>
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                  {stats.map((stat, index) => (
-                    <div 
-                      key={index}
-                      className="text-center group"
-                    >
-                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center mx-auto mb-3 shadow-lg group-hover:scale-110 transition-transform duration-300">
-                        <stat.icon className="w-6 h-6 text-white" />
-                      </div>
-                      <p className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent">
-                        {stat.value}
-                      </p>
-                      <p className="text-sm font-medium text-gray-700 mt-1">{stat.label}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
             </div>
           </div>
         </section>

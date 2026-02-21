@@ -340,14 +340,14 @@ const Auth = () => {
       
       {/* Hero Section */}
       <main className="flex-1">
-        <section className="relative overflow-hidden bg-gradient-to-br from-orange-50 via-orange-100/50 to-orange-50 px-6 md:px-[10%] pt-11 pb-12 sm:pt-12 sm:pb-16">
+        <section className="relative overflow-hidden bg-gradient-to-br from-orange-50 via-orange-100/50 to-orange-50 px-4 sm:px-6 md:px-[10%] pt-6 pb-10 sm:pt-12 sm:pb-16">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(249,115,22,0.15),transparent_60%),radial-gradient(circle_at_bottom_right,rgba(251,146,60,0.12),transparent_60%),radial-gradient(circle_at_center,rgba(254,215,170,0.10),transparent_65%)]" />
           
           <div className="relative mx-auto max-w-7xl">
             <div className="grid lg:grid-cols-2 gap-10 items-start">
               
-              {/* Left Section - Informational Panel */}
-              <div className="space-y-10 mt-[3.5rem]">
+              {/* Left Section - Informational Panel (order-2 on mobile: show below form) */}
+              <div className="order-2 lg:order-1 space-y-10 mt-6 lg:mt-[3.5rem]">
                 {/* Badge */}
                 <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-orange-200/50 border border-orange-300/50 rounded-full backdrop-blur-sm">
                   <Shield className="w-3.5 h-3.5 text-orange-600" />
@@ -406,8 +406,8 @@ const Auth = () => {
 
               </div>
 
-              {/* Right Section - Auth Form */}
-              <div className="relative bg-white/90 backdrop-blur-sm rounded-2xl border border-orange-200/50 shadow-2xl shadow-orange-100/40 p-8">
+              {/* Right Section - Auth Form (order-1 on mobile: show first) */}
+              <div className="order-1 lg:order-2 relative bg-white/90 backdrop-blur-sm rounded-2xl border border-orange-200/50 shadow-2xl shadow-orange-100/40 p-6 sm:p-8">
                 {/* Tab Switcher */}
                 <div className="flex gap-2 mb-6 bg-orange-50/50 p-1 rounded-lg">
                       <button

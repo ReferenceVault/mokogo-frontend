@@ -10,9 +10,6 @@ import {
   MapPin,
   Calendar,
   MessageSquare,
-  ChevronRight,
-  Copy,
-  Plus,
   Send,
   X
 } from 'lucide-react'
@@ -324,34 +321,6 @@ const RequestsContent = ({
     accepted: sentRequests.filter(r => r.status === 'approved').length,
     rejected: sentRequests.filter(r => r.status === 'rejected').length
   }
-
-  const responseTemplates = [
-    {
-      title: 'Acceptance Template',
-      content: "Hi [Name]! Thank you for your interest in my room. Your profile looks great and I'd love to chat further. I've accepted your request - let's schedule a virtual tour this weekend. Looking forward to connecting!",
-      icon: CheckCircle
-    },
-    {
-      title: 'More Info Request',
-      content: "Hi [Name]! Thanks for reaching out. I'd like to know more about your lifestyle preferences, work schedule, and any questions you have about the room. Could you share more details about yourself?",
-      icon: MessageSquare
-    },
-    {
-      title: 'Polite Rejection',
-      content: "Hi [Name]! Thank you for your interest in my room listing. After reviewing all applications, I've decided to move forward with another candidate. I wish you the best in your room search!",
-      icon: XCircle
-    },
-    {
-      title: 'Schedule Visit',
-      content: "Hi [Name]! Your profile looks promising. I'd like to arrange a visit to show you the room and discuss house rules. Are you available this weekend for a virtual or in-person tour?",
-      icon: Calendar
-    },
-    {
-      title: 'Room On Hold',
-      content: "Hi [Name]! Thanks for your interest. The room is currently on hold pending another applicant's decision. I'll keep you updated and reach out if it becomes available again.",
-      icon: Clock
-    }
-  ]
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50/30 via-white to-orange-50/20">
@@ -713,52 +682,6 @@ const RequestsContent = ({
           )}
         </div>
       </section>
-
-      {/* Quick Response Templates Section (only for received requests) */}
-      {activeTab === 'received' && (
-        <section className="px-4 sm:px-6 md:px-8 py-4">
-          <div className="max-w-7xl mx-auto">
-            <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-4">Quick Response Templates</h2>
-            <p className="text-sm text-gray-600 mb-4">Save time with pre-written responses for common scenarios</p>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
-              {responseTemplates.map((template, index) => (
-                <div
-                  key={index}
-                  className="relative bg-white/80 backdrop-blur-sm rounded-lg border border-orange-200/50 p-3 sm:p-4 shadow-md hover:shadow-lg hover:scale-105 transition-all duration-300 group"
-                >
-                  <div className="absolute inset-0 bg-gradient-to-br from-orange-50/30 via-transparent to-transparent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  <div className="relative">
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                        <template.icon className="w-4 h-4 text-white" />
-                      </div>
-                      <button className="p-1 text-gray-500 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-all">
-                        <Copy className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                    <h3 className="font-semibold text-gray-900 mb-1.5 text-xs">{template.title}</h3>
-                    <p className="text-xs text-gray-600 leading-relaxed mb-2">{template.content}</p>
-                    <button className="text-xs font-semibold text-orange-600 hover:text-orange-700 flex items-center gap-1 group-hover:gap-1.5 transition-all">
-                      Use This Template <ChevronRight className="w-3 h-3" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-              <div className="relative bg-white/80 backdrop-blur-sm rounded-lg border-2 border-dashed border-orange-300/50 p-4 shadow-md hover:shadow-lg hover:scale-105 transition-all duration-300 group cursor-pointer">
-                <div className="absolute inset-0 bg-gradient-to-br from-orange-50/30 via-transparent to-transparent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                <div className="relative flex flex-col items-center justify-center h-full min-h-[140px] text-center">
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center mb-2 shadow-lg group-hover:scale-110 transition-transform duration-300">
-                    <Plus className="w-5 h-5 text-white" />
-                  </div>
-                  <h3 className="font-semibold text-gray-900 mb-1.5 text-xs">Create Custom</h3>
-                  <p className="text-xs text-gray-600 leading-relaxed">Create your own template for specific scenarios or frequently asked questions. Save time with personalized responses.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
 
       {/* Reject Confirmation Modal */}
       {showRejectModal && (

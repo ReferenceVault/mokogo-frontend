@@ -832,10 +832,10 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
     // <div className="h-[calc(100vh-4rem)] sm:h-[calc(100vh-120px)] flex bg-gray-50">
       <div className="h-[calc(100dvh-4rem)] sm:h-[calc(100vh-120px)] min-h-[400px] flex flex-col lg:flex-row lg:items-stretch bg-gray-50">
 
-      {/* Backdrop for profile overlay on mobile */}
+      {/* Backdrop for profile overlay on mobile - z-[60] above dashboard header (z-50) */}
       {selectedConversation && showProfile && (
         <div 
-          className="fixed inset-0 bg-black/50 z-30 lg:hidden" 
+          className="fixed inset-0 bg-black/50 z-[60] lg:hidden" 
           onClick={() => setShowProfile(false)}
           aria-hidden="true"
         />
@@ -1217,18 +1217,19 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
         )}
       </div>
 
-      {/* Right Panel - Property & User Profile */}
+      {/* Right Panel - Property & User Profile - z-[70] above backdrop on mobile */}
       {selectedConversation && showProfile && (
-        <div className="fixed lg:relative inset-y-0 right-0 z-40 w-full max-w-sm lg:max-w-none lg:w-80 lg:min-h-screen lg:sticky lg:top-16 border-l border-gray-200 bg-white overflow-y-auto shadow-xl lg:shadow-none">
-          {/* Header with Close Button */}
-          <div className="p-4 border-b border-gray-200">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-gray-900">Details</h3>
+        <div className="fixed lg:relative inset-y-0 right-0 z-[70] lg:z-auto w-full max-w-sm lg:max-w-none lg:w-80 lg:min-h-screen lg:sticky lg:top-16 border-l border-gray-200 bg-white overflow-y-auto shadow-xl lg:shadow-none">
+          {/* Header with Close Button - sticky on mobile so it stays visible */}
+          <div className="sticky top-0 z-10 p-4 pt-6 sm:pt-4 pb-4 border-b border-gray-200 bg-white lg:static lg:pt-4 shadow-sm lg:shadow-none">
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="text-base font-semibold text-gray-900">Details</h3>
               <button
                 onClick={() => setShowProfile(false)}
-                className="p-2 min-h-[44px] min-w-[44px] hover:bg-gray-100 rounded-lg transition-colors flex items-center justify-center"
+                className="p-2.5 min-h-[44px] min-w-[44px] hover:bg-gray-100 rounded-lg transition-colors flex items-center justify-center flex-shrink-0 bg-gray-100 lg:bg-transparent"
+                aria-label="Close"
               >
-                <X className="w-5 h-5 text-gray-600" />
+                <X className="w-6 h-6 text-gray-700 lg:w-5 lg:h-5 lg:text-gray-600" />
               </button>
             </div>
           </div>

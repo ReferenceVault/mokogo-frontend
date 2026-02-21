@@ -88,29 +88,11 @@ const Footer = () => {
             <ul className="space-y-3 text-sm">
               <li>
                 <Link 
-                  to="/auth" 
+                  to="/auth?redirect=/dashboard&view=listings" 
                   className="text-gray-600 hover:text-orange-500 transition-all duration-300 inline-flex items-center gap-2 group"
                 >
                   <span className="w-1.5 h-1.5 rounded-full bg-orange-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   <span className="group-hover:translate-x-1 transition-transform duration-300">List Your Space</span>
-                </Link>
-              </li>
-              <li>
-                <Link 
-                  to="#" 
-                  className="text-gray-600 hover:text-orange-500 transition-all duration-300 inline-flex items-center gap-2 group"
-                >
-                  <span className="w-1.5 h-1.5 rounded-full bg-orange-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  <span className="group-hover:translate-x-1 transition-transform duration-300">Verification Process</span>
-                </Link>
-              </li>
-              <li>
-                <Link 
-                  to="#" 
-                  className="text-gray-600 hover:text-orange-500 transition-all duration-300 inline-flex items-center gap-2 group"
-                >
-                  <span className="w-1.5 h-1.5 rounded-full bg-orange-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  <span className="group-hover:translate-x-1 transition-transform duration-300">Premium Features</span>
                 </Link>
               </li>
             </ul>
@@ -199,7 +181,7 @@ const Footer = () => {
               </Link>
             </div>
             <p className="text-gray-600 font-medium">
-              © 2025 <span className="text-orange-500 font-bold">MOKOGO</span>. All rights reserved.
+              © 2026 <span className="text-orange-500 font-bold">MOKOGO</span>. All rights reserved.
             </p>
           </div>
         </div>
