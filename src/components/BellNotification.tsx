@@ -165,11 +165,11 @@ const BellNotification = ({ className = '' }: BellNotificationProps) => {
         )}
       </button>
 
-      {/* Dropdown */}
+      {/* Dropdown - fixed on mobile for viewport visibility, absolute on desktop */}
       {isOpen && (
         <div
           ref={dropdownRef}
-          className="absolute top-full right-0 mt-2 w-80 sm:w-96 bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-orange-200/50 z-50 max-h-[500px] flex flex-col"
+          className="fixed left-4 right-4 top-20 sm:absolute sm:left-auto sm:right-0 sm:top-full sm:mt-2 sm:w-96 w-auto bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-orange-200/50 z-50 max-h-[min(500px,70vh)] flex flex-col"
           role="menu"
           aria-orientation="vertical"
         >
@@ -194,8 +194,8 @@ const BellNotification = ({ className = '' }: BellNotificationProps) => {
             )}
           </div>
 
-          {/* Notifications List */}
-          <div className="overflow-y-auto flex-1">
+          {/* Notifications List - min-h-0 needed for flex overflow scroll */}
+          <div className="overflow-y-auto flex-1 min-h-0">
             {loading && notifications.length === 0 ? (
               <div className="px-4 py-8 text-center text-sm text-gray-500">
                 Loading notifications...
@@ -227,7 +227,7 @@ const BellNotification = ({ className = '' }: BellNotificationProps) => {
                             <span className="w-2 h-2 bg-orange-500 rounded-full flex-shrink-0" />
                           )}
                         </div>
-                        <p className="text-xs text-gray-600 line-clamp-2 mb-1">
+                        <p className="text-xs text-gray-600 line-clamp-3 sm:line-clamp-2 mb-1 break-words">
                           {notification.body}
                         </p>
                         <p className="text-xs text-gray-400">

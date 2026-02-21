@@ -337,31 +337,31 @@ const LandingPage = () => {
     { 
       name: 'Pune', 
       image: '/pune-city.png', 
-      listings: getCityListingsCount('Pune') || 156,
+      listings: getCityListingsCount('Pune'),
       active: true
     },
     { 
       name: 'Mumbai', 
       image: '/mumbai-city.png', 
-      listings: getCityListingsCount('Mumbai') || 245,
+      listings: getCityListingsCount('Mumbai'),
       active: false
     },
     { 
       name: 'Bangalore', 
       image: '/bangalore-city.png', 
-      listings: getCityListingsCount('Bangalore') || 189,
+      listings: getCityListingsCount('Bangalore'),
       active: false
     },
     { 
       name: 'Hyderabad', 
       image: '/hyderabad-city.png', 
-      listings: getCityListingsCount('Hyderabad') || 98,
+      listings: getCityListingsCount('Hyderabad'),
       active: false
     },
     {
       name: 'Delhi NCR',
       image: '/delhi-city.png',
-      listings: getCityListingsCount('Delhi NCR') || 0,
+      listings: getCityListingsCount('Delhi NCR'),
       active: false
     }
   ]
@@ -769,7 +769,7 @@ const LandingPage = () => {
           <section className="max-w-7xl mx-auto space-y-6">
             <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center justify-between gap-3">
               <h2 className="text-xl sm:text-2xl font-bold text-gray-900 shrink-0">
-                {isLoadingListings ? 'Loading...' : `${allListings.filter(l => l.status === 'live').length}+ Available Properties`}
+                {isLoadingListings ? 'Loading...' : `${allListings.filter(l => l.status === 'live').length} Available Properties`}
               </h2>
               <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
                 <button

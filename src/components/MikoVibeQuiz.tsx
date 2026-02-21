@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { VibeTagId } from '@/types'
 import Logo from '@/components/Logo'
 
@@ -227,6 +227,7 @@ const QUESTIONS: MikoQuestion[] = [
 ]
 
 const MikoVibeQuiz = ({ isOpen, onClose, onComplete }: MikoVibeQuizProps) => {
+  const scrollRef = useRef<HTMLDivElement>(null)
   const [currentStep, setCurrentStep] = useState(0)
   const [answers, setAnswers] = useState<Record<string, MikoOption>>({})
   const [typedQuestion, setTypedQuestion] = useState('')
@@ -261,6 +262,11 @@ const MikoVibeQuiz = ({ isOpen, onClose, onComplete }: MikoVibeQuizProps) => {
     setCurrentStep(prev => prev - 1)
   }
 
+  // Scroll to top when step changes (important for mobile with many options)
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [currentStep])
+
   useEffect(() => {
     setTypedQuestion('')
     let index = 0
@@ -285,16 +291,16 @@ const MikoVibeQuiz = ({ isOpen, onClose, onComplete }: MikoVibeQuizProps) => {
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4">
-      <section className="relative w-full max-w-4xl h-[calc(100vh-4rem)] flex flex-col items-center justify-center px-4 py-8 bg-[#F7F5F2] rounded-3xl border border-[#E9E3DC] shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/30 px-0 sm:px-4 pb-0 sm:pb-4">
+      <section className="relative w-full max-w-4xl h-[90vh] sm:h-[calc(100vh-4rem)] max-h-[700px] flex flex-col px-4 py-6 sm:py-8 bg-[#F7F5F2] rounded-t-3xl sm:rounded-3xl border border-[#E9E3DC] shadow-2xl overflow-hidden">
         {/* Background texture */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48ZGVmcz48cGF0dGVybiBpZD0idGV4dHVyZSIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSIgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiPjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiBmaWxsPSJ0cmFuc3BhcmVudCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNTAiIHI9IjAuNSIgZmlsbD0iIzJDMkMyQyIgZmlsbC1vcGFjaXR5PSIwLjA1Ii8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI3RleHR1cmUpIi8+PC9zdmc+')] opacity-50" />
         </div>
 
-        <div className="relative w-full max-w-3xl flex flex-col items-center text-center -mt-6">
-          <div className="flex flex-col items-center gap-2 w-full">
-            <div className="scale-125 md:scale-150 origin-center">
+        <div ref={scrollRef} className="relative w-full max-w-3xl flex flex-col items-center text-center flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain -mx-1 px-1">
+          <div className="flex flex-col items-center gap-2 w-full shrink-0">
+            <div className="scale-100 sm:scale-125 md:scale-150 origin-center">
               <Logo />
             </div>
             <p className="text-xs uppercase tracking-[0.35em] text-[#B5573E]/80">
@@ -323,7 +329,7 @@ const MikoVibeQuiz = ({ isOpen, onClose, onComplete }: MikoVibeQuizProps) => {
             </h2>
           </div>
 
-          <div className="mt-6 w-full flex items-center justify-center gap-2">
+          <div className="mt-4 sm:mt-6 w-full flex items-center justify-center gap-2 shrink-0">
             {QUESTIONS.map((_, index) => (
               <span
                 key={index}
@@ -338,12 +344,13 @@ const MikoVibeQuiz = ({ isOpen, onClose, onComplete }: MikoVibeQuizProps) => {
             ))}
           </div>
 
+          {/* Options grid - scrolls with parent on mobile */}
           <div
-            className={`mt-6 w-full grid gap-4 ${
+            className={`mt-4 sm:mt-6 w-full ${
               currentQuestion.options.length === 3
-                ? 'grid-cols-1 sm:grid-cols-2'
-                : 'grid-cols-1 sm:grid-cols-2'
-            }`}
+                ? 'grid grid-cols-1 sm:grid-cols-2'
+                : 'grid grid-cols-1 sm:grid-cols-2'
+            } gap-3 sm:gap-4 content-start`}
           >
             {currentQuestion.options.map((option, index) => (
               <button
@@ -368,7 +375,7 @@ const MikoVibeQuiz = ({ isOpen, onClose, onComplete }: MikoVibeQuizProps) => {
             ))}
           </div>
 
-          <div className="mt-10 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between w-full">
+          <div className="mt-4 sm:mt-6 mb-4 sm:mb-0 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between w-full shrink-0">
             <button
               type="button"
               onClick={handleBack}

@@ -280,11 +280,11 @@ const Step1Photos = ({ data, onChange, error: stepError, onClearError }: Step1Ph
           <div className="flex flex-wrap gap-3">
             {photos.map((photo, index) => (
               <div key={index} className="relative group flex-shrink-0">
-                <div className="w-24 h-24 rounded-lg overflow-hidden border-2 border-mokogo-gray">
+                <div className="w-24 h-24 rounded-lg overflow-hidden border-2 border-mokogo-gray bg-stone-100 flex items-center justify-center">
                   <img
                     src={photo}
                     alt={`Photo ${index + 1}`}
-                    className="w-full h-full object-cover"
+                    className="max-w-full max-h-full object-contain"
                   />
                 </div>
                 <div className="absolute inset-0 bg-black/50 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 rounded-lg">

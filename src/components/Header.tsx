@@ -164,9 +164,9 @@ const Header = ({ forceGuest = false }: HeaderProps) => {
   return (
     <>
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-orange-200/50 shadow-sm">
-      <div className="max-w-7xl mx-auto px-6 md:px-16 py-4 flex justify-between items-center">
-        {/* Left: Logo */}
-        <div className="transform transition-transform duration-300 hover:scale-105">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-16 py-3 sm:py-4 flex justify-between items-center gap-3 min-w-0">
+        {/* Left: Logo - shrink on mobile to prevent overlap */}
+        <div className="transform transition-transform duration-300 hover:scale-105 flex-shrink-0 min-w-0 overflow-hidden">
           <Logo />
         </div>
         
@@ -253,13 +253,13 @@ const Header = ({ forceGuest = false }: HeaderProps) => {
         </nav>
 
         {/* Right section with Log in button, Dashboard button, and/or User menu */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
           {isAuthenticated ? (
             <>
               {showDashboardCta && (
                 <Link 
                   to="/dashboard" 
-                  className="group relative bg-gradient-to-r from-orange-400 to-orange-500 text-white px-6 py-2.5 rounded-full font-medium transition-all duration-300 shadow-md hover:shadow-lg hover:shadow-orange-500/30 hover:scale-105 active:scale-95 overflow-hidden"
+                  className="group relative bg-gradient-to-r from-orange-400 to-orange-500 text-white px-3 py-2 sm:px-6 sm:py-2.5 rounded-full text-sm sm:text-base font-medium transition-all duration-300 shadow-md hover:shadow-lg hover:shadow-orange-500/30 hover:scale-105 active:scale-95 overflow-hidden whitespace-nowrap"
                 >
                   <span className="relative z-10 flex items-center gap-2">
                     Dashboard
@@ -280,7 +280,7 @@ const Header = ({ forceGuest = false }: HeaderProps) => {
                   className="flex items-center gap-3 cursor-pointer group"
                   onClick={() => setShowUserMenu(!showUserMenu)}
                 >
-                  <div className="group-hover:scale-110 transition-transform duration-300">
+                  <div className="group-hover:scale-110 transition-transform duration-300 w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0">
                     {(() => {
                       // Get current user from store or localStorage
                       const savedUser = localStorage.getItem('mokogo-user')
@@ -301,7 +301,7 @@ const Header = ({ forceGuest = false }: HeaderProps) => {
                           }}
                           size="md"
                           showBorder={false}
-                          className="shadow-lg bg-gradient-to-br from-orange-400 to-orange-500"
+                          className="shadow-lg bg-gradient-to-br from-orange-400 to-orange-500 w-full h-full"
                         />
                       )
                     })()}
@@ -350,7 +350,7 @@ const Header = ({ forceGuest = false }: HeaderProps) => {
           ) : (
             <Link 
               to={`/auth?redirect=${redirectTarget}`} 
-              className="group relative bg-gradient-to-r from-orange-400 to-orange-500 text-white px-6 py-2.5 rounded-full font-medium transition-all duration-300 shadow-md hover:shadow-lg hover:shadow-orange-500/30 hover:scale-105 active:scale-95 overflow-hidden"
+              className="group relative bg-gradient-to-r from-orange-400 to-orange-500 text-white px-3 py-2 sm:px-6 sm:py-2.5 rounded-full text-sm sm:text-base font-medium transition-all duration-300 shadow-md hover:shadow-lg hover:shadow-orange-500/30 hover:scale-105 active:scale-95 overflow-hidden whitespace-nowrap"
             >
               <span className="relative z-10 flex items-center gap-2">
                 Log in

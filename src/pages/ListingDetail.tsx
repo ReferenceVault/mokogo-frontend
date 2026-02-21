@@ -14,14 +14,13 @@ import MeetYourHost from '@/components/MeetYourHost'
 import ContactHostSection from '@/components/ContactHostSection'
 import { useStore } from '@/store/useStore'
 
-import { formatPrice, formatRent } from '@/utils/formatters'
+import { formatRent } from '@/utils/formatters'
 import { handleLogout as handleLogoutUtil } from '@/utils/auth'
 import { requestsApi, listingsApi, messagesApi, usersApi, UserProfile } from '@/services/api'
 import { Listing } from '@/types'
 import { getListingBadgeLabel } from '@/utils/listingTags'
 
 import {
-  ChevronDown,
   ChevronRight,
   Bell,
   Heart,
@@ -227,7 +226,6 @@ const ListingDetail = () => {
     }
   }, [listingId, user, savedListings, isListingSaved])
 
-  const [expandedFAQ, setExpandedFAQ] = useState<string | null>(null)
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [listingOwnerId, setListingOwnerId] = useState<string | null>(null)
   const [conversationId, setConversationId] = useState<string | null>(null)
@@ -595,43 +593,10 @@ const ListingDetail = () => {
     }
   }
 
-  const toggleFAQ = (faqId: string) => {
-    setExpandedFAQ(expandedFAQ === faqId ? null : faqId)
-  }
-
-
   // Mock similar listings (filter current listing)
   const similarListings = allListings
     .filter(l => l.id !== listingId && l.city === listing.city)
     .slice(0, 3)
-
-  const faqs = [
-    {
-      id: '1',
-      question: 'What is included in the rent?',
-      answer: 'The rent includes furnished room, Wi-Fi, and access to common areas (kitchen, living room). Electricity charges are shared equally among flatmates. Maintenance fee of ₹500/month covers society charges and basic repairs.'
-    },
-    {
-      id: '2',
-      question: 'What is the security deposit policy?',
-      answer: 'Security deposit is 2 months\' rent (₹' + formatPrice(listing.deposit) + '). It will be refunded within 15 days of checkout after deducting any damages or pending dues. The deposit is refundable and serves as security for the property.'
-    },
-    {
-      id: '3',
-      question: 'Can I schedule a visit before deciding?',
-      answer: 'Absolutely! We encourage all potential tenants to visit the property in person. You can schedule a visit through our platform or contact the host directly. Virtual tours are also available if you\'re unable to visit immediately.'
-    },
-    {
-      id: '4',
-      question: 'What is the minimum stay duration?',
-      answer: 'The minimum stay duration is 6 months. However, we prefer long-term tenants (12+ months) for stability. If you need to leave early, a 1-month notice period is required as per the rental agreement.'
-    },
-    {
-      id: '5',
-      question: 'Are there any additional charges?',
-      answer: 'Apart from rent and maintenance (₹500/month), you\'ll need to contribute to electricity bills based on actual consumption. Cooking gas is shared among flatmates. No other hidden charges.'
-    }
-  ]
 
   const handleLogout = () => handleLogoutUtil(navigate)
 
@@ -755,7 +720,7 @@ const ListingDetail = () => {
         isOwner={isOwner}
         onSave={handleSave}
         onShare={handleShare}
-        onReport={handleReport}
+        onReport={user ? handleReport : undefined}
         onMarkAsFulfilled={handleMarkAsFulfilled}
         showVerified={false}
         showActions={true}
@@ -908,35 +873,6 @@ const ListingDetail = () => {
           </div>
         </section>
       )}
-
-      {/* FAQ Section */}
-      <section className="py-10 sm:py-16 bg-white">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6">
-          <div className="text-center mb-8 sm:mb-12">
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">Frequently Asked Questions</h2>
-            <p className="text-sm sm:text-base text-gray-600 max-w-2xl mx-auto">Get answers to common questions about this listing and the rental process</p>
-          </div>
-          
-          <div className="space-y-3 sm:space-y-4">
-            {faqs.map((faq) => (
-              <div key={faq.id} className="border border-stone-200 rounded-xl">
-                <button 
-                  onClick={() => toggleFAQ(faq.id)}
-                  className="w-full flex items-center justify-between p-4 sm:p-6 text-left hover:bg-stone-50 transition-colors gap-3"
-                >
-                  <span className="font-semibold text-gray-900 text-sm sm:text-base text-left">{faq.question}</span>
-                  <ChevronDown className={`w-5 h-5 text-gray-400 flex-shrink-0 transition-transform ${expandedFAQ === faq.id ? 'rotate-180' : ''}`} />
-                </button>
-                {expandedFAQ === faq.id && (
-                  <div className="px-4 sm:px-6 pb-4 sm:pb-6 text-sm sm:text-base text-gray-700">
-                    {faq.answer}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
       <Footer />
       <ProfileCompletionModal 
