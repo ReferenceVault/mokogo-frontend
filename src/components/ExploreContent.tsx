@@ -704,7 +704,7 @@ const ExploreContent = ({
                 onChange={(date) => handleFilterChange('moveInDate', date)}
                 min={new Date().toISOString().split('T')[0]}
                 hideLabel={true}
-                numberOfMonths={2}
+                numberOfMonths={1}
                 className="!h-[52px] !rounded-xl !border !border-mokogo-gray"
               />
             </div>

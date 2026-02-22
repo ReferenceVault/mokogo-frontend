@@ -9,10 +9,10 @@ interface MoveInDateFieldProps {
   min?: string;
   hideLabel?: boolean; // Hide internal label when external label is provided
   className?: string; // Allow custom className for different contexts
-  numberOfMonths?: number; // Number of months to show (default 2)
+  numberOfMonths?: number; // Number of months to show (default 1)
 }
 
-export function MoveInDateField({ value, onChange, min, hideLabel = false, className = "", numberOfMonths = 2 }: MoveInDateFieldProps) {
+export function MoveInDateField({ value, onChange, min, hideLabel = false, className = "", numberOfMonths = 1 }: MoveInDateFieldProps) {
   const [open, setOpen] = useState(false);
   const [positionReady, setPositionReady] = useState(false);
   
@@ -232,9 +232,7 @@ export function MoveInDateField({ value, onChange, min, hideLabel = false, class
               }}
             >
               <div
-                className={
-                  "w-[min(90vw,360px)] md:w-[min(90vw,720px)] p-4 sm:p-6 rounded-2xl md:rounded-3xl bg-[rgba(255,255,255,0.96)] backdrop-blur-2xl border border-[rgba(255,255,255,0.35)] shadow-[0_24px_60px_rgba(0,0,0,0.18)]"
-                }
+                className="w-[min(90vw,360px)] p-4 sm:p-6 rounded-2xl md:rounded-3xl bg-[rgba(255,255,255,0.96)] backdrop-blur-2xl border border-[rgba(255,255,255,0.35)] shadow-[0_24px_60px_rgba(0,0,0,0.18)]"
               >
               <div className="flex items-center justify-between mb-3 md:mb-4">
                 <div className="flex flex-col gap-0.5">
@@ -260,7 +258,7 @@ export function MoveInDateField({ value, onChange, min, hideLabel = false, class
                 onSelect={handleDateSelect}
                 disabled={(d) => d < minDate}
                 defaultMonth={date || minDate}
-                numberOfMonths={position.placement !== "bottom" ? 1 : numberOfMonths}
+                numberOfMonths={numberOfMonths}
                 weekStartsOn={1}
                 className="rdp-root text-[#2B2B2B]"
               />
