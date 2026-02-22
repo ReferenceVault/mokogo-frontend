@@ -217,16 +217,18 @@ export function MoveInDateField({ value, onChange, min, hideLabel = false, class
               onClick={() => setOpen(false)}
               style={{ opacity: positionReady ? 1 : 0, pointerEvents: positionReady ? "auto" : "none" }}
             />
-            {/* Calendar: fixed at input's top/left so it opens exactly on the field */}
+            {/* Calendar: on mobile centered horizontally; on desktop aligned to input */}
             <div
               ref={calendarRef}
               role="dialog"
               aria-modal="true"
               aria-label="Choose move-in date"
-              className="fixed z-[99999] transition-opacity duration-200"
+              className="fixed z-[99999] transition-opacity duration-200 md:left-auto"
               style={{
                 top: `${position.top}px`,
-                left: `${position.left}px`,
+                ...(isMobile()
+                  ? { left: "50%", transform: "translateX(-50%)" }
+                  : { left: `${position.left}px` }),
                 opacity: positionReady ? 1 : 0,
                 pointerEvents: positionReady ? "auto" : "none",
               }}
