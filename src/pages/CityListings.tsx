@@ -1,4 +1,5 @@
-import { useState, useMemo, useEffect, useRef } from 'react'
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
@@ -38,11 +39,23 @@ const CityListings = () => {
   const [areaInputValue, setAreaInputValue] = useState('')
   const [areaSuggestions, setAreaSuggestions] = useState<AutocompletePrediction[]>([])
   const [showAreaSuggestions, setShowAreaSuggestions] = useState(false)
+  const [areaDropdownPosition, setAreaDropdownPosition] = useState({ top: 0, left: 0, width: 0 })
   const [isLoadingArea, setIsLoadingArea] = useState(false)
   const areaInputRef = useRef<HTMLInputElement | null>(null)
   const areaSuggestionsRef = useRef<HTMLDivElement | null>(null)
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const skipNextAreaFetchRef = useRef(false)
+
+  const updateAreaDropdownPosition = useCallback(() => {
+    if (areaInputRef.current) {
+      const rect = areaInputRef.current.getBoundingClientRect()
+      setAreaDropdownPosition({
+        top: rect.bottom + 4,
+        left: rect.left,
+        width: rect.width,
+      })
+    }
+  }, [])
 
   // Decode the city name from URL
   const decodedCityName = cityName ? decodeURIComponent(cityName) : ''
@@ -376,6 +389,19 @@ const CityListings = () => {
     }))
   }
 
+  // Update dropdown position when open (and on scroll/resize) so it stays under the input
+  useEffect(() => {
+    if (showAreaSuggestions) {
+      updateAreaDropdownPosition()
+      window.addEventListener('scroll', updateAreaDropdownPosition, true)
+      window.addEventListener('resize', updateAreaDropdownPosition)
+      return () => {
+        window.removeEventListener('scroll', updateAreaDropdownPosition, true)
+        window.removeEventListener('resize', updateAreaDropdownPosition)
+      }
+    }
+  }, [showAreaSuggestions, updateAreaDropdownPosition])
+
   // Close suggestions on outside click
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -449,13 +475,24 @@ const CityListings = () => {
                       setAreaInputValue(e.target.value)
                       setFilters(prev => ({ ...prev, area: '' }))
                     }}
+                    onFocus={() => {
+                      if (areaSuggestions.length > 0 && areaInputValue.trim().length >= 2) {
+                        setShowAreaSuggestions(true)
+                        updateAreaDropdownPosition()
+                      }
+                    }}
                     placeholder="Search area (e.g., Baner, Wakad)"
                     className="w-full h-[52px] px-4 rounded-xl border border-mokogo-gray focus:outline-none focus:ring-2 focus:ring-mokogo-primary bg-white/80"
                   />
-                  {showAreaSuggestions && (
+                  {showAreaSuggestions && typeof document !== 'undefined' && createPortal(
                     <div
                       ref={areaSuggestionsRef}
-                      className="absolute mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg z-30 max-height-60 overflow-auto"
+                      className="fixed z-[99999] bg-white border border-gray-200 rounded-xl shadow-xl max-h-60 overflow-y-auto"
+                      style={{
+                        top: `${areaDropdownPosition.top}px`,
+                        left: `${areaDropdownPosition.left}px`,
+                        width: `${areaDropdownPosition.width}px`,
+                      }}
                     >
                       {isLoadingArea ? (
                         <div className="px-4 py-3 text-sm text-gray-500">Searching areas...</div>
@@ -465,7 +502,7 @@ const CityListings = () => {
                             key={prediction.place_id}
                             type="button"
                             onClick={() => handleAreaSuggestionSelect(prediction)}
-                            className="w-full text-left px-4 py-2 hover:bg-orange-50 text-sm text-gray-700"
+                            className="w-full text-left px-4 py-3 hover:bg-orange-50 text-sm text-gray-700 border-b border-gray-100 last:border-b-0"
                           >
                             <div className="font-medium">
                               {prediction.structured_formatting.main_text}
@@ -476,7 +513,8 @@ const CityListings = () => {
                           </button>
                         ))
                       )}
-                    </div>
+                    </div>,
+                    document.body
                   )}
                 </div>
               </div>

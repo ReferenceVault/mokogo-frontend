@@ -684,7 +684,7 @@ const LandingPage = () => {
                           {showAreaSuggestions && areaSuggestions.length > 0 && createPortal(
                             <div 
                               ref={areaSuggestionsRef}
-                              className="fixed bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto z-[9999]"
+                              className="fixed z-[99999] bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto"
                               style={{
                                 top: `${areaDropdownPosition.top}px`,
                                 left: `${areaDropdownPosition.left}px`,
@@ -711,7 +711,7 @@ const LandingPage = () => {
                           )}
                         </div>
                       </div>
-                      <div className="[&_button]:h-[50px] [&_button]:py-0 group">
+                      <div className="[&_button]:h-[42px] md:[&_button]:h-[50px] [&_button]:py-0 group overflow-visible">
                         <label className="block text-sm font-medium text-stone-700 mb-2">
                           Move-in Date
                         </label>
@@ -720,7 +720,7 @@ const LandingPage = () => {
                           onChange={(date) => setSearchFilters({ ...searchFilters, moveInDate: date })}
                           min={new Date().toISOString().split('T')[0]}
                           hideLabel={true}
-                          className="!h-[50px] !rounded-lg !border-2 !border-gray-200 hover:!border-orange-300 focus:!ring-2 focus:!ring-orange-400 focus:!border-orange-400"
+                          className="!h-[42px] md:!h-[50px] !rounded-lg !border-2 !border-gray-200 hover:!border-orange-300 focus:!ring-2 focus:!ring-orange-400 focus:!border-orange-400"
                         />
                       </div>
                       <div>

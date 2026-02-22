@@ -664,7 +664,7 @@ const ExploreContent = ({
                 />
                 {showAreaSuggestions && typeof document !== 'undefined' && createPortal(
                   <div
-                    className="fixed z-[9999] bg-white border border-gray-200 rounded-xl shadow-xl max-h-[50vh] sm:max-h-60 overflow-auto"
+                    className="fixed z-[99999] bg-white border border-gray-200 rounded-xl shadow-xl max-h-[50vh] sm:max-h-60 overflow-auto"
                     style={{
                       top: `${areaDropdownPosition.top}px`,
                       left: `${areaDropdownPosition.left}px`,

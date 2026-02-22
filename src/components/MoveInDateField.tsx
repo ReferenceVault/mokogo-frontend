@@ -39,22 +39,50 @@ export function MoveInDateField({ value, onChange, min, hideLabel = false, class
   const [date, setDate] = useState<Date | undefined>(
     value ? parseLocalDate(value) : undefined
   );
-  const [position, setPosition] = useState({ top: 0, left: 0 });
+  type Placement = "bottom" | "top";
+  const [position, setPosition] = useState<{
+    top: number;
+    left: number;
+    placement: Placement;
+  }>({ top: 0, left: 0, placement: "bottom" });
 
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
   const calendarRef = useRef<HTMLDivElement | null>(null);
 
-  // Calculate position before opening
-  const calculatePosition = () => {
-    if (buttonRef.current) {
-      const rect = buttonRef.current.getBoundingClientRect();
+  const isMobile = () =>
+    typeof window !== "undefined" && window.innerWidth < 768;
+
+  // Estimated height for single-month panel (header + calendar + padding) for placement calc
+  const MOBILE_PANEL_HEIGHT = 380;
+
+  // Position always at the move-in date input: below on desktop; on mobile, above if room else below
+  const calculatePosition = (): { top: number; left: number; placement: Placement } => {
+    if (!buttonRef.current) return { top: 0, left: 0, placement: "bottom" };
+    const rect = buttonRef.current.getBoundingClientRect();
+    const gap = 8;
+
+    if (!isMobile()) {
       return {
-        top: rect.bottom + 8,
-        left: rect.left
+        placement: "bottom",
+        top: rect.bottom + gap,
+        left: rect.left,
       };
     }
-    return { top: 0, left: 0 };
+
+    const spaceAbove = rect.top - gap;
+    if (spaceAbove >= MOBILE_PANEL_HEIGHT) {
+      return {
+        placement: "top",
+        top: rect.top - MOBILE_PANEL_HEIGHT - gap,
+        left: rect.left,
+      };
+    }
+    return {
+      placement: "bottom",
+      top: rect.bottom + gap,
+      left: rect.left,
+    };
   };
 
   // sync with controlled value
@@ -130,7 +158,7 @@ export function MoveInDateField({ value, onChange, min, hideLabel = false, class
   const minDate = min ? parseLocalDate(min) : today;
   return (
     <>
-      <div ref={wrapperRef} className="relative">
+      <div ref={wrapperRef} className="relative z-50 overflow-visible">
         {/* Airbnb-style fake input */}
         <button
           ref={buttonRef}
@@ -154,13 +182,12 @@ export function MoveInDateField({ value, onChange, min, hideLabel = false, class
               setPositionReady(false);
             }
           }}
-          className={`flex ${hideLabel ? 'items-center px-3.5' : 'flex-col justify-center px-4'} py-2 
-                     ${hideLabel 
-                       ? 'bg-white w-full border border-mokogo-gray hover:border-mokogo-primary focus:outline-none focus:ring-2 focus:ring-mokogo-primary' 
-                       : 'bg-[rgba(255,255,255,0.72)] backdrop-blur-md min-w-[200px] border border-[#DED8D1] hover:border-[#E58C4A]'}
-                     transition
-                     text-left
-                     ${hideLabel ? 'h-[52px] rounded-xl' : 'h-[56px] rounded-2xl'}
+          className={`flex ${hideLabel ? "items-center px-3.5" : "flex-col justify-center px-4"} py-2
+                     ${hideLabel
+                       ? "bg-white w-full border border-mokogo-gray hover:border-mokogo-primary focus:outline-none focus:ring-2 focus:ring-mokogo-primary"
+                       : "bg-[rgba(255,255,255,0.72)] backdrop-blur-md min-w-[200px] border border-[#DED8D1] hover:border-[#E58C4A]"}
+                     transition text-left
+                     ${hideLabel ? "h-[42px] md:h-[50px] rounded-lg md:rounded-xl" : "h-[42px] md:h-[56px] rounded-xl md:rounded-2xl"}
                      ${className}`}
         >
           {!hideLabel && (
@@ -178,29 +205,39 @@ export function MoveInDateField({ value, onChange, min, hideLabel = false, class
         </button>
       </div>
 
-      {/* Floating calendar panel */}
+      {/* Portal: calendar anchored exactly to the move-in date input (body so no clipping) */}
       {typeof document !== "undefined" &&
         open &&
         createPortal(
-          <div
-            ref={calendarRef}
-            className="fixed z-[9999] transition-opacity duration-200"
-            style={{ 
-              top: `${position.top}px`,
-              left: `${position.left}px`,
-              opacity: positionReady ? 1 : 0,
-              pointerEvents: positionReady ? 'auto' : 'none'
-            }}
-          >
+          <>
+            {/* Backdrop: close on click; does not affect calendar position */}
             <div
-              className={`${numberOfMonths === 1 ? 'w-[min(90vw,360px)]' : 'w-[min(90vw,720px)]'} p-6 rounded-3xl
-                         bg-[rgba(255,255,255,0.96)] backdrop-blur-2xl
-                         border border-[rgba(255,255,255,0.35)]
-                         shadow-[0_24px_60px_rgba(0,0,0,0.18)]`}
+              className="fixed inset-0 z-[99998] bg-black/20 md:bg-transparent"
+              aria-hidden
+              onClick={() => setOpen(false)}
+              style={{ opacity: positionReady ? 1 : 0, pointerEvents: positionReady ? "auto" : "none" }}
+            />
+            {/* Calendar: fixed at input's top/left so it opens exactly on the field */}
+            <div
+              ref={calendarRef}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Choose move-in date"
+              className="fixed z-[99999] transition-opacity duration-200"
+              style={{
+                top: `${position.top}px`,
+                left: `${position.left}px`,
+                opacity: positionReady ? 1 : 0,
+                pointerEvents: positionReady ? "auto" : "none",
+              }}
             >
-              {/* header like Airbnb */}
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex flex-col">
+              <div
+                className={
+                  "w-[min(90vw,360px)] md:w-[min(90vw,720px)] p-4 sm:p-6 rounded-2xl md:rounded-3xl bg-[rgba(255,255,255,0.96)] backdrop-blur-2xl border border-[rgba(255,255,255,0.35)] shadow-[0_24px_60px_rgba(0,0,0,0.18)]"
+                }
+              >
+              <div className="flex items-center justify-between mb-3 md:mb-4">
+                <div className="flex flex-col gap-0.5">
                   <span className="text-sm font-semibold text-[#2B2B2B]">
                     Move-in date
                   </span>
@@ -223,12 +260,13 @@ export function MoveInDateField({ value, onChange, min, hideLabel = false, class
                 onSelect={handleDateSelect}
                 disabled={(d) => d < minDate}
                 defaultMonth={date || minDate}
-                numberOfMonths={numberOfMonths}
+                numberOfMonths={position.placement !== "bottom" ? 1 : numberOfMonths}
                 weekStartsOn={1}
                 className="rdp-root text-[#2B2B2B]"
               />
+              </div>
             </div>
-          </div>,
+          </>,
           document.body
         )}
     </>

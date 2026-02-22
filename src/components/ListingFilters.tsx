@@ -46,6 +46,7 @@ export const ListingFilters = ({
   // Dual-handle slider state
   const [isDragging, setIsDragging] = useState<'min' | 'max' | null>(null)
   const sliderRef = useRef<HTMLDivElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!open) return
@@ -205,12 +206,38 @@ export const ListingFilters = ({
     }
   }, [isDragging, handleTouchMove, handleTouchEnd])
 
+  // Lock body scroll when modal is open so only the popup content scrolls
+  useEffect(() => {
+    if (!open) return
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = prevOverflow
+    }
+  }, [open])
+
+  // Prevent touch scroll on backdrop (so body doesn't scroll); panel content still scrolls
+  useEffect(() => {
+    if (!open || !panelRef.current) return
+    const overlay = panelRef.current.parentElement
+    if (!overlay) return
+    const handleTouchMove = (e: TouchEvent) => {
+      if (panelRef.current?.contains(e.target as Node)) return
+      e.preventDefault()
+    }
+    overlay.addEventListener('touchmove', handleTouchMove, { passive: false })
+    return () => overlay.removeEventListener('touchmove', handleTouchMove)
+  }, [open])
+
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center md:items-center bg-black/40">
-      <div className="w-full max-w-lg md:max-w-2xl bg-white rounded-t-2xl md:rounded-2xl shadow-xl max-h-[90vh] overflow-hidden flex flex-col">
-        <div className="px-5 pt-4 pb-3 border-b border-gray-200 flex items-center justify-between">
+    <div className="fixed inset-0 z-50 flex items-end justify-center md:items-center bg-black/40 p-0 md:p-4 overflow-hidden">
+      <div
+        ref={panelRef}
+        className="w-full max-w-lg md:max-w-2xl bg-white rounded-t-2xl md:rounded-2xl shadow-xl max-h-[90vh] md:max-h-[85vh] overflow-hidden flex flex-col min-h-0"
+      >
+        <div className="flex-shrink-0 px-5 pt-4 pb-3 border-b border-gray-200 flex items-center justify-between">
           <div>
             <h2 className="text-base md:text-lg font-semibold text-gray-900">Filters</h2>
             <p className="text-xs md:text-sm text-gray-500">
@@ -227,7 +254,7 @@ export const ListingFilters = ({
           </button>
         </div>
 
-        <div className="px-5 py-4 space-y-5 overflow-y-auto">
+        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-5 py-4 space-y-5 overscroll-contain">
           {/* Price range */}
           <div>
             <div className="flex items-center justify-between mb-2">
@@ -449,7 +476,7 @@ export const ListingFilters = ({
           </div>
         </div>
 
-        <div className="px-5 py-3 border-t border-gray-200 flex items-center justify-end gap-3">
+        <div className="flex-shrink-0 px-5 py-3 border-t border-gray-200 flex items-center justify-end gap-3 bg-white">
           <button
             type="button"
             onClick={handleClearAll}
