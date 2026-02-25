@@ -6,9 +6,9 @@ import { websocketService } from '@/services/websocket'
 import UserAvatar from './UserAvatar'
 import ReportUserModal from './ReportUserModal'
 import BlockUserModal from './BlockUserModal'
+import UnblockUserModal from './UnblockUserModal'
 import ArchiveConversationModal from './ArchiveConversationModal'
 import { 
-  MoreVertical, 
   Shield,
   Image as ImageIcon,
   Send,
@@ -34,8 +34,6 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
   const [showProfile, setShowProfile] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1024)
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
-  const [showMenu, setShowMenu] = useState(false)
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set()) // Set of online user IDs
   const [property, setProperty] = useState<ListingResponse | null>(null)
   const [propertyLoading, setPropertyLoading] = useState(false)
@@ -44,6 +42,7 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
   const [showUnavailableModal, setShowUnavailableModal] = useState(false)
   const [showReportModal, setShowReportModal] = useState(false)
   const [showBlockModal, setShowBlockModal] = useState(false)
+  const [showUnblockModal, setShowUnblockModal] = useState(false)
   const [showArchiveModal, setShowArchiveModal] = useState(false)
   const [activeTab, setActiveTab] = useState<'active' | 'archived' | 'blocked'>('active')
   const [archivedConversations, setArchivedConversations] = useState<ConversationResponse[]>([])
@@ -52,12 +51,10 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
   const [currentUserMessagingRestricted, setCurrentUserMessagingRestricted] = useState<boolean>(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const conversationsLoadedRef = useRef(false)
-  const menuRef = useRef<HTMLDivElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const lastFetchedListingIdRef = useRef<string | null>(null)
   const isFetchingRef = useRef(false)
 
-  const conversationMenuRefs = useRef<Map<string, HTMLDivElement>>(new Map())
 
   useEffect(() => {
     if (user && !conversationsLoadedRef.current) {
@@ -283,6 +280,13 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
     }
   }, [selectedConversationId])
 
+  // Fetch blocked conversations when blocked tab is active
+  useEffect(() => {
+    if (activeTab === 'blocked' && user) {
+      fetchBlockedConversations()
+    }
+  }, [activeTab, user])
+
   // Fetch property and profile when conversation is selected
   useEffect(() => {
     const fetchPropertyAndProfile = async () => {
@@ -447,8 +451,8 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
     setLoading(true)
     try {
       const [conversationsData, archivedData, onlineUsersData, blockedIds] = await Promise.all([
-        messagesApi.getAllConversations(false), // Active conversations
-        messagesApi.getAllConversations(true), // Archived conversations
+        messagesApi.getAllConversations(false), // Active conversations (excludes blocked)
+        messagesApi.getAllConversations(true), // Archived conversations (excludes blocked)
         messagesApi.getOnlineUsers().catch(() => []), // Fetch online users, ignore errors
         blocksApi.getAllBlockedUserIds().catch(() => []), // Fetch blocked user IDs
       ])
@@ -466,80 +470,12 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
         return timeB - timeA
       })
       
-      // Helper function to extract user ID string from conversation user field
-      const getUserIdStr = (userId: any): string => {
-        if (!userId) return ''
-        if (typeof userId === 'string') return userId
-        if (typeof userId === 'object' && userId._id) {
-          return userId._id.toString()
-        }
-        if (typeof userId === 'object' && userId.id) {
-          return userId.id.toString()
-        }
-        return ''
-      }
-
-      // Normalize blocked IDs to strings for comparison
-      const normalizedBlockedIds = blockedIds.map(id => {
-        if (typeof id === 'string') return id
-        if (typeof id === 'object' && id && '_id' in id) return (id as any)._id.toString()
-        if (typeof id === 'object' && id && 'id' in id) return (id as any).id.toString()
-        return String(id)
-      })
-      
-      // Debug logging
-      if (import.meta.env.DEV && blockedIds.length > 0) {
-        console.log('Blocked user IDs:', normalizedBlockedIds)
-      }
-      
-      // Filter blocked conversations
-      const blockedConvs: ConversationResponse[] = []
-      const activeConvs = sortedConversations.filter(conv => {
-        const user1IdStr = getUserIdStr(conv.user1Id)
-        const user2IdStr = getUserIdStr(conv.user2Id)
-        
-        // Check if either user is in the blocked list (compare as strings)
-        const isBlocked = (user1IdStr && normalizedBlockedIds.includes(user1IdStr)) || 
-                         (user2IdStr && normalizedBlockedIds.includes(user2IdStr))
-        
-        if (isBlocked) {
-          if (import.meta.env.DEV) {
-            console.log('Found blocked conversation:', {
-              convId: conv._id || conv.id,
-              user1Id: user1IdStr,
-              user2Id: user2IdStr,
-              isBlocked
-            })
-          }
-          blockedConvs.push(conv)
-          return false
-        }
-        return true
-      })
-
-      // Also check archived conversations for blocked users
-      const archivedNonBlocked = sortedArchived.filter(conv => {
-        const user1IdStr = getUserIdStr(conv.user1Id)
-        const user2IdStr = getUserIdStr(conv.user2Id)
-        
-        // Check if either user is in the blocked list (compare as strings)
-        const isBlocked = (user1IdStr && normalizedBlockedIds.includes(user1IdStr)) || 
-                         (user2IdStr && normalizedBlockedIds.includes(user2IdStr))
-        
-        if (isBlocked) {
-          blockedConvs.push(conv)
-          return false
-        }
-        return true
-      })
-      
       // Cache the conversations
-      useStore.getState().setCachedConversations([...activeConvs, ...archivedNonBlocked])
+      useStore.getState().setCachedConversations([...sortedConversations, ...sortedArchived])
       useStore.getState().setDataFetchedAt(Date.now())
       
-      setConversations(activeConvs)
-      setArchivedConversations(archivedNonBlocked)
-      setBlockedConversations(blockedConvs)
+      setConversations(sortedConversations)
+      setArchivedConversations(sortedArchived)
       setBlockedUserIds(blockedIds)
       setOnlineUsers(new Set(onlineUsersData))
       
@@ -550,6 +486,26 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
       console.error('Error fetching conversations:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchBlockedConversations = async () => {
+    if (!user) return
+    
+    try {
+      const blockedData = await messagesApi.getAllConversations(false, true) // Fetch blocked conversations
+      
+      // Sort blocked conversations by lastMessageAt (most recent first)
+      const sortedBlocked = [...blockedData].sort((a, b) => {
+        const timeA = new Date(a.lastMessageAt || 0).getTime()
+        const timeB = new Date(b.lastMessageAt || 0).getTime()
+        return timeB - timeA
+      })
+      
+      setBlockedConversations(sortedBlocked)
+    } catch (error) {
+      console.error('Error fetching blocked conversations:', error)
+      setBlockedConversations([])
     }
   }
 
@@ -630,57 +586,6 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
   }
 
 
-  const handleDeleteConversation = async (conversationId: string, e: React.MouseEvent) => {
-    e.stopPropagation()
-    
-    if (!confirm('Are you sure you want to delete this conversation? This action cannot be undone.')) {
-      return
-    }
-
-    try {
-      await messagesApi.deleteConversation(conversationId)
-      setConversations(prev => prev.filter(conv => (conv._id || conv.id) !== conversationId))
-      setOpenMenuId(null)
-      
-      // If deleted conversation was selected, clear selection
-      if (selectedConversationId === conversationId) {
-        setSelectedConversationId(null)
-        setMessages([])
-      }
-    } catch (error) {
-      console.error('Error deleting conversation:', error)
-      alert('Failed to delete conversation. Please try again.')
-    }
-  }
-
-  // Close menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setShowMenu(false)
-      }
-      
-      // Close conversation menus
-      let clickedOutside = true
-      conversationMenuRefs.current.forEach((ref) => {
-        if (ref && ref.contains(event.target as Node)) {
-          clickedOutside = false
-        }
-      })
-      
-      if (clickedOutside) {
-        setOpenMenuId(null)
-      }
-    }
-
-    if (showMenu || openMenuId) {
-      document.addEventListener('mousedown', handleClickOutside)
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [showMenu, openMenuId])
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString)
@@ -782,6 +687,32 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
       setDidCurrentUserBlock(false)
     }
   }, [otherUser?._id, selectedConversation, blockedUserIds])
+
+  const handleUnblockUser = () => {
+    if (!otherUser) return
+    setShowUnblockModal(true)
+  }
+
+  const handleUnblockSuccess = async () => {
+    if (!otherUser) return
+    
+    try {
+      // Refresh conversations to update blocked list
+      await fetchConversations()
+      
+      // Update didCurrentUserBlock state
+      setDidCurrentUserBlock(false)
+      
+      // If we're on the blocked tab, switch to active tab
+      if (activeTab === 'blocked') {
+        setActiveTab('active')
+      }
+      
+      console.log('User unblocked successfully')
+    } catch (error) {
+      console.error('Error refreshing conversations after unblock:', error)
+    }
+  }
   
   // Debug: Log to see what data we're getting
   if (import.meta.env.DEV && selectedConversation) {
@@ -843,6 +774,7 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
             onClick={() => {
               setActiveTab('blocked')
               setSelectedConversationId(null)
+              fetchBlockedConversations()
             }}
             className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
               activeTab === 'blocked'
@@ -877,7 +809,6 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
               const unreadCount = conv.unreadCount || 0
               
               const convId = conv._id || conv.id
-              const isMenuOpen = openMenuId === convId
               
               return (
                 <div
@@ -927,34 +858,6 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
                         </div>
                       </div>
                       <p className="text-xs text-gray-600 truncate mb-1">{getLastMessage(conv)}</p>
-                    </div>
-                    <div 
-                      ref={(el) => {
-                        if (el) conversationMenuRefs.current.set(convId, el)
-                        else conversationMenuRefs.current.delete(convId)
-                      }}
-                      className="relative flex-shrink-0"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setOpenMenuId(isMenuOpen ? null : convId)
-                        }}
-                        className="p-2 min-h-[44px] min-w-[44px] hover:bg-gray-200 rounded transition-colors flex items-center justify-center"
-                      >
-                        <MoreVertical className="w-4 h-4 text-gray-600" />
-                      </button>
-                      {isMenuOpen && (
-                        <div className="absolute right-0 top-8 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-20 min-w-[140px]">
-                          <button
-                            onClick={(e) => handleDeleteConversation(convId, e)}
-                            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
-                          >
-                            Delete Chat
-                          </button>
-                        </div>
-                      )}
                     </div>
                   </div>
                 </div>
@@ -1366,13 +1269,23 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
                   <Flag className="w-4 h-4" />
                   Report User
                 </button>
-                <button 
-                  onClick={() => setShowBlockModal(true)}
-                  className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors flex items-center gap-2"
-                >
-                  <X className="w-4 h-4" />
-                  Block User
-                </button>
+                {didCurrentUserBlock ? (
+                  <button 
+                    onClick={handleUnblockUser}
+                    className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors flex items-center gap-2"
+                  >
+                    <User className="w-4 h-4" />
+                    Unblock User
+                  </button>
+                ) : (
+                  <button 
+                    onClick={() => setShowBlockModal(true)}
+                    className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors flex items-center gap-2"
+                  >
+                    <X className="w-4 h-4" />
+                    Block User
+                  </button>
+                )}
                 <button 
                   onClick={() => setShowArchiveModal(true)}
                   className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors flex items-center gap-2"
@@ -1457,6 +1370,17 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
             setMessages([])
             console.log('User blocked successfully')
           }}
+        />
+      )}
+
+      {/* Unblock User Modal */}
+      {selectedConversation && otherUser && (
+        <UnblockUserModal
+          isOpen={showUnblockModal}
+          onClose={() => setShowUnblockModal(false)}
+          unblockedUserId={otherUser._id}
+          unblockedUserName={otherUser.name || 'Unknown User'}
+          onSuccess={handleUnblockSuccess}
         />
       )}
 

@@ -706,8 +706,11 @@ export interface CreateMessageRequest {
 }
 
 export const messagesApi = {
-  getAllConversations: async (archived?: boolean): Promise<ConversationResponse[]> => {
-    const queryParams = archived !== undefined ? `?archived=${archived}` : ''
+  getAllConversations: async (archived?: boolean, blocked?: boolean): Promise<ConversationResponse[]> => {
+    const params = new URLSearchParams()
+    if (archived !== undefined) params.append('archived', String(archived))
+    if (blocked !== undefined) params.append('blocked', String(blocked))
+    const queryParams = params.toString() ? `?${params.toString()}` : ''
     const response = await api.get<ConversationResponse[]>(`/messages/conversations${queryParams}`)
     return response.data || []
   },
