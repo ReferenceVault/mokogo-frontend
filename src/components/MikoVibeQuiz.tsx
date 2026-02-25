@@ -1,6 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
 import { VibeTagId } from '@/types'
-import Logo from '@/components/Logo'
 
 interface MikoQuizResult {
   tags: VibeTagId[]
@@ -300,13 +299,10 @@ const MikoVibeQuiz = ({ isOpen, onClose, onComplete }: MikoVibeQuizProps) => {
 
         <div ref={scrollRef} className="relative w-full max-w-3xl flex flex-col items-center text-center flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain -mx-1 px-1">
           <div className="flex flex-col items-center gap-2 w-full shrink-0">
-            <div className="scale-100 sm:scale-125 md:scale-150 origin-center">
-              <Logo />
-            </div>
-            <p className="text-xs uppercase tracking-[0.35em] text-[#B5573E]/80">
+            <p className="text-sm md:text-base uppercase tracking-[0.35em] text-[#B5573E] font-semibold">
               MIKO VIBE SEARCH
             </p>
-            <p className="text-[#2C2C2C]/60 text-center font-light max-w-md text-xs md:text-sm">
+            <p className="text-[#2C2C2C] text-center font-medium max-w-md text-sm md:text-base">
               Get matched with homes that fit your lifestyle, not just your budget.
             </p>
           </div>
@@ -315,7 +311,7 @@ const MikoVibeQuiz = ({ isOpen, onClose, onComplete }: MikoVibeQuizProps) => {
             <div className="w-full flex justify-end pr-0 min-h-[1.75rem]">
               <button
                 onClick={onClose}
-                className="text-[#2C2C2C]/75 hover:text-[#B5573E] transition-colors text-xs md:text-sm font-medium shrink-0"
+                className="px-4 py-2 rounded-lg bg-[#2C2C2C] text-white hover:bg-[#B5573E] transition-colors text-sm font-semibold shrink-0 shadow-md"
                 type="button"
               >
                 Close
@@ -379,7 +375,7 @@ const MikoVibeQuiz = ({ isOpen, onClose, onComplete }: MikoVibeQuizProps) => {
             <button
               type="button"
               onClick={handleBack}
-              className="px-4 py-2 rounded-xl border border-[#B5573E]/40 text-[#2C2C2C]/80 font-medium hover:text-[#2C2C2C] hover:border-[#B5573E]/70 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className="px-4 py-2 rounded-xl border-2 border-[#B5573E] text-[#B5573E] font-semibold hover:bg-[#B5573E] hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:border-[#E9E3DC] disabled:text-[#2C2C2C]/60"
               disabled={currentStep === 0}
             >
               Back

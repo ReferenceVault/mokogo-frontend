@@ -10,7 +10,6 @@ import ArchiveConversationModal from './ArchiveConversationModal'
 import { 
   MoreVertical, 
   Shield,
-  Paperclip,
   Image as ImageIcon,
   Send,
   X,
@@ -1001,8 +1000,8 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
         </div>
       </div>
 
-      {/* Center Panel - Chat Window */}
-      <div className={`flex-1 flex flex-col lg:min-h-screen lg:sticky lg:top-16 bg-white min-w-0 ${!selectedConversationId ? 'hidden lg:flex' : 'flex'}`}>
+      {/* Center Panel - Chat Window - min-h-0 so flex keeps input visible */}
+      <div className={`flex-1 flex flex-col min-h-0 lg:sticky lg:top-16 bg-white min-w-0 ${!selectedConversationId ? 'hidden lg:flex' : 'flex'}`}>
         {selectedConversation && otherUser ? (
           <>
             {/* Chat Header */}
@@ -1140,8 +1139,8 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Message Input */}
-            <div className="p-4 border-t border-gray-200 bg-white">
+            {/* Message Input - flex-shrink-0 so it stays at bottom */}
+            <div className="flex-shrink-0 p-4 border-t border-gray-200 bg-white">
               {selectedConversation?.isDisabled ? (
                 <div className="flex items-center justify-center py-3">
                   <p className="text-sm text-gray-500">Listing is no longer available</p>
@@ -1161,10 +1160,7 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
                   </p>
                 </div>
               ) : (
-                <div className="flex items-end gap-2">
-                  <button className="hidden sm:flex p-2 min-h-[44px] min-w-[44px] hover:bg-gray-100 rounded-lg transition-colors items-center justify-center">
-                    <span className="text-xl text-gray-600">+</span>
-                  </button>
+                <div className="flex items-center gap-2">
                   <input
                     type="text"
                     value={message}
@@ -1174,12 +1170,6 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
                     disabled={sending}
                     className="flex-1 min-h-[44px] px-4 py-2.5 border border-gray-200 rounded-lg text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent disabled:opacity-50"
                   />
-                  <button className="hidden sm:flex p-2 min-h-[44px] min-w-[44px] hover:bg-gray-100 rounded-lg transition-colors items-center justify-center">
-                    <Paperclip className="w-5 h-5 text-gray-600" />
-                  </button>
-                  <button className="hidden sm:flex p-2 min-h-[44px] min-w-[44px] hover:bg-gray-100 rounded-lg transition-colors items-center justify-center">
-                    <ImageIcon className="w-5 h-5 text-gray-600" />
-                  </button>
                   <button 
                     onClick={handleSendMessage}
                     disabled={sending || !message.trim()}

@@ -759,6 +759,22 @@ const LandingPage = () => {
                   )}
                 </div>
 
+                {/* List Your Space CTA */}
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4 sm:pt-6 border-t border-orange-200/50 mt-6 sm:mt-8">
+                  <p className="text-gray-600 text-sm sm:text-base font-medium">
+                    Have a room to rent?
+                  </p>
+                  <Link
+                    to="/auth?redirect=/dashboard&view=listings"
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-orange-400 to-orange-500 text-white font-semibold shadow-lg hover:shadow-xl hover:shadow-orange-500/30 transition-all duration-300 hover:scale-105 active:scale-95"
+                  >
+                    List Your Space
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
+                  </Link>
+                </div>
+
               </div>
             </div>
           </div>
@@ -851,7 +867,7 @@ const LandingPage = () => {
                         <div className="flex items-center justify-between pt-2 border-t border-gray-200">
                           <div>
                             <p className="text-xl font-bold text-gray-900">{formatRent(listing.rent)}</p>
-                            <p className="text-xs text-gray-600">per month</p>
+                            <p className="text-xs text-gray-600">per person per month</p>
                           </div>
                           <span className="btn-primary text-sm px-4 py-2 inline-block text-center">
                             View Details

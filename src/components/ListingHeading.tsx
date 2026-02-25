@@ -1,4 +1,4 @@
-import { MapPin, Shield, Share2, Heart, Flag, CheckCircle2 } from 'lucide-react'
+import { MapPin, Shield, Share2, Heart, CheckCircle2 } from 'lucide-react'
 import { Listing } from '@/types'
 import { formatDate } from '@/utils/formatters'
 
@@ -8,7 +8,6 @@ interface ListingHeadingProps {
   isOwner?: boolean
   onSave?: () => void
   onShare?: () => void
-  onReport?: () => void
   onMarkAsFulfilled?: () => void
   showVerified?: boolean
   showActions?: boolean
@@ -20,7 +19,6 @@ const ListingHeading = ({
   isOwner = false,
   onSave,
   onShare,
-  onReport,
   onMarkAsFulfilled,
   showVerified = true,
   showActions = true,
@@ -124,15 +122,6 @@ const ListingHeading = ({
                     >
                       <Heart className={`w-4 h-4 ${isSaved ? 'text-red-500 fill-red-500' : 'text-gray-600'}`} />
                       <span>Save</span>
-                    </button>
-                  )}
-                  {onReport && (
-                    <button
-                      onClick={onReport}
-                      className="flex items-center justify-center space-x-2 px-4 py-2.5 min-h-[44px] w-full sm:w-auto bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-                    >
-                      <Flag className="w-4 h-4" />
-                      <span>Report</span>
                     </button>
                   )}
                 </>

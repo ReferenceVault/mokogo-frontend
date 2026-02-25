@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { useStore } from '@/store/useStore'
 import { Listing } from '@/types'
 import ProfileCompletionModal from '@/components/ProfileCompletionModal'
@@ -27,6 +27,7 @@ interface ListingDetailContentProps {
 }
 
 const ListingDetailContent = ({ listingId, onBack, onExplore }: ListingDetailContentProps) => {
+  const location = useLocation()
   const { allListings, user, currentListing, setAllListings, setCurrentListing, toggleSavedListing, isListingSaved, savedListings, setSavedListings } = useStore()
   const [isSaved, setIsSaved] = useState(false)
   const [listing, setListing] = useState<Listing | null>(null)
@@ -388,6 +389,10 @@ const ListingDetailContent = ({ listingId, onBack, onExplore }: ListingDetailCon
 
   const handleContactHostError = (errorMessage: string) => {
     if (errorMessage.includes('profile') || errorMessage.includes('complete')) {
+      sessionStorage.setItem('mokogo-profile-completion-source', JSON.stringify({
+        action: 'contact_host',
+        returnUrl: location.pathname + location.search
+      }))
       setShowProfileModal(true)
     }
   }
@@ -466,18 +471,18 @@ const ListingDetailContent = ({ listingId, onBack, onExplore }: ListingDetailCon
               <span className="text-gray-600 truncate">{listing.title}</span>
             </nav>
             <button
-              onClick={() => {
-                if (onExplore) {
-                  onExplore()
-                } else if (onBack) {
-                  onBack()
-                }
-              }}
-              className="flex items-center justify-center gap-2 px-4 py-2.5 min-h-[44px] w-full sm:w-auto bg-orange-50 text-orange-600 rounded-lg text-sm font-semibold hover:bg-orange-100 transition-all duration-300 border border-orange-200 hover:border-orange-300 flex-shrink-0"
-            >
-              <Search className="w-4 h-4" />
-              Browse More Properties
-            </button>
+                onClick={() => {
+                  if (onExplore) {
+                    onExplore()
+                  } else if (onBack) {
+                    onBack()
+                  }
+                }}
+                className="flex items-center justify-center gap-2 px-4 py-2.5 min-h-[44px] w-full sm:w-auto bg-orange-50 text-orange-600 rounded-lg text-sm font-semibold hover:bg-orange-100 transition-all duration-300 border border-orange-200 hover:border-orange-300 flex-shrink-0"
+              >
+                <Search className="w-4 h-4" />
+                Browse More Properties
+              </button>
           </div>
         </div>
       </section>
@@ -624,7 +629,7 @@ const ListingDetailContent = ({ listingId, onBack, onExplore }: ListingDetailCon
                       <div className="flex items-center justify-between pt-2 border-t border-gray-200">
                         <div>
                           <p className="text-xl font-bold text-gray-900">{formatRent(similar.rent)}</p>
-                          <p className="text-xs text-gray-600">per month</p>
+                          <p className="text-xs text-gray-600">per person per month</p>
                         </div>
                         <span className="btn-primary text-sm px-4 py-2 inline-block text-center">
                           View Details

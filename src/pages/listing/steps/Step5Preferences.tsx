@@ -32,8 +32,7 @@ const Step5Preferences = ({ data, onChange, error, onClearError }: Step5Preferen
 
   return (
     <div>
-      <h2 className="text-lg sm:text-[1.2375rem] font-semibold text-gray-900 mb-1">Preferences</h2>
-      <p className="text-[0.825rem] text-gray-600 mb-4">Who are you looking for?</p>
+      <h2 className="text-lg sm:text-[1.2375rem] font-semibold text-gray-900 mb-4">Preferences</h2>
 
       {error && (
         <div className="mb-3 p-2 bg-red-50 border border-red-200 rounded-lg text-red-700 text-[0.825rem]">

@@ -516,7 +516,7 @@ const ExploreProperties = () => {
                           <div className="flex items-center justify-between pt-2 border-t border-gray-200 flex-nowrap">
                             <div className="min-w-0 flex-1">
                               <p className="text-xl font-bold text-gray-900 truncate">{formatRent(listing.rent)}</p>
-                              <p className="text-xs text-gray-600">per month</p>
+                              <p className="text-xs text-gray-600">per person per month</p>
                             </div>
                             <span className="btn-primary text-sm px-4 py-2 inline-block text-center flex-shrink-0 whitespace-nowrap min-w-[100px]">
                               View Details
