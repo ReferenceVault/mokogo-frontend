@@ -156,10 +156,6 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
         // New message, add it
         return [...prev, newMessage]
       })
-      // Mark as read if it's the current conversation
-      if (selectedConversationId && newMessage.conversationId === selectedConversationId) {
-        messagesApi.markAsRead(selectedConversationId).catch(console.error)
-      }
     }
 
     const handleConversationUpdate = (updatedConversation: ConversationResponse) => {
@@ -184,29 +180,6 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
       })
     }
 
-    const handleMessagesRead = (data: { conversationId: string; lastReadMessageId: string }) => {
-      // Only update if it's the current conversation
-      if (selectedConversationId && data.conversationId === selectedConversationId) {
-        setMessages(prev => {
-          const userId = typeof user === 'object' && user?.id ? user.id : ''
-          const lastReadMsgId = data.lastReadMessageId
-          
-          // Find the index of the last read message
-          const lastReadIndex = prev.findIndex(m => (m._id || m.id) === lastReadMsgId)
-          if (lastReadIndex === -1) return prev
-          
-          // Mark all messages from current user up to and including the lastReadMessageId as read
-          return prev.map((msg, index) => {
-            const senderId = typeof msg.senderId === 'object' ? msg.senderId._id : msg.senderId
-            // Only mark messages from current user that are at or before the last read message
-            if (senderId === userId && index <= lastReadIndex) {
-              return { ...msg, isRead: true }
-            }
-            return msg
-          })
-        })
-      }
-    }
 
     const handleUserPresence = (data: { userId: string; isOnline: boolean }) => {
       setOnlineUsers(prev => {
@@ -222,13 +195,11 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
 
     websocketService.on('new_message', handleNewMessage)
     websocketService.on('conversation_updated', handleConversationUpdate)
-    websocketService.on('messages_read', handleMessagesRead)
     websocketService.on('user_presence', handleUserPresence)
 
     return () => {
       websocketService.off('new_message', handleNewMessage)
       websocketService.off('conversation_updated', handleConversationUpdate)
-      websocketService.off('messages_read', handleMessagesRead)
       websocketService.off('user_presence', handleUserPresence)
     }
   }, [user, selectedConversationId])
@@ -296,7 +267,7 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
       fetchMessages(selectedConversationId)
       websocketService.emit('join_conversation', { conversationId: selectedConversationId })
       
-      // Mark conversation as read and reset unread count
+      // Reset unread count
       setConversations(prev => {
         return prev.map(conv => {
           const convId = conv._id || conv.id
@@ -305,11 +276,6 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
           }
           return conv
         })
-      })
-      
-      // Mark as read on server
-      messagesApi.markAsRead(selectedConversationId).catch(err => {
-        console.error('Error marking conversation as read:', err)
       })
     } else {
       // Clear messages when no conversation is selected
@@ -591,7 +557,6 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
     try {
       const data = await messagesApi.getMessages(conversationId)
       setMessages(data)
-      await messagesApi.markAsRead(conversationId)
       
       // Reset unread count for this conversation
       setConversations(prev => 
@@ -628,7 +593,6 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
         conversationId: selectedConversationId,
         senderId: typeof user === 'object' && user?.id ? { _id: user.id, name: user.name || '', email: user.email || '' } : user?.id || '',
         text: messageText,
-        isRead: false,
         isSystem: false,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -1083,13 +1047,6 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
 
               {(() => {
                 const userId = typeof user === 'object' && user?.id ? user.id : ''
-                // Find the last message sent by current user
-                const userMessages = messages.filter(m => {
-                  const mSenderId = typeof m.senderId === 'object' ? m.senderId._id : m.senderId
-                  return mSenderId === userId && !m.isSystem
-                })
-                const lastUserMessage = userMessages[userMessages.length - 1]
-                const lastUserMessageId = lastUserMessage ? (lastUserMessage._id || lastUserMessage.id) : null
                 
                 return messages.map((msg) => {
                   if (msg.isSystem) {
@@ -1105,7 +1062,6 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
                   const senderId = typeof msg.senderId === 'object' ? msg.senderId._id : msg.senderId
                   const isYou = senderId === userId
                   const msgId = msg._id || msg.id
-                  const isLastUserMessage = msgId === lastUserMessageId
 
                   return (
                     <div key={msgId} className={`flex ${isYou ? 'justify-end' : 'justify-start'}`}>
@@ -1126,9 +1082,6 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
                             <span className={`text-xs ${isYou ? 'text-orange-100' : 'text-gray-500'}`}>
                               {formatTimestamp(msg.createdAt)}
                             </span>
-                            {isYou && isLastUserMessage && msg.isRead && (
-                              <span className="text-xs text-orange-100 italic">Seen</span>
-                            )}
                           </div>
                         </div>
                       </div>

@@ -694,7 +694,7 @@ export interface MessageResponse {
   conversationId: string
   senderId: string | { _id: string; name: string; email: string; profileImageUrl?: string }
   text: string
-  isRead: boolean
+  isRead?: boolean
   isSystem: boolean
   createdAt: string
   updatedAt: string
@@ -728,10 +728,6 @@ export const messagesApi = {
       text,
     })
     return response.data
-  },
-
-  markAsRead: async (conversationId: string): Promise<void> => {
-    await api.post(`/messages/conversations/${conversationId}/read`)
   },
 
   clearMessages: async (conversationId: string): Promise<void> => {
