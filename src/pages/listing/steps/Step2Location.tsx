@@ -12,7 +12,7 @@ interface Step2LocationProps {
 }
 
 const cities = [
-  'Mumbai', 'Bangalore', 'Pune', 'Delhi NCR', 'Hyderabad'
+  'Pune', 'Mumbai', 'Bangalore', 'Delhi NCR', 'Hyderabad'
 ]
 
 const Step2Location = ({ data, onChange, error, onClearError }: Step2LocationProps) => {

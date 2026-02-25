@@ -1,4 +1,4 @@
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
 import { useState, useEffect, useRef } from 'react'
 import Footer from '@/components/Footer'
 import Header from '@/components/Header'
@@ -30,6 +30,7 @@ import {
 const ListingDetail = () => {
   const { listingId } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
   const { allListings, user, setUser, toggleSavedListing, isListingSaved, savedListings, setSavedListings } = useStore()
   const [isSaved, setIsSaved] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -520,18 +521,6 @@ const ListingDetail = () => {
     }
   }
 
-  const handleReport = () => {
-    // Check if user is logged in
-    if (!user) {
-      navigate(`/auth?redirect=/listings/${listingId}`)
-      return
-    }
-
-    // User is logged in - implement report functionality
-    // You can add a report modal or navigate to report page
-    alert('Report functionality will be implemented')
-  }
-
   const handleMarkAsFulfilled = async () => {
     if (!listing || !listingId) return
     
@@ -587,6 +576,10 @@ const ListingDetail = () => {
 
   const handleContactHostError = (errorMessage: string) => {
     if (errorMessage.includes('profile') || errorMessage.includes('complete')) {
+      sessionStorage.setItem('mokogo-profile-completion-source', JSON.stringify({
+        action: 'contact_host',
+        returnUrl: location.pathname + location.search
+      }))
       setShowProfileModal(true)
     } else {
       alert(errorMessage)
@@ -720,7 +713,6 @@ const ListingDetail = () => {
         isOwner={isOwner}
         onSave={handleSave}
         onShare={handleShare}
-        onReport={user ? handleReport : undefined}
         onMarkAsFulfilled={handleMarkAsFulfilled}
         showVerified={false}
         showActions={true}
@@ -859,7 +851,7 @@ const ListingDetail = () => {
                       <div className="flex items-center justify-between pt-2 border-t border-gray-200">
                         <div>
                           <p className="text-xl font-bold text-gray-900">{formatRent(similar.rent)}</p>
-                          <p className="text-xs text-gray-600">per month</p>
+                          <p className="text-xs text-gray-600">per person per month</p>
                         </div>
                         <span className="btn-primary text-sm px-4 py-2 inline-block text-center">
                           View Details

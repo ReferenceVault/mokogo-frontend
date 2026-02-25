@@ -1,10 +1,12 @@
 import { useState, useRef, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useStore } from '@/store/useStore'
 import { usersApi, uploadApi } from '@/services/api'
 import DateOfBirthSelector from '@/components/DateOfBirthSelector'
-import { User, Mail, Phone, Calendar, Users, Briefcase, Building, MapPin, FileText, Cigarette, Wine, Utensils, X, Clock, Plus, Copy, Heart } from 'lucide-react'
+import { User, Mail, Phone, Calendar, Users, Briefcase, Building, MapPin, FileText, Cigarette, Wine, Utensils, X, Clock, Copy, Heart } from 'lucide-react'
 
 const ProfileContent = () => {
+  const navigate = useNavigate()
   const { user, setUser } = useStore()
   
   const getUserName = () => {
@@ -115,11 +117,14 @@ const ProfileContent = () => {
           }
         }
         
+        const rawPhone = (profile.phoneNumber || '').toString().trim()
+        const phoneDigits = rawPhone.replace(/\D/g, '')
+        const phone10 = phoneDigits.length > 10 ? phoneDigits.slice(-10) : phoneDigits
         setFormData({
           firstName,
           lastName,
           email: profile.email || '',
-          phone: profile.phoneNumber || '',
+          phone: phone10,
           dateOfBirth,
           gender: profile.gender || '',
           occupation: profile.occupation || '',
@@ -268,6 +273,8 @@ const ProfileContent = () => {
     }
   }
 
+  const isPhoneValidFormat = (p: string) => /^[6-9]\d{9}$/.test((p || '').replace(/\D/g, ''))
+
   const validate = () => {
     const newErrors: Record<string, string> = {}
     
@@ -285,14 +292,11 @@ const ProfileContent = () => {
     if (!formData.drinking) newErrors.drinking = 'Drinking preference is required'
     if (!formData.foodPreference) newErrors.foodPreference = 'Food preference is required'
 
-    // Phone number validation (optional but if provided, must be valid international format)
-    if (formData.phone && formData.phone.trim() !== '') {
-      // Allow international format: + followed by country code and number (1-15 digits total)
-      // Or just digits (for backward compatibility)
-      const phoneRegex = /^\+?[1-9]\d{1,14}$/
-      const cleanedPhone = formData.phone.trim().replace(/\s|-|\(|\)/g, '') // Remove spaces, dashes, parentheses
-      if (!phoneRegex.test(cleanedPhone)) {
-        newErrors.phone = 'Please enter a valid phone number (international format supported)'
+    // Phone number validation (optional). Skip if already saved so we don't block saving other fields.
+    if (!hasSavedPhoneNumber && formData.phone && formData.phone.trim() !== '') {
+      const digitsOnly = formData.phone.replace(/\D/g, '')
+      if (digitsOnly.length !== 10 || !/^[6-9]\d{9}$/.test(digitsOnly)) {
+        newErrors.phone = 'Please enter a valid 10-digit mobile number (starting with 6–9)'
       }
     }
 
@@ -355,8 +359,35 @@ const ProfileContent = () => {
         // Mark phone number as saved so field becomes disabled
         setPhoneNumberSaved(true)
       }
-      
-      setNotice({ type: 'success', message: 'Profile saved successfully!' })
+
+      // Check profile completion source for redirect after save
+      let message = 'Your profile is saved successfully.'
+      let redirectTo: string | null = null
+      try {
+        const stored = sessionStorage.getItem('mokogo-profile-completion-source')
+        if (stored) {
+          const { action, returnUrl } = JSON.parse(stored) as { action?: string; returnUrl?: string }
+          sessionStorage.removeItem('mokogo-profile-completion-source')
+          if (action === 'contact_host' && returnUrl) {
+            message = 'Your profile is successfully saved — redirecting you to the property.'
+            redirectTo = returnUrl
+          } else if (action === 'list_your_space') {
+            message = "Profile successfully saved — redirecting you to 'List Your Space' page."
+            redirectTo = '/listing/wizard'
+          }
+        }
+        if (!redirectTo) {
+          redirectTo = '/explore'
+        }
+      } catch {
+        redirectTo = '/explore'
+      }
+
+      setNotice({ type: 'success', message })
+
+      if (redirectTo) {
+        setTimeout(() => navigate(redirectTo!), 1500)
+      }
     } catch (error: any) {
       console.error('Error saving profile:', error)
       setNotice({ type: 'error', message: error.response?.data?.message || 'Failed to save profile. Please try again.' })
@@ -414,6 +445,12 @@ const ProfileContent = () => {
       title: 'Working Professional',
       icon: Clock,
       content: "I'm a working professional with a steady income and reliable employment. I'm ready to move in and can provide all necessary documents. I maintain a professional lifestyle, respect house rules, and value cleanliness. I'm looking for a comfortable living space with a responsible roommate."
+    },
+    {
+      id: 'founder',
+      title: 'Founder & Entrepreneur',
+      icon: Briefcase,
+      content: "I'm a founder building exciting projects and value focus, discipline, and a positive environment. My schedule can be busy, but I'm respectful of shared spaces and maintain a clean, organized lifestyle. I appreciate open communication and living with driven, like-minded individuals who value ambition and balance."
     }
   ]
 
@@ -555,11 +592,10 @@ const ProfileContent = () => {
               value={formData.phone}
               onChange={(e) => {
                 const value = e.target.value
-                // Allow international format: + and digits, remove spaces/dashes/parentheses but keep +
-                const cleaned = value.replace(/[^\d+]/g, '').replace(/(?<=\+)\+/g, '') // Remove duplicates of +
-                // Allow up to 16 characters (for international format like +1234567890123)
-                if (cleaned.length <= 16) {
-                  handleChange('phone', cleaned)
+                const digitsOnly = value.replace(/\D/g, '')
+                // Limit to 10 digits (Indian mobile)
+                if (digitsOnly.length <= 10) {
+                  handleChange('phone', digitsOnly)
                 }
               }}
               onKeyDown={(e) => {
@@ -577,22 +613,25 @@ const ProfileContent = () => {
                   e.preventDefault()
                 }
               }}
-              disabled={hasSavedPhoneNumber}
+              disabled={hasSavedPhoneNumber && isPhoneValidFormat(formData.phone)}
               className={`w-full px-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 ${
-                hasSavedPhoneNumber
+                hasSavedPhoneNumber && isPhoneValidFormat(formData.phone)
                   ? 'border-gray-300 bg-gray-50 text-gray-500 cursor-not-allowed'
                   : errors.phone
                     ? 'border-red-500'
                     : 'border-gray-300'
               }`}
-              placeholder="Enter phone number (e.g., +1234567890)"
-              maxLength={16}
+              placeholder="10-digit mobile number (e.g., 9876543210)"
+              maxLength={10}
             />
             {errors.phone && (
               <p className="text-xs text-red-500 mt-1">{errors.phone}</p>
             )}
-            {!errors.phone && hasSavedPhoneNumber && (
+            {!errors.phone && hasSavedPhoneNumber && isPhoneValidFormat(formData.phone) && (
               <p className="text-xs text-gray-500 mt-1">Phone number cannot be changed once saved</p>
+            )}
+            {!errors.phone && hasSavedPhoneNumber && !isPhoneValidFormat(formData.phone) && (
+              <p className="text-xs text-amber-600 mt-1">Saved number is in an old format. Edit to a valid 10-digit number (starting with 6–9) so you can save your profile.</p>
             )}
             {!errors.phone && !hasSavedPhoneNumber && (
               <p className="text-xs text-gray-500 mt-1">Add your phone number (optional, cannot be changed once saved)</p>
@@ -978,17 +1017,6 @@ const ProfileContent = () => {
                     </div>
                   )
                 })}
-                
-                {/* Create Custom Template Card */}
-                <div className="bg-white border-2 border-dashed border-gray-300 rounded-lg p-5 hover:border-orange-400 hover:bg-orange-50/50 transition-all flex flex-col items-center justify-center text-center min-h-[200px] cursor-pointer">
-                  <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mb-3">
-                    <Plus className="w-6 h-6 text-orange-600" />
-                  </div>
-                  <h4 className="font-semibold text-gray-900 mb-2">Create Custom</h4>
-                  <p className="text-xs text-gray-600 leading-relaxed">
-                    Write your own personalized "About You" section. Be authentic and share what makes you unique.
-                  </p>
-                </div>
               </div>
             </div>
           </div>

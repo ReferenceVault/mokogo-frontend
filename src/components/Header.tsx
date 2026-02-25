@@ -149,6 +149,7 @@ const Header = ({ forceGuest = false }: HeaderProps) => {
       
       // Check if profile is complete
       if (!isProfileComplete(user)) {
+        sessionStorage.setItem('mokogo-profile-completion-source', JSON.stringify({ action: 'list_your_space' }))
         setShowProfileModal(true)
         return
       }
@@ -205,74 +206,25 @@ const Header = ({ forceGuest = false }: HeaderProps) => {
             )}
             <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-orange-400 to-orange-500 rounded-full group-hover:w-full transition-all duration-300" />
           </Link>
-          
-        {isAuthenticated ? (
-  <button
-    onClick={handleListYourSpace}
-    className="relative group"
-  >
-    <span
-      className={`text-sm font-medium transition-all duration-300 ${
-        isActive('/auth') || isActive('/listing') || isActive('/dashboard')
-          ? 'text-orange-500 font-semibold'
-          : 'text-gray-600 group-hover:text-orange-500'
-      }`}
-    >
-      List Your Space
-    </span>
-
-    {(isActive('/auth') || isActive('/listing') || isActive('/dashboard')) && (
-      <span className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-orange-400 to-orange-500 rounded-full" />
-    )}
-
-    <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-orange-400 to-orange-500 rounded-full group-hover:w-full transition-all duration-300" />
-  </button>
-) : (
-  <Link
-    to="/auth?redirect=/dashboard&view=listings"
-    className="relative group"
-  >
-    <span
-      className={`text-sm font-medium transition-all duration-300 ${
-        isActive('/auth') || isActive('/listing') || isActive('/dashboard')
-          ? 'text-orange-500 font-semibold'
-          : 'text-gray-600 group-hover:text-orange-500'
-      }`}
-    >
-      List Your Space
-    </span>
-
-    {(isActive('/auth') || isActive('/listing') || isActive('/dashboard')) && (
-      <span className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-orange-400 to-orange-500 rounded-full" />
-    )}
-
-    <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-orange-400 to-orange-500 rounded-full group-hover:w-full transition-all duration-300" />
-  </Link>
-)}
-
         </nav>
 
-        {/* Right section with Log in button, Dashboard button, and/or User menu */}
+        {/* Right section: List Your Space (primary CTA), Log in / Dashboard, User menu */}
         <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
           {isAuthenticated ? (
             <>
+              <button
+                onClick={handleListYourSpace}
+                className="group relative bg-gradient-to-r from-orange-400 to-orange-500 text-white px-3 py-2 sm:px-5 sm:py-2.5 rounded-full text-sm sm:text-base font-semibold transition-all duration-300 shadow-md hover:shadow-lg hover:shadow-orange-500/30 hover:scale-105 active:scale-95 overflow-hidden whitespace-nowrap"
+              >
+                <span className="relative z-10">List Your Space</span>
+                <span className="absolute inset-0 bg-gradient-to-r from-orange-500 to-orange-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              </button>
               {showDashboardCta && (
                 <Link 
                   to="/dashboard" 
-                  className="group relative bg-gradient-to-r from-orange-400 to-orange-500 text-white px-3 py-2 sm:px-6 sm:py-2.5 rounded-full text-sm sm:text-base font-medium transition-all duration-300 shadow-md hover:shadow-lg hover:shadow-orange-500/30 hover:scale-105 active:scale-95 overflow-hidden whitespace-nowrap"
+                  className="text-sm font-medium text-gray-600 hover:text-orange-500 transition-colors px-2 py-1.5"
                 >
-                  <span className="relative z-10 flex items-center gap-2">
-                    Dashboard
-                    <svg 
-                      className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" 
-                      fill="none" 
-                      stroke="currentColor" 
-                      viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                    </svg>
-                  </span>
-                  <span className="absolute inset-0 bg-gradient-to-r from-orange-500 to-orange-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  Dashboard
                 </Link>
               )}
               <div className="relative" ref={userMenuRef}>
@@ -348,23 +300,21 @@ const Header = ({ forceGuest = false }: HeaderProps) => {
               </div>
             </>
           ) : (
-            <Link 
-              to={`/auth?redirect=${redirectTarget}`} 
-              className="group relative bg-gradient-to-r from-orange-400 to-orange-500 text-white px-3 py-2 sm:px-6 sm:py-2.5 rounded-full text-sm sm:text-base font-medium transition-all duration-300 shadow-md hover:shadow-lg hover:shadow-orange-500/30 hover:scale-105 active:scale-95 overflow-hidden whitespace-nowrap"
-            >
-              <span className="relative z-10 flex items-center gap-2">
+            <>
+              <Link
+                to="/auth?redirect=/dashboard&view=listings"
+                className="group relative bg-gradient-to-r from-orange-400 to-orange-500 text-white px-3 py-2 sm:px-5 sm:py-2.5 rounded-full text-sm sm:text-base font-semibold transition-all duration-300 shadow-md hover:shadow-lg hover:shadow-orange-500/30 hover:scale-105 active:scale-95 overflow-hidden whitespace-nowrap"
+              >
+                <span className="relative z-10">List Your Space</span>
+                <span className="absolute inset-0 bg-gradient-to-r from-orange-500 to-orange-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              </Link>
+              <Link 
+                to={`/auth?redirect=${redirectTarget}`} 
+                className="text-sm font-medium text-gray-600 hover:text-orange-500 transition-colors px-2 py-1.5"
+              >
                 Log in
-                <svg 
-                  className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" 
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                </svg>
-              </span>
-              <span className="absolute inset-0 bg-gradient-to-r from-orange-500 to-orange-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            </Link>
+              </Link>
+            </>
           )}
         </div>
       </div>

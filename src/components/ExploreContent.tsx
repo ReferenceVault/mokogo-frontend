@@ -651,7 +651,7 @@ const ExploreContent = ({
               />
             </div>
             {filters.city && (
-              <div ref={areaInputRef} className="flex-1 relative z-20">
+              <div ref={areaInputRef} className="flex-1 min-w-[180px] relative z-20">
                 <label className="block text-sm font-medium text-stone-700 mb-2">
                   Area
                 </label>
@@ -660,15 +660,15 @@ const ExploreContent = ({
                   value={areaInputValue}
                   onChange={(e) => setAreaInputValue(e.target.value)}
                   placeholder="Search area (e.g., Baner, Wakad)"
-                  className="w-full h-[52px] px-4 rounded-xl border border-mokogo-gray focus:outline-none focus:ring-2 focus:ring-mokogo-primary bg-white/80 text-base sm:text-sm"
+                  className="w-full min-w-0 h-[52px] px-4 rounded-xl border border-mokogo-gray focus:outline-none focus:ring-2 focus:ring-mokogo-primary bg-white/80 text-base sm:text-sm"
                 />
                 {showAreaSuggestions && typeof document !== 'undefined' && createPortal(
                   <div
-                    className="fixed z-[99999] bg-white border border-gray-200 rounded-xl shadow-xl max-h-[50vh] sm:max-h-60 overflow-auto"
+                    className="fixed z-[99999] bg-white border border-gray-200 rounded-xl shadow-xl max-h-[50vh] sm:max-h-60 overflow-auto min-w-[280px]"
                     style={{
                       top: `${areaDropdownPosition.top}px`,
                       left: `${areaDropdownPosition.left}px`,
-                      width: `${Math.max(areaDropdownPosition.width, 200)}px`
+                      width: `${Math.max(areaDropdownPosition.width, 280)}px`
                     }}
                   >
                     {isLoadingArea ? (
@@ -679,12 +679,12 @@ const ExploreContent = ({
                           key={prediction.place_id}
                           type="button"
                           onClick={() => handleAreaSuggestionSelect(prediction)}
-                          className="w-full text-left px-4 py-3 sm:py-2 min-h-[48px] sm:min-h-0 flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-2 hover:bg-orange-50 active:bg-orange-50 text-sm text-gray-700"
+                          className="w-full text-left px-4 py-3 sm:py-2 min-h-[48px] sm:min-h-0 flex flex-col gap-0.5 hover:bg-orange-50 active:bg-orange-50 text-sm text-gray-700"
                         >
-                          <span className="font-medium truncate">
+                          <span className="font-medium whitespace-normal break-words">
                             {prediction.structured_formatting.main_text}
                           </span>
-                          <span className="text-xs text-gray-500 truncate sm:max-w-none">
+                          <span className="text-xs text-gray-500 whitespace-normal break-words">
                             {prediction.structured_formatting.secondary_text}
                           </span>
                         </button>
@@ -884,7 +884,7 @@ const ExploreContent = ({
                     <div className="flex items-center justify-between pt-2 border-t border-gray-200 mt-auto flex-nowrap">
                       <div className="min-w-0 flex-1">
                         <p className="text-xl font-bold text-gray-900 truncate">{formatRent(listing.rent)}</p>
-                        <p className="text-xs text-gray-600">per month</p>
+                        <p className="text-xs text-gray-600">per person per month</p>
                       </div>
                       <span className="btn-primary text-sm px-4 py-2 inline-block text-center flex-shrink-0 whitespace-nowrap min-w-[100px]">
                         View Details

@@ -11,8 +11,7 @@ import {
   Refrigerator,
   Armchair,
   Bed,
-  Bath,
-  Sun
+  Bath
 } from 'lucide-react'
 
 interface Amenity {
@@ -34,8 +33,7 @@ const allAmenities: Amenity[] = [
   { id: 'Fridge', label: 'Fridge', icon: Refrigerator },
   { id: 'Sofa', label: 'Sofa', icon: Armchair },
   { id: 'Bed', label: 'Bed', icon: Bed },
-  { id: 'Geyser', label: 'Geyser', icon: Bath },
-  { id: 'Balcony', label: 'Balcony', icon: Sun }
+  { id: 'Geyser', label: 'Geyser', icon: Bath }
 ]
 
 interface AmenitiesSelectorProps {

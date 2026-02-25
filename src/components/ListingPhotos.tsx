@@ -17,15 +17,32 @@ const ListingPhotos = ({
 }: ListingPhotosProps) => {
   const [activePhotoIndex, setActivePhotoIndex] = useState(0)
   const [mainImageLoaded, setMainImageLoaded] = useState(false)
+  const [mainImageError, setMainImageError] = useState(false)
+  const [firstImageReady, setFirstImageReady] = useState(false)
 
   const photos = listing?.photos || []
   const photoCount = photos.length
 
-  // Reset state when listing changes
+  // Reset state when listing or its photos change (so first image loads when photos become available).
+  // Defer mounting the first image by one tick so the URL and DOM are ready (fixes first image not loading on initial load).
   useEffect(() => {
     setActivePhotoIndex(0)
     setMainImageLoaded(false)
-  }, [listing?.id])
+    setMainImageError(false)
+    setFirstImageReady(false)
+    if (photoCount > 0) {
+      const id = setTimeout(() => setFirstImageReady(true), 0)
+      return () => clearTimeout(id)
+    } else {
+      setFirstImageReady(true)
+    }
+  }, [listing?.id, listing?.photos?.length, listing?.photos?.[0], photoCount])
+
+  // When switching photo, reset load/error state for the new image
+  useEffect(() => {
+    setMainImageLoaded(false)
+    setMainImageError(false)
+  }, [activePhotoIndex])
 
   // Preload adjacent images for smoother navigation
   useEffect(() => {
@@ -38,9 +55,18 @@ const ListingPhotos = ({
     })
   }, [activePhotoIndex, photoCount, photos])
 
+  const handleMainImageError = () => {
+    setMainImageLoaded(true)
+    setMainImageError(true)
+    if (photoCount > 1 && activePhotoIndex < photoCount - 1) {
+      setActivePhotoIndex((prev) => prev + 1)
+    }
+  }
+
   const handlePhotoNav = (direction: 'prev' | 'next') => {
     if (!listing?.photos || listing.photos.length === 0) return
     setMainImageLoaded(false)
+    setMainImageError(false)
     setActivePhotoIndex((prev) => {
       const lastIndex = listing.photos.length - 1
       if (direction === 'prev') {
@@ -62,14 +88,25 @@ const ListingPhotos = ({
                   <div className={`absolute inset-0 bg-stone-200 animate-pulse ${mainImageHeight}`} />
                 )}
                 <div className={`w-full ${mainImageHeight} bg-stone-100 flex items-center justify-center overflow-hidden`}>
-                <img
-                  className={`max-w-full max-h-full w-auto h-auto object-contain transition-opacity duration-300 ${mainImageLoaded ? 'opacity-100' : 'opacity-0'}`}
-                  src={photos[activePhotoIndex]}
-                  alt={`${listing.title} photo ${activePhotoIndex + 1}`}
-                  loading="eager"
-                  decoding="async"
-                  onLoad={() => setMainImageLoaded(true)}
-                />
+                {mainImageError ? (
+                  <div className="flex flex-col items-center justify-center gap-2 text-gray-500">
+                    <Images className="w-12 h-12" />
+                    <span className="text-sm">Image unavailable</span>
+                  </div>
+                ) : firstImageReady && photos[activePhotoIndex] ? (
+                  <img
+                    key={`${listing?.id}-${activePhotoIndex}-${photos[activePhotoIndex]}`}
+                    className={`max-w-full max-h-full w-auto h-auto object-contain transition-opacity duration-300 ${mainImageLoaded ? 'opacity-100' : 'opacity-0'}`}
+                    src={photos[activePhotoIndex]}
+                    alt={`${listing.title} photo ${activePhotoIndex + 1}`}
+                    loading="eager"
+                    decoding="async"
+                    onLoad={() => setMainImageLoaded(true)}
+                    onError={handleMainImageError}
+                  />
+                ) : (
+                  null
+                )}
                 </div>
                 {/* Photo count badge - visible on mobile and desktop */}
                 {photoCount > 0 && (

@@ -258,7 +258,7 @@ export const ListingFilters = ({
           {/* Price range */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-800">Price range (per month)</span>
+              <span className="text-sm font-medium text-gray-800">Price range (per person per month)</span>
               <button
                 type="button"
                 className="text-xs text-mokogo-primary font-semibold"

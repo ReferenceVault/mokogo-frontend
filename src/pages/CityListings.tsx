@@ -637,7 +637,7 @@ const CityListings = () => {
                         <div className="flex items-center justify-between pt-2 border-t border-gray-200">
                           <div>
                             <p className="text-lg sm:text-xl font-bold text-gray-900">{formatRent(listing.rent)}</p>
-                            <p className="text-xs text-gray-600">per month</p>
+                            <p className="text-xs text-gray-600">per person per month</p>
                           </div>
                           <span className="btn-primary text-sm px-4 py-2 inline-block text-center">
                             View Details

@@ -322,6 +322,7 @@ const Dashboard = () => {
   const handleCreateListingWithProfileCheck = () => {
     // Check if profile is complete
     if (!checkProfileComplete(user)) {
+      sessionStorage.setItem('mokogo-profile-completion-source', JSON.stringify({ action: 'list_your_space' }))
       setShowProfileModal(true)
       return
     }
@@ -415,6 +416,8 @@ const Dashboard = () => {
 
   const activeListings = allListings.filter(l => l.status === 'live')
   const savedListingItems = savedPublicListings.filter(l => savedListings.includes(l.id))
+  // Badge: count of saved listings that actually exist on the platform (live), not raw saved IDs
+  const savedCountOnPlatform = allListings.filter(l => l.status === 'live' && savedListings.includes(l.id)).length
   const hasListings = allListings.length > 0 // Check if user has any listings
 
   // Update counts from cached data when cache is available
@@ -567,7 +570,7 @@ const Dashboard = () => {
               id: 'saved',
               label: 'Saved Properties',
               icon: Bookmark,
-              badge: savedListings.length > 0 ? savedListings.length : undefined,
+              badge: savedCountOnPlatform > 0 ? savedCountOnPlatform : undefined,
               onClick: () => { setActiveView('saved'); setMobileMenuOpen(false) }
             },
             {
@@ -582,22 +585,23 @@ const Dashboard = () => {
           ctaSection={
             <>
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(249,115,22,0.1),transparent_55%)]" />
-              <div className="relative flex items-start space-x-3">
+              <button
+                type="button"
+                onClick={() => { handleCreateListingWithProfileCheck(); setMobileMenuOpen(false) }}
+                className="relative flex items-start space-x-3 w-full text-left"
+              >
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center flex-shrink-0 shadow-lg group-hover:scale-110 transition-transform duration-300">
                   <Plus className="w-6 h-6 text-white" />
                 </div>
                 <div>
                   <h4 className="text-sm font-semibold text-gray-900 mb-1">Post Your Listing</h4>
                   <p className="text-xs text-gray-600 mb-3">Find your perfect roommate in minutes</p>
-                  <button 
-                    onClick={() => { handleCreateListingWithProfileCheck(); setMobileMenuOpen(false) }}
-                    className="text-xs font-semibold text-orange-600 hover:text-orange-700 transition-colors flex items-center gap-1 group-hover:gap-2"
-                  >
+                  <span className="text-xs font-semibold text-orange-600 hover:text-orange-700 transition-colors flex items-center gap-1 group-hover:gap-2">
                     Get Started
                     <span className="transition-transform group-hover:translate-x-1">→</span>
-                  </button>
+                  </span>
                 </div>
-              </div>
+              </button>
             </>
           }
           collapsedCtaButton={{
@@ -779,7 +783,7 @@ const Dashboard = () => {
                                     <p className="text-xl font-bold text-gray-900">
                                       ₹{listing.rent.toLocaleString()}
                                     </p>
-                                    <p className="text-xs text-gray-600">per month</p>
+                                    <p className="text-xs text-gray-600">per person per month</p>
                                   </>
                                 )}
                               </div>
@@ -933,7 +937,7 @@ const Dashboard = () => {
                             </div>
                             <div className="flex items-center justify-between pt-4 border-t border-orange-200/50">
                               <div>
-                                <p className="text-xs text-gray-500 mb-1">Rent per month</p>
+                                <p className="text-xs text-gray-500 mb-1">Rent per person per month</p>
                                 <p className="text-xl font-bold bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent">₹{listing.rent?.toLocaleString()}</p>
                               </div>
                               <div className="flex space-x-2">
@@ -1066,9 +1070,13 @@ const Dashboard = () => {
                   <div className="relative overflow-hidden bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-orange-200/50 text-center py-12">
                     <div className="absolute inset-0 bg-gradient-to-br from-orange-50/50 via-transparent to-transparent" />
                     <div className="relative">
-                      <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center shadow-lg">
+                      <button
+                        type="button"
+                        onClick={handleCreateListingWithProfileCheck}
+                        className="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center shadow-lg hover:scale-110 hover:shadow-xl transition-all duration-300 cursor-pointer"
+                      >
                         <Plus className="w-12 h-12 text-white" />
-                      </div>
+                      </button>
                       <h2 className="text-xl font-semibold text-gray-900 mb-2">
                         You don't have any listings yet.
                       </h2>
