@@ -322,10 +322,9 @@ const Auth = () => {
   }
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Allow international format: + and digits, remove spaces/dashes/parentheses but keep +
-    const value = e.target.value.replace(/[^\d+]/g, '').replace(/(?<=\+)\+/g, '') // Remove duplicates of +
-    // Allow up to 16 characters (for international format like +1234567890123)
-    if (value.length <= 16) {
+    const value = e.target.value.replace(/[^\d]/g, '') // Digits only (country code is in dropdown)
+    // Limit to 10 digits for Indian mobile numbers
+    if (value.length <= 10) {
       setPhone(value)
       setError('')
     }
@@ -692,8 +691,8 @@ const Auth = () => {
             ? 'border-red-400 focus:ring-red-400 focus:border-red-400'
             : 'border-orange-200 focus:ring-orange-400 focus:border-orange-400'
         } ${isLoading ? 'opacity-50 cursor-not-allowed' : 'bg-white/80 hover:border-orange-300'}`}
-        placeholder="Enter your phone number (e.g., +1234567890)"
-        maxLength={16}
+        placeholder="10-digit mobile number"
+        maxLength={11}
         disabled={isLoading}
       />
     </div>

@@ -584,14 +584,9 @@ const LandingPage = () => {
               
               <div className="relative space-y-6 sm:space-y-8 md:space-y-10">
                 <div className="text-center space-y-2">
-                  <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 leading-tight px-1">
-                    Find Your Perfect{' '}
-                    <span className="relative inline-block">
-                      <span className="relative z-10 bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent">
-                        Room & Roommate
-                      </span>
-                      <span className="absolute bottom-2 left-0 right-0 h-3 bg-orange-200/40 -z-0 transform -skew-x-12" />
-                    </span>
+                  <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold leading-tight px-1">
+                    <span className="text-black">Flat & Flatmate Discovery</span>
+                    <span className="bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent"> - Simplified.</span>
                   </h1>
                   <p className="text-orange-600 text-xs sm:text-sm md:text-base max-w-[773px] mx-auto font-semibold flex flex-wrap justify-center gap-x-2 gap-y-1 md:block">
                     <span>⚡ Verified listings</span>

@@ -120,21 +120,26 @@ const ProfileContent = () => {
         const rawPhone = (profile.phoneNumber || '').toString().trim()
         const phoneDigits = rawPhone.replace(/\D/g, '')
         const phone10 = phoneDigits.length > 10 ? phoneDigits.slice(-10) : phoneDigits
-        setFormData({
-          firstName,
-          lastName,
-          email: profile.email || '',
-          phone: phone10,
-          dateOfBirth,
-          gender: profile.gender || '',
-          occupation: profile.occupation || '',
-          companyName: profile.companyName || '',
-          currentCity: profile.currentCity || '',
-          area: profile.area || '',
-          about: profile.about || '',
-          smoking: profile.smoking || '',
-          drinking: profile.drinking || '',
-          foodPreference: profile.foodPreference || ''
+        setFormData((prev) => {
+          // Preserve user's in-progress phone input (fetch is async; don't overwrite what they typed)
+          const userHasTypedPhone = prev.phone && prev.phone.replace(/\D/g, '').length > 0
+          const keepPhone = userHasTypedPhone && !profile.phoneNumber
+          return {
+            firstName,
+            lastName,
+            email: profile.email || '',
+            phone: keepPhone ? prev.phone : phone10,
+            dateOfBirth,
+            gender: profile.gender || '',
+            occupation: profile.occupation || '',
+            companyName: profile.companyName || '',
+            currentCity: profile.currentCity || '',
+            area: profile.area || '',
+            about: profile.about || '',
+            smoking: profile.smoking || '',
+            drinking: profile.drinking || '',
+            foodPreference: profile.foodPreference || ''
+          }
         })
         
         // Set phoneNumberSaved if phone exists in profile (from DB)
