@@ -1310,7 +1310,7 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
 
       {/* Unavailable Listing Modal */}
       {showUnavailableModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[80] p-4">
           <div className="relative bg-white rounded-2xl p-6 max-w-md w-full border border-gray-200 shadow-2xl">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xl font-bold text-gray-900">Listing Unavailable</h3>
