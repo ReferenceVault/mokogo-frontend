@@ -17,6 +17,8 @@ interface DashboardHeaderProps {
   onProfile?: () => void
   onLogout?: () => void
   onMenuClick?: () => void
+  onNavigateToOtherDashboard?: () => void
+  otherDashboardLabel?: string
 }
 
 const DashboardHeader = ({
@@ -28,7 +30,9 @@ const DashboardHeader = ({
   userImageUrl,
   onProfile,
   onLogout,
-  onMenuClick
+  onMenuClick,
+  onNavigateToOtherDashboard,
+  otherDashboardLabel
 }: DashboardHeaderProps) => {
   const [showUserMenu, setShowUserMenu] = useState(false)
 
@@ -118,6 +122,17 @@ const DashboardHeader = ({
                       className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors"
                     >
                       Profile
+                    </button>
+                  )}
+                  {onNavigateToOtherDashboard && otherDashboardLabel && (
+                    <button
+                      onClick={() => {
+                        onNavigateToOtherDashboard()
+                        setShowUserMenu(false)
+                      }}
+                      className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-colors"
+                    >
+                      {otherDashboardLabel}
                     </button>
                   )}
                   {onLogout && (

@@ -27,6 +27,7 @@ import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminUserProfile from './pages/admin/AdminUserProfile'
 import CookieConsent from './components/CookieConsent'
 import ProtectedRoute from './components/ProtectedRoute'
+import AdminProtectedRoute from './components/AdminProtectedRoute'
 import { trackPageView, initializeGADisableFlag } from './utils/analytics'
 
 // Component to track page views on route changes
@@ -108,17 +109,17 @@ function App() {
         <Route
           path="/admin/dashboard"
           element={
-            <ProtectedRoute>
+            <AdminProtectedRoute>
               <AdminDashboard />
-            </ProtectedRoute>
+            </AdminProtectedRoute>
           }
         />
         <Route
           path="/admin/dashboard/user/:userId"
           element={
-            <ProtectedRoute>
+            <AdminProtectedRoute>
               <AdminUserProfile />
-            </ProtectedRoute>
+            </AdminProtectedRoute>
           }
         />
       </Routes>

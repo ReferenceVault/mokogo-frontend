@@ -12,10 +12,12 @@ import { AdminReportsTab } from './tabs/AdminReportsTab'
 import { AdminRequestsTab } from './tabs/AdminRequestsTab'
 import { AdminSettingsTab } from './tabs/AdminSettingsTab'
 import { ADMIN_VIEW_IDS, type AdminViewId } from './constants'
+import { useStore } from '@/store/useStore'
 
 const AdminDashboard = () => {
   const navigate = useNavigate()
   const location = useLocation()
+  const user = useStore((state) => state.user)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [activeView, setActiveView] = useState<AdminViewId>('overview')
 
@@ -32,7 +34,13 @@ const AdminDashboard = () => {
     navigate('/admin/login')
   }
 
-  const userName = 'Admin'
+  const handleNavigateToUserDashboard = () => {
+    navigate('/dashboard')
+  }
+
+  // Get user info from store, with fallbacks
+  const userName = user?.name || user?.email?.split('@')[0] || 'Admin'
+  const userEmail = user?.email || ''
 
   return (
     <div className="min-h-screen bg-stone-100 flex flex-col">
@@ -41,8 +49,11 @@ const AdminDashboard = () => {
         onViewChange={(view) => setActiveView(view as AdminViewId)}
         menuItems={[{ label: 'Dashboard', view: 'overview' }]}
         userName={userName}
-        userEmail="admin@mokogo.in"
+        userEmail={userEmail}
+        userImageUrl={user?.profileImageUrl}
         onLogout={handleLogout}
+        onNavigateToOtherDashboard={handleNavigateToUserDashboard}
+        otherDashboardLabel="User Dashboard"
       />
 
       <div className="flex flex-1">

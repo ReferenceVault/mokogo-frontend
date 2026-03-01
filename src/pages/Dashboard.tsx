@@ -414,6 +414,13 @@ const Dashboard = () => {
 
   const handleLogout = () => handleLogoutUtil(navigate)
 
+  const handleNavigateToAdminDashboard = () => {
+    navigate('/admin/dashboard')
+  }
+
+  // Check if user is admin
+  const isAdmin = user?.roles?.includes('admin')
+
   const activeListings = allListings.filter(l => l.status === 'live')
   const savedListingItems = savedPublicListings.filter(l => savedListings.includes(l.id))
   // Badge: count of saved listings that actually exist on the platform (live), not raw saved IDs
@@ -512,6 +519,8 @@ const Dashboard = () => {
         userImageUrl={userImageUrl}
         onProfile={() => setActiveView('profile')}
         onLogout={handleLogout}
+        onNavigateToOtherDashboard={isAdmin ? handleNavigateToAdminDashboard : undefined}
+        otherDashboardLabel={isAdmin ? 'Admin Dashboard' : undefined}
       />
 
       <div className="flex flex-1 relative">

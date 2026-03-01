@@ -42,6 +42,7 @@ const AdminLogin = () => {
       const response = await authApi.login({ email: email.trim(), password })
       if (!response.user.roles?.includes('admin')) {
         setError('You do not have admin access.')
+        setIsLoading(false)
         return
       }
 
@@ -62,6 +63,7 @@ const AdminLogin = () => {
     } catch (err: any) {
       const message = err.response?.data?.message || err.message || 'Login failed. Please try again.'
       setError(message)
+      setIsLoading(false)
     }
   }
 
