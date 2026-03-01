@@ -723,8 +723,7 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
   }
 
   return (
-    // <div className="h-[calc(100vh-4rem)] sm:h-[calc(100vh-120px)] flex bg-gray-50">
-      <div className="h-[calc(100dvh-4rem)] sm:h-[calc(100vh-120px)] min-h-[400px] flex flex-col lg:flex-row lg:items-stretch bg-gray-50">
+    <div className="h-[calc(100vh-4rem)] sm:h-[calc(100vh-120px)] flex flex-col lg:flex-row bg-gray-50 overflow-hidden">
 
       {/* Backdrop for profile overlay on mobile - z-[60] above dashboard header (z-50) */}
       {selectedConversation && showProfile && (
@@ -736,7 +735,7 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
       )}
 
       {/* Left Panel - Messages List */}
-      <div className={`flex flex-col w-full lg:w-80 lg:min-h-screen lg:sticky lg:top-16 lg:border-r lg:border-gray-200 bg-white flex-shrink-0 ${selectedConversationId ? 'hidden lg:flex' : 'flex'}`}>
+      <div className={`flex flex-col w-full lg:w-80 h-full bg-white flex-shrink-0 ${selectedConversationId ? 'hidden lg:flex' : 'flex'}`}>
         {/* Header */}
         <div className="p-4 border-b border-gray-200">
           <h2 className="text-lg font-bold text-gray-900">Messages</h2>
@@ -868,7 +867,7 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
       </div>
 
       {/* Center Panel - Chat Window - min-h-0 so flex keeps input visible */}
-      <div className={`flex-1 flex flex-col min-h-0 lg:sticky lg:top-16 bg-white min-w-0 ${!selectedConversationId ? 'hidden lg:flex' : 'flex'}`}>
+      <div className={`flex-1 flex flex-col h-full min-h-0 bg-white min-w-0 lg:border-l lg:border-gray-200 ${!selectedConversationId ? 'hidden lg:flex' : 'flex'}`}>
         {selectedConversation && otherUser ? (
           <>
             {/* Chat Header */}
@@ -945,7 +944,6 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
             )}
 
             {/* Messages */}
-            {/* <div className="flex-1 overflow-y-auto p-4 space-y-4"> */}
             <div ref={messagesContainerRef} className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-4 space-y-4">
 
               {(() => {
@@ -1065,9 +1063,9 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
 
       {/* Right Panel - Property & User Profile - z-[70] above backdrop on mobile */}
       {selectedConversation && showProfile && (
-        <div className="fixed lg:relative inset-y-0 right-0 z-[70] lg:z-auto w-full max-w-sm lg:max-w-none lg:w-80 lg:min-h-screen lg:sticky lg:top-16 border-l border-gray-200 bg-white overflow-y-auto shadow-xl lg:shadow-none">
+        <div className="fixed lg:relative inset-y-0 right-0 z-[70] lg:z-auto w-full max-w-sm lg:max-w-none lg:w-80 h-full lg:h-full border-l border-gray-200 bg-white flex flex-col overflow-hidden shadow-xl lg:shadow-none">
           {/* Header with Close Button - sticky on mobile so it stays visible */}
-          <div className="sticky top-0 z-10 p-4 pt-6 sm:pt-4 pb-4 border-b border-gray-200 bg-white lg:static lg:pt-4 shadow-sm lg:shadow-none">
+          <div className="flex-shrink-0 p-4 pt-6 sm:pt-4 pb-4 border-b border-gray-200 bg-white shadow-sm lg:shadow-none">
             <div className="flex items-center justify-between gap-3">
               <h3 className="text-base font-semibold text-gray-900">Details</h3>
               <button
@@ -1080,7 +1078,7 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
             </div>
           </div>
 
-          <div className="p-4 space-y-6">
+          <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-6">
             {/* Property Tile */}
             <div className="relative">
               {/* Skeleton - Fades out when content loads */}
