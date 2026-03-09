@@ -24,7 +24,7 @@ const DEFAULT_MAX_RENT = 0
 
 const ALL_ROOM_TYPES = ['Private Room', 'Shared Room', 'Master Room']
 const ALL_FURNISHING = ['Fully Furnished', 'Semi-furnished', 'Unfurnished']
-const ALL_BHK_TYPES = ['1BHK', '2BHK', '3BHK']
+const ALL_BHK_TYPES = ['1RK', '1BHK', '2BHK', '3BHK']
 const ALL_BATHROOM_TYPES = ['Attached', 'Common']
 
 export const ListingFilters = ({

@@ -131,6 +131,7 @@ const Dashboard = () => {
           drinkingPolicy: listing.drinkingPolicy,
           description: listing.description,
           photos: listing.photos || [],
+          mikoTags: listing.mikoTags || [],
           status: listing.status,
           createdAt: listing.createdAt,
           updatedAt: listing.updatedAt,
