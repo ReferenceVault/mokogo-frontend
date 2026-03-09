@@ -56,7 +56,7 @@ const ResetPassword = () => {
       })
       setSuccess(true)
       setTimeout(() => {
-        navigate('/auth')
+        navigate('/auth', { replace: true })
       }, 3000)
     } catch (err: any) {
       if (err.response?.status === 429) {

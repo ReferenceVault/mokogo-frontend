@@ -10,6 +10,7 @@ import { useStore } from '@/store/useStore'
 import { Listing } from '@/types'
 import { handleLogout as handleLogoutUtil } from '@/utils/auth'
 import { isListingLimitError } from '@/utils/errorHandler'
+import { normalizeVibeTagsOnePerGroup } from '@/utils/miko'
 
 import { listingsApi, CreateListingRequest } from '@/services/api'
 import { Search, LayoutGrid, Home, MessageSquare, Bookmark, Calendar, Plus, Sparkles } from 'lucide-react'
@@ -173,6 +174,7 @@ const ListingWizard = () => {
       const formattedListing = {
         ...currentListing,
         moveInDate: formatDateForInput(currentListing.moveInDate),
+        mikoTags: normalizeVibeTagsOnePerGroup(currentListing.mikoTags),
       }
       listingDataRef.current = formattedListing
       setListingData(formattedListing)
@@ -186,6 +188,7 @@ const ListingWizard = () => {
       const formattedListing = {
         ...currentListing,
         moveInDate: formatDateForInput(currentListing.moveInDate),
+        mikoTags: normalizeVibeTagsOnePerGroup(currentListing.mikoTags),
       }
       listingDataRef.current = formattedListing
       setListingData(formattedListing)
@@ -1145,7 +1148,7 @@ const ListingWizard = () => {
       } else {
         // Clear any toast messages before navigating
         setShowToast(false)
-        navigate('/dashboard')
+        navigate('/dashboard', { replace: true })
       }
     } catch (error: any) {
       console.error('Error creating listing:', error)
@@ -1657,7 +1660,7 @@ const ListingWizard = () => {
         onClose={() => {
           setShowListingLimitModal(false)
           setListingSavedAsDraft(false)
-          navigate('/dashboard')
+          navigate('/dashboard', { replace: true })
         }}
         savedAsDraft={listingSavedAsDraft}
       />
