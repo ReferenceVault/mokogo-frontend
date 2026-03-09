@@ -172,11 +172,6 @@ const ExploreContent = ({
       Boolean(filters.city) && Boolean(filters.area) && normalize(filters.city) === normalize(filters.area)
 
     const filtered = allLiveListings.filter(listing => {
-      const hasMikoFilters =
-        Boolean(filters.city || filters.area || filters.moveInDate || filters.preferredGender) ||
-        Boolean(roomTypePreference) ||
-        mikoTags.length > 0
-
       const cityMatch = filters.city ? listing.city === filters.city : false
       
       // Area matching: if coordinates provided, use distance (within 10km), otherwise exact match
@@ -254,23 +249,12 @@ const ExploreContent = ({
 
       if (isMikoMode) {
         if (filters.city && !cityMatch) return false
-
-        const hasOtherFilters =
-          Boolean(filters.area || filters.moveInDate || filters.preferredGender) ||
-          Boolean(roomTypePreference) ||
-          mikoTags.length > 0
-
-        if (!hasMikoFilters || !hasOtherFilters) {
-          return true
-        }
-
-        return (
-          areaMatch ||
-          moveInDateMatch ||
-          genderMatch ||
-          roomTypeMatch ||
-          mikoTagsMatch
-        )
+        if (filters.area && !areaMatch) return false
+        if (filters.moveInDate && !moveInDateMatch) return false
+        if (filters.preferredGender && !genderMatch) return false
+        if (roomTypePreference && !roomTypeMatch) return false
+        if (mikoTags.length > 0 && !mikoTagsMatch) return false
+        return true
       }
 
       // Standard search: all selected filters must match
@@ -342,9 +326,11 @@ const ExploreContent = ({
       bathroomTypes,
       lgbtqFriendly,
     } = advancedFilters
+    const hasPriceFilter =
+      (minRent !== undefined && minRent !== DEFAULT_MIN_RENT) ||
+      (maxRent !== undefined && maxRent !== DEFAULT_MAX_RENT)
     return (
-      (minRent !== undefined && minRent !== DEFAULT_MIN_RENT ? 1 : 0) +
-      (maxRent !== undefined && maxRent !== DEFAULT_MAX_RENT ? 1 : 0) +
+      (hasPriceFilter ? 1 : 0) +
       (roomTypes && roomTypes.length ? 1 : 0) +
       (furnishingLevels && furnishingLevels.length ? 1 : 0) +
       (preferredGender ? 1 : 0) +

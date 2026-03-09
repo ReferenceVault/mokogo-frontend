@@ -212,9 +212,11 @@ const CityListings = () => {
       bathroomTypes,
       lgbtqFriendly,
     } = advancedFilters
+    const hasPriceFilter =
+      (minRent !== undefined && minRent !== DEFAULT_MIN_RENT) ||
+      (maxRent !== undefined && maxRent !== DEFAULT_MAX_RENT)
     return (
-      (minRent !== undefined && minRent !== DEFAULT_MIN_RENT ? 1 : 0) +
-      (maxRent !== undefined && maxRent !== DEFAULT_MAX_RENT ? 1 : 0) +
+      (hasPriceFilter ? 1 : 0) +
       (roomTypes && roomTypes.length ? 1 : 0) +
       (furnishingLevels && furnishingLevels.length ? 1 : 0) +
       (preferredGender ? 1 : 0) +

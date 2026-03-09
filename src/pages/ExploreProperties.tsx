@@ -451,16 +451,18 @@ const ExploreProperties = () => {
                   >
                     <span>Filter</span>
                     <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-orange-500 text-[11px] text-white">
-                      {[
-                        filters.maxRent,
-                        filters.minRent,
-                        filters.preferredGender,
-                        filters.roomTypes.length,
-                        filters.bhkTypes.length,
-                        filters.furnishingLevels.length,
-                        filters.bathroomTypes.length,
-                        filters.lgbtqFriendly,
-                      ].filter(Boolean).length}
+                      {(() => {
+                        const hasPrice = Boolean(filters.minRent || filters.maxRent)
+                        return (
+                          (hasPrice ? 1 : 0) +
+                          (filters.preferredGender ? 1 : 0) +
+                          (filters.roomTypes.length ? 1 : 0) +
+                          (filters.bhkTypes.length ? 1 : 0) +
+                          (filters.furnishingLevels.length ? 1 : 0) +
+                          (filters.bathroomTypes.length ? 1 : 0) +
+                          (filters.lgbtqFriendly ? 1 : 0)
+                        )
+                      })()}
                     </span>
                   </button>
                 </div>

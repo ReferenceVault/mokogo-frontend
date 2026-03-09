@@ -94,9 +94,9 @@ export const ListingFilters = ({
     onClear()
   }
 
+  const hasPriceFilter = minRent !== DEFAULT_MIN_RENT || maxRent !== DEFAULT_MAX_RENT
   const selectedCount =
-    (minRent !== DEFAULT_MIN_RENT ? 1 : 0) +
-    (maxRent !== DEFAULT_MAX_RENT ? 1 : 0) +
+    (hasPriceFilter ? 1 : 0) +
     (roomTypes.length ? 1 : 0) +
     (furnishingLevels.length ? 1 : 0) +
     (preferredGender ? 1 : 0) +
