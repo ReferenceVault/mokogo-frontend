@@ -167,6 +167,10 @@ const ExploreContent = ({
 
   // Apply filters to listings
   const filteredListings = useMemo(() => {
+    const normalize = (v: string) => (v || '').trim().toLowerCase()
+    const isCityWideAreaSelected =
+      Boolean(filters.city) && Boolean(filters.area) && normalize(filters.city) === normalize(filters.area)
+
     const filtered = allLiveListings.filter(listing => {
       const hasMikoFilters =
         Boolean(filters.city || filters.area || filters.moveInDate || filters.preferredGender) ||
@@ -178,7 +182,15 @@ const ExploreContent = ({
       // Area matching: if coordinates provided, use distance (within 10km), otherwise exact match
       let areaMatch = false
       if (filters.area) {
-        if (filters.areaLat !== null && filters.areaLng !== null && listing.latitude && listing.longitude) {
+        const listingLocalityNorm = normalize(listing.locality || '')
+        const cityNorm = normalize(filters.city || '')
+        const isCityWideListing = Boolean(cityNorm) && listingLocalityNorm === cityNorm
+
+        // If "area" is the same as city (e.g., Pune + Pune), treat it as "all areas"
+        // Also, city-wide listings (locality === city) should appear in every area of that city
+        if (isCityWideAreaSelected || isCityWideListing) {
+          areaMatch = true
+        } else if (filters.areaLat !== null && filters.areaLng !== null && listing.latitude && listing.longitude) {
           // Use distance-based matching (within 10km)
           areaMatch = isListingWithinRadius(
             listing,
@@ -188,7 +200,7 @@ const ExploreContent = ({
           )
         } else {
           // Fallback to exact locality match
-          areaMatch = listing.locality === filters.area
+          areaMatch = normalize(listing.locality || '') === normalize(filters.area)
         }
       }
       // Move-in date match
@@ -272,7 +284,7 @@ const ExploreContent = ({
     })
 
     // Sort by distance if area coordinates are provided
-    if (filters.area && filters.areaLat !== null && filters.areaLng !== null) {
+    if (!isCityWideAreaSelected && filters.area && filters.areaLat !== null && filters.areaLng !== null) {
       return sortListingsByDistance(filtered, filters.areaLat, filters.areaLng)
     }
 
@@ -397,9 +409,14 @@ const ExploreContent = ({
 
       // Include basic explore filters (city/area/date/gender) where relevant
       if (filters.city) backendFilters.city = filters.city
-      if (filters.area) backendFilters.area = filters.area
-      if (filters.areaLat != null) backendFilters.areaLat = filters.areaLat
-      if (filters.areaLng != null) backendFilters.areaLng = filters.areaLng
+      const normalize = (v: string) => (v || '').trim().toLowerCase()
+      const isCityWideAreaSelected =
+        Boolean(filters.city) && Boolean(filters.area) && normalize(filters.city) === normalize(filters.area)
+      if (filters.area && !isCityWideAreaSelected) backendFilters.area = filters.area
+      if (!isCityWideAreaSelected) {
+        if (filters.areaLat != null) backendFilters.areaLat = filters.areaLat
+        if (filters.areaLng != null) backendFilters.areaLng = filters.areaLng
+      }
       if (filters.moveInDate) backendFilters.moveInDate = filters.moveInDate
 
       // Gender: popup selection overrides inline selection for consistency
@@ -468,9 +485,14 @@ const ExploreContent = ({
     try {
       const backendFilters: any = {}
       if (filters.city) backendFilters.city = filters.city
-      if (filters.area) backendFilters.area = filters.area
-      if (filters.areaLat != null) backendFilters.areaLat = filters.areaLat
-      if (filters.areaLng != null) backendFilters.areaLng = filters.areaLng
+      const normalize = (v: string) => (v || '').trim().toLowerCase()
+      const isCityWideAreaSelected =
+        Boolean(filters.city) && Boolean(filters.area) && normalize(filters.city) === normalize(filters.area)
+      if (filters.area && !isCityWideAreaSelected) backendFilters.area = filters.area
+      if (!isCityWideAreaSelected) {
+        if (filters.areaLat != null) backendFilters.areaLat = filters.areaLat
+        if (filters.areaLng != null) backendFilters.areaLng = filters.areaLng
+      }
       if (filters.moveInDate) backendFilters.moveInDate = filters.moveInDate
       // Do NOT send preferredGender here so inline gender becomes a pure client-side filter again
 

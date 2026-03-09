@@ -120,9 +120,24 @@ const CityListings = () => {
   // Apply filters to listings
   const cityListings = useMemo(() => {
     return cityListingsBase.filter(listing => {
+      const normalize = (v: string) => (v || '').trim().toLowerCase()
+
       // Area filter
-      if (filters.area && listing.locality !== filters.area) {
-        return false
+      // Special rules:
+      // - If selected area === city (e.g., Pune + Pune), treat as "all areas" (no area filtering)
+      // - Listings with locality === city (e.g., Pune,Pune) should appear in every area of that city
+      if (filters.area) {
+        const areaNorm = normalize(filters.area)
+        const cityNorm = normalize(decodedCityName)
+        const listingLocalityNorm = normalize(listing.locality || '')
+
+        if (areaNorm !== cityNorm) {
+          const matchesSelectedArea = listingLocalityNorm === areaNorm
+          const isCityWideListing = listingLocalityNorm === cityNorm
+          if (!matchesSelectedArea && !isCityWideListing) {
+            return false
+          }
+        }
       }
       
       // Move-in Date filter
@@ -218,7 +233,11 @@ const CityListings = () => {
       const backendFilters: any = { city: decodedCityName }
 
       // keep inline/base filters as server filters where it makes sense
-      if (filters.area) backendFilters.area = filters.area
+      if (filters.area) {
+        const normalize = (v: string) => (v || '').trim().toLowerCase()
+        const isCityWideAreaSelected = normalize(filters.area) === normalize(decodedCityName)
+        if (!isCityWideAreaSelected) backendFilters.area = filters.area
+      }
       if (filters.moveInDate) backendFilters.moveInDate = filters.moveInDate
       // Gender: popup selection overrides inline selection for consistency
       if (state.preferredGender) {
@@ -286,7 +305,11 @@ const CityListings = () => {
     setIsLoading(true)
     try {
       const backendFilters: any = { city: decodedCityName }
-      if (filters.area) backendFilters.area = filters.area
+      if (filters.area) {
+        const normalize = (v: string) => (v || '').trim().toLowerCase()
+        const isCityWideAreaSelected = normalize(filters.area) === normalize(decodedCityName)
+        if (!isCityWideAreaSelected) backendFilters.area = filters.area
+      }
       if (filters.moveInDate) backendFilters.moveInDate = filters.moveInDate
       // Do NOT send gender here so inline gender becomes a pure client-side filter again
 

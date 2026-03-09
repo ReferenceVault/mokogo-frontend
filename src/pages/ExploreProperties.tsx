@@ -71,9 +71,16 @@ const ExploreProperties = () => {
         const backendFilters: any = {}
         // Default to Pune when no city selected (Pune is the only active city)
         backendFilters.city = filters.city || 'Pune'
-        if (filters.area) backendFilters.area = filters.area
-        if (filters.areaLat != null) backendFilters.areaLat = filters.areaLat
-        if (filters.areaLng != null) backendFilters.areaLng = filters.areaLng
+        const normalize = (v: string) => (v || '').trim().toLowerCase()
+        const isCityWideAreaSelected =
+          Boolean(filters.area) && normalize(filters.area) === normalize(backendFilters.city)
+
+        // If "area" is the same as city (e.g., Pune + Pune), treat it as "all areas"
+        if (filters.area && !isCityWideAreaSelected) backendFilters.area = filters.area
+        if (!isCityWideAreaSelected) {
+          if (filters.areaLat != null) backendFilters.areaLat = filters.areaLat
+          if (filters.areaLng != null) backendFilters.areaLng = filters.areaLng
+        }
         if (filters.minRent) backendFilters.minRent = parseInt(filters.minRent)
         if (filters.maxRent) backendFilters.maxRent = parseInt(filters.maxRent)
         if (filters.moveInDate) backendFilters.moveInDate = filters.moveInDate
