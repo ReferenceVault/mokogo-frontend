@@ -1063,6 +1063,79 @@ export const adminApi = {
   },
 }
 
+export const conciergeApi = {
+  listListings: async (params?: {
+    listingStatus?: string
+    outreachStatus?: string
+    ownerLogin?: string
+    search?: string
+    sourcePlatform?: string
+    dateFrom?: string
+    dateTo?: string
+    addedBy?: string
+    page?: number
+    limit?: number
+  }) => {
+    const searchParams = new URLSearchParams()
+    if (params?.listingStatus) searchParams.set('listingStatus', params.listingStatus)
+    if (params?.outreachStatus) searchParams.set('outreachStatus', params.outreachStatus)
+    if (params?.ownerLogin) searchParams.set('ownerLogin', params.ownerLogin)
+    if (params?.search) searchParams.set('search', params.search)
+    if (params?.sourcePlatform) searchParams.set('sourcePlatform', params.sourcePlatform)
+    if (params?.dateFrom) searchParams.set('dateFrom', params.dateFrom)
+    if (params?.dateTo) searchParams.set('dateTo', params.dateTo)
+    if (params?.addedBy) searchParams.set('addedBy', params.addedBy)
+    if (params?.page) searchParams.set('page', String(params.page))
+    if (params?.limit) searchParams.set('limit', String(params.limit))
+    const response = await api.get(`/concierge/listings?${searchParams.toString()}`)
+    return response.data
+  },
+  createDraft: async (data: Record<string, unknown>) => {
+    const response = await api.post('/concierge/listings', data)
+    return response.data
+  },
+  getById: async (id: string) => {
+    const response = await api.get(`/concierge/listings/${id}`)
+    return response.data
+  },
+  updateListing: async (id: string, data: Record<string, unknown>) => {
+    const response = await api.patch(`/concierge/listings/${id}`, data)
+    return response.data
+  },
+  regenerateLink: async (id: string) => {
+    const response = await api.patch(`/concierge/listings/${id}/regenerate-link`)
+    return response.data
+  },
+  publishOnBehalf: async (id: string) => {
+    const response = await api.post(`/concierge/listings/${id}/publish-on-behalf`)
+    return response.data
+  },
+  publishChanges: async (id: string) => {
+    const response = await api.post(`/concierge/listings/${id}/publish-changes`)
+    return response.data
+  },
+}
+
+/** Public: get/update/publish listing by preview token (no auth) */
+export const previewApi = {
+  getByToken: async (token: string) => {
+    const response = await api.get(`/listings/preview/${token}`)
+    return response.data
+  },
+  checkPublish: async (token: string) => {
+    const response = await api.get(`/listings/preview/${token}/check-publish`)
+    return response.data
+  },
+  updateByToken: async (token: string, data: Record<string, unknown>) => {
+    const response = await api.patch(`/listings/preview/${token}`, data)
+    return response.data
+  },
+  publish: async (token: string, options?: { replaceExisting?: boolean }) => {
+    const response = await api.post(`/listings/preview/${token}/publish`, options)
+    return response.data
+  },
+}
+
 export interface AdminUserItem {
   _id: string
   name: string
