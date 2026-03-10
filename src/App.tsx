@@ -25,6 +25,8 @@ import Contact from './pages/Contact'
 import AdminLogin from './pages/admin/AdminLogin'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminUserProfile from './pages/admin/AdminUserProfile'
+import ConciergeCreateDraftPage from './pages/admin/ConciergeCreateDraftPage'
+import PreviewPage from './pages/PreviewPage'
 import CookieConsent from './components/CookieConsent'
 import ProtectedRoute from './components/ProtectedRoute'
 import AdminProtectedRoute from './components/AdminProtectedRoute'
@@ -72,6 +74,7 @@ function App() {
         <Route path="/contact" element={<Contact />} />
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/listings/:listingId" element={<ListingDetail />} />
+        <Route path="/preview/:token" element={<PreviewPage />} />
         
         {/* Protected routes - require authentication */}
         <Route
@@ -111,6 +114,14 @@ function App() {
           element={
             <AdminProtectedRoute>
               <AdminDashboard />
+            </AdminProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/dashboard/concierge/create"
+          element={
+            <AdminProtectedRoute>
+              <ConciergeCreateDraftPage />
             </AdminProtectedRoute>
           }
         />

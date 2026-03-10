@@ -89,8 +89,17 @@ const Auth = () => {
 
   useEffect(() => {
     const modeParam = searchParams.get('mode')
+    const emailParam = searchParams.get('email')
+    const phoneParam = searchParams.get('phone')
+    if (emailParam) setEmail(decodeURIComponent(emailParam))
+    if (phoneParam) {
+      const decoded = decodeURIComponent(phoneParam).replace(/\D/g, '')
+      setPhone(decoded)
+    }
     if (modeParam === 'signup' || modeParam === 'signin') {
       setAuthMode(modeParam)
+    } else if (emailParam) {
+      setAuthMode('signin')
     }
   }, [searchParams])
 

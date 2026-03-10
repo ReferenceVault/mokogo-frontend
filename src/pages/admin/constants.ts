@@ -4,6 +4,7 @@
 
 export const ADMIN_VIEW_IDS = [
   'overview',
+  'concierge',
   'users',
   'listings',
   'requests',

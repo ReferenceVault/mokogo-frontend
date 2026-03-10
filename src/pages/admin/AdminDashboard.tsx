@@ -4,8 +4,9 @@ import Footer from '@/components/Footer'
 import SocialSidebar from '@/components/SocialSidebar'
 import DashboardHeader from '@/components/DashboardHeader'
 import DashboardSidebar from '@/components/DashboardSidebar'
-import { LayoutGrid, Home, MessageSquare, Settings, Users, Flag } from 'lucide-react'
+import { LayoutGrid, Home, MessageSquare, Settings, Users, Flag, Briefcase } from 'lucide-react'
 import { AdminOverviewTab } from './tabs/AdminOverviewTab'
+import { AdminConciergeTab } from './tabs/AdminConciergeTab'
 import { AdminUsersTab } from './tabs/AdminUsersTab'
 import { AdminListingsTab } from './tabs/AdminListingsTab'
 import { AdminReportsTab } from './tabs/AdminReportsTab'
@@ -28,6 +29,7 @@ const AdminDashboard = () => {
   useEffect(() => {
     const openTab = (location.state as { openTab?: string })?.openTab
     if (openTab === 'users') setActiveView('users')
+    if (openTab === 'concierge') setActiveView('concierge')
   }, [location.state])
 
   const handleLogout = () => {
@@ -64,6 +66,7 @@ const AdminDashboard = () => {
           activeView={activeView}
           menuItems={[
             { id: 'overview', label: 'Overview', icon: LayoutGrid, onClick: () => setActiveView('overview') },
+            { id: 'concierge', label: 'Concierge', icon: Briefcase, onClick: () => setActiveView('concierge') },
             { id: 'listings', label: 'Listings', icon: Home, onClick: () => setActiveView('listings') },
             { id: 'users', label: 'Users', icon: Users, onClick: () => setActiveView('users') },
             { id: 'requests', label: 'Requests', icon: MessageSquare, onClick: () => setActiveView('requests') },
@@ -77,6 +80,7 @@ const AdminDashboard = () => {
         <main className="flex-1 pr-11 lg:pr-14">
           <div className="max-w-7xl mx-auto px-6 py-8">
             {activeView === 'overview' && <AdminOverviewTab />}
+            {activeView === 'concierge' && <AdminConciergeTab />}
             {activeView === 'users' && <AdminUsersTab />}
             {activeView === 'listings' && <AdminListingsTab />}
             {activeView === 'requests' && <AdminRequestsTab onSetActiveView={(view) => setActiveView(view as AdminViewId)} />}

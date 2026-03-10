@@ -723,7 +723,7 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
   }
 
   return (
-    <div className="h-[calc(100vh-4rem)] sm:h-[calc(100vh-120px)] flex flex-col lg:flex-row bg-gray-50 overflow-hidden">
+    <div className="h-[calc(100vh-(-3rem))] sm:h-[calc(100vh-0px)] flex flex-col lg:flex-row bg-gray-50 overflow-hidden">
 
       {/* Backdrop for profile overlay on mobile - z-[60] above dashboard header (z-50) */}
       {selectedConversation && showProfile && (
