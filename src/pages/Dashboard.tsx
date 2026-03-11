@@ -267,10 +267,14 @@ const Dashboard = () => {
     if (listingParam) {
       setViewingListingId(listingParam)
       setActiveView('listing-detail')
-      setListingReturnView('explore')
       // Scroll to top when viewing a listing
       window.scrollTo({ top: 0, behavior: 'smooth' })
       // Don't clean up listing param - keep it in URL while viewing
+    } else if (activeView === 'listing-detail' && viewingListingId) {
+      // Browser back/forward can remove `?listing=...` without triggering our UI back handlers.
+      // If URL no longer has `listing`, exit listing detail view and return to the last known view.
+      setViewingListingId(null)
+      setActiveView(listingReturnView)
     } else if (conversationParam) {
       // URL has ?conversation=xxx - open messages view with that conversation
       setActiveView('messages')
@@ -303,7 +307,7 @@ const Dashboard = () => {
       const newUrl = newSearch ? `${window.location.pathname}?${newSearch}` : window.location.pathname
       navigate(newUrl, { replace: true })
     }
-  }, [allListings.length, requests, user?.id, location.search, navigate])
+  }, [allListings.length, requests, user?.id, location.search, navigate, activeView, viewingListingId, listingReturnView])
 
   // Scroll to top when activeView changes to listing-detail
   useEffect(() => {
