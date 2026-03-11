@@ -5,7 +5,6 @@ interface NewsletterSectionProps {
   subscribeSuccess: string | null
   isSubscribing: boolean
   onSubscribe: () => void
-  whatsappCommunityUrl: string
 }
 
 const NewsletterSection = ({
@@ -15,7 +14,6 @@ const NewsletterSection = ({
   subscribeSuccess,
   isSubscribing,
   onSubscribe,
-  whatsappCommunityUrl,
 }: NewsletterSectionProps) => {
   return (
     <section className="w-full bg-gradient-to-br from-orange-100/80 to-orange-50 py-12 md:py-16">
@@ -57,14 +55,6 @@ const NewsletterSection = ({
                   {isSubscribing ? 'Subscribing...' : 'Subscribe'}
                 </button>
               </div>
-              <a
-                href={whatsappCommunityUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center justify-center rounded-full border border-orange-200 bg-white px-6 py-3 text-sm font-semibold text-orange-600 transition-colors hover:bg-orange-50"
-              >
-                💬 Join our WhatsApp Community →
-              </a>
             </div>
           </div>
         </div>

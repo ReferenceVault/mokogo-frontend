@@ -4,7 +4,7 @@ import { CheckCircle2 } from 'lucide-react'
 const ListYourSpaceSection = () => {
   return (
     <section className="mx-auto grid max-w-7xl overflow-hidden rounded-[32px] bg-white shadow-sm ring-1 ring-orange-100 lg:grid-cols-[0.95fr_1.05fr]">
-      <div className="flex bg-orange-500 px-6 py-10 text-white md:px-10 lg:items-center lg:py-12">
+      <div className="flex bg-orange-400 px-6 py-10 text-white md:px-10 lg:items-center lg:py-12">
         <div className="max-w-xl space-y-6">
           <span className="inline-flex items-center rounded-full border border-white/80 bg-white px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.26em] text-orange-600 shadow-sm">
             For Owners & Hosts
@@ -35,9 +35,9 @@ const ListYourSpaceSection = () => {
           <div className="flex items-center gap-4">
             <Link
               to="/auth?redirect=/dashboard&view=listings"
-              className="inline-flex items-center justify-center rounded-full bg-white px-6 py-3 text-sm font-semibold text-orange-600 transition-colors hover:bg-orange-50"
+              className="inline-flex items-center justify-center rounded-full bg-white px-6 py-3 text-sm font-semibold text-orange-700 transition-colors hover:bg-orange-50"
             >
-              List Your Space →
+              List Your Place →
             </Link>
             <span className="text-sm text-white/80">Simple setup. No listing fee.</span>
           </div>

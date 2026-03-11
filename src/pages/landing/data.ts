@@ -17,6 +17,28 @@ export const rotatingHeroPlaceholders = [
 
 export const searchCities = ['Pune']
 
+export const cityAreaHintExamples: Record<string, string[]> = {
+  pune: ['Try: Koregaon Park, Pune', 'Try: Baner, Pune', 'Try: Wakad, Pune'],
+  mumbai: ['Try: Andheri, Mumbai', 'Try: Bandra, Mumbai', 'Try: Powai, Mumbai'],
+  bangalore: ['Try: Koramangala, Bangalore', 'Try: Indiranagar, Bangalore', 'Try: HSR Layout, Bangalore'],
+  hyderabad: ['Try: Gachibowli, Hyderabad', 'Try: Hitech City, Hyderabad', 'Try: Kondapur, Hyderabad'],
+  'delhi ncr': ['Try: South Delhi, Delhi NCR', 'Try: DLF Phase 3, Delhi NCR', 'Try: Noida Sector 62, Delhi NCR'],
+  chennai: ['Try: Adyar, Chennai', 'Try: Velachery, Chennai', 'Try: OMR, Chennai'],
+  kolkata: ['Try: Salt Lake, Kolkata', 'Try: New Town, Kolkata', 'Try: Ballygunge, Kolkata'],
+  ahmedabad: ['Try: Prahlad Nagar, Ahmedabad', 'Try: Vastrapur, Ahmedabad', 'Try: Thaltej, Ahmedabad'],
+  jaipur: ['Try: Mansarovar, Jaipur', 'Try: Malviya Nagar, Jaipur', 'Try: Vaishali Nagar, Jaipur'],
+  surat: ['Try: Vesu, Surat', 'Try: Adajan, Surat', 'Try: Pal, Surat'],
+  indore: ['Try: Vijay Nagar, Indore', 'Try: Palasia, Indore', 'Try: Rau, Indore'],
+  chandigarh: ['Try: Sector 17, Chandigarh', 'Try: Sector 35, Chandigarh', 'Try: Sector 44, Chandigarh'],
+  kochi: ['Try: Kakkanad, Kochi', 'Try: Edappally, Kochi', 'Try: Panampilly Nagar, Kochi'],
+  coimbatore: ['Try: RS Puram, Coimbatore', 'Try: Peelamedu, Coimbatore', 'Try: Avinashi Road, Coimbatore'],
+  vizag: ['Try: MVP Colony, Vizag', 'Try: Madhurawada, Vizag', 'Try: Seethammadhara, Vizag'],
+  nagpur: ['Try: Dharampeth, Nagpur', 'Try: Civil Lines, Nagpur', 'Try: Wardha Road, Nagpur'],
+  lucknow: ['Try: Gomti Nagar, Lucknow', 'Try: Aliganj, Lucknow', 'Try: Indira Nagar, Lucknow'],
+  bhopal: ['Try: Arera Colony, Bhopal', 'Try: MP Nagar, Bhopal', 'Try: Kolar Road, Bhopal'],
+  patna: ['Try: Boring Road, Patna', 'Try: Kankarbagh, Patna', 'Try: Bailey Road, Patna'],
+}
+
 export const howItWorksSteps: HowItWorksStep[] = [
   {
     number: '01',
@@ -26,7 +48,7 @@ export const howItWorksSteps: HowItWorksStep[] = [
   },
   {
     number: '02',
-    title: 'Browse verified listings & connect directly with owners',
+    title: 'Connect directly with owners',
     description: 'See real homes, compare details, and message owners without middlemen.',
     icon: Building2,
   },
@@ -100,7 +122,7 @@ export const whyMokogoFeatures: WhyMokogoFeature[] = [
   {
     icon: '🤝',
     title: 'Real Owner Contact',
-    description: 'Skip the middlemen. Message or call owners directly from the platform.',
+    description: 'Skip the middlemen. Message owners directly from the platform.',
   },
   {
     icon: '🏳️‍🌈',
@@ -111,29 +133,54 @@ export const whyMokogoFeatures: WhyMokogoFeature[] = [
 
 export const faqItems: FAQItem[] = [
   {
-    question: 'Is Mokogo really free to use?',
+    question: 'What exactly is Mokogo and how is it different?',
     answer:
-      'Yes. Searching, browsing, and connecting on Mokogo is free for seekers, with zero brokerage on the homes you find here.',
+      "Mokogo is a shared housing discovery platform. We don't act as brokers, take commissions, or push deals. You connect directly with flat owners or current tenants. No middlemen, no brokerage fees, no spam calls from agents.",
   },
   {
-    question: 'How are listings verified?',
+    question: "Is it really free? What's the catch?",
     answer:
-      'Each live listing goes through checks for authenticity and completeness before it appears publicly, helping reduce spam and misleading posts.',
+      "Yes, completely free right now for both listing and finding a place. No hidden charges, no premium unlocks. Mokogo is free because we're building trust first. That's the only agenda.",
   },
   {
-    question: 'What is Miko Vibe Search?',
+    question: 'Will Mokogo always be free?',
     answer:
-      'Miko Vibe Search is our quick lifestyle matching flow that uses six simple questions to recommend homes that fit how you actually live.',
+      "Listing a space will always be free. In the future, we may introduce a small fee for connecting seekers with listers but we'll be upfront about it well in advance, and we'll only charge when the value is clear.",
   },
   {
-    question: 'Can I list a PG or hostel?',
+    question: 'How do I find a room or flatmate that actually fits me?',
     answer:
-      'Yes. Owners and operators can list rooms, shared spaces, PGs, and similar stays as long as the details are accurate and complete.',
+      "You can search by city, budget, and area. Mokogo also helps match you based on lifestyle preferences so you're not just finding a room, you're finding a living situation that works for you.",
   },
   {
-    question: 'How do I contact a room owner?',
+    question: 'How do I know the listings are real and not fake or outdated?',
     answer:
-      'Open a listing, review the details, and use the contact flow to connect directly with the owner or host without a broker in between.',
+      "Listings on Mokogo are closely monitored and organised, not pulled from random group posts or broker aggregators. If something looks off, you can flag it and we'll look into it.",
+  },
+  {
+    question: 'Do I need an account just to browse?',
+    answer:
+      "You can browse listings without an account. You'll need to sign up when you want to connect with a lister or post your own space.",
+  },
+  {
+    question: "I'm a lister. Will brokers or random people spam me?",
+    answer:
+      "No. Mokogo is built specifically to keep brokers out. Your contact details aren't publicly exposed so you only hear from people who are genuinely looking.",
+  },
+  {
+    question: 'Which cities is Mokogo currently available in?',
+    answer:
+      "We're starting in Pune, Mumbai, Bangalore, Hyderabad, and Delhi NCR. More cities are coming. If yours isn't listed yet, you can sign up to be notified when we launch there.",
+  },
+  {
+    question: 'What happens after I connect with someone? Does Mokogo stay involved?',
+    answer:
+      "Once we connect you, the conversation and decision is entirely yours. Mokogo doesn't interfere, take a cut, or push any outcome. We're a discovery platform. What happens next is between real people.",
+  },
+  {
+    question: 'Is Mokogo safe to use, especially for women and LGBTQ users?',
+    answer:
+      "Your phone number and personal details are never publicly visible on Mokogo. We built it this way deliberately because women shouldn't have to share their number with strangers just to find a flat, and because LGBTQ users deserve a space where they can look for housing without uncertainty about whether they'll be welcomed.",
   },
 ]
 

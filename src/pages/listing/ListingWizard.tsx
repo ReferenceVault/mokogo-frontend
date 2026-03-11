@@ -1457,7 +1457,7 @@ const ListingWizard = () => {
           {/* Page Header */}
           <div className="mb-3">
             <h1 className="text-xl sm:text-[1.375rem] font-bold text-gray-900 mb-0.5">
-              {isEditing ? 'Edit Your Listing' : 'List Your Space'}
+              {isEditing ? 'Edit Your Listing' : 'List Your Place'}
             </h1>
             <p className="text-[0.825rem] text-gray-600">
               {isEditing ? 'Update your listing details below' : 'Find your perfect flatmate in under 5 minutes'}

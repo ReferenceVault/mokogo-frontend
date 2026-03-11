@@ -33,8 +33,8 @@ const HowItWorksSection = ({ workflows }: HowItWorksSectionProps) => {
         <h2 className="relative mx-auto mt-5 max-w-3xl text-3xl font-bold tracking-tight text-gray-900 md:text-4xl">
           One platform, <span className="bg-gradient-to-r from-orange-600 via-amber-500 to-orange-500 bg-clip-text text-transparent">two simple journeys</span>
         </h2>
-        <div className="mt-6 flex justify-center">
-          <div className="inline-flex rounded-[22px] border border-orange-200/80 bg-white/80 p-1.5 shadow-sm backdrop-blur">
+        <div className="mt-6 flex flex-col items-center gap-3">
+          <div className="inline-flex rounded-[26px] border-2 border-orange-200/90 bg-white/90 p-2 shadow-lg shadow-orange-200/35 ring-1 ring-white/80 backdrop-blur">
             {workflows.map((workflow) => {
               const isActive = workflow.id === activeWorkflow.id
 
@@ -43,11 +43,12 @@ const HowItWorksSection = ({ workflows }: HowItWorksSectionProps) => {
                   key={workflow.id}
                   type="button"
                   onClick={() => setActiveWorkflowId(workflow.id)}
+                  aria-pressed={isActive}
                   className={[
-                    'rounded-2xl px-4 py-2.5 text-sm font-semibold transition-all duration-200 md:px-5',
+                    'min-w-[140px] rounded-2xl px-4 py-3 text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white md:min-w-[170px] md:px-6',
                     isActive
-                      ? 'bg-gradient-to-r from-orange-500 to-amber-400 text-white shadow-lg shadow-orange-300/30'
-                      : 'text-gray-600 hover:bg-orange-50 hover:text-orange-600',
+                      ? 'bg-gradient-to-r from-orange-500 to-amber-400 text-white shadow-lg shadow-orange-300/35'
+                      : 'text-gray-700 hover:bg-orange-50 hover:text-orange-700',
                   ].join(' ')}
                 >
                   {workflow.label}
@@ -55,6 +56,9 @@ const HowItWorksSection = ({ workflows }: HowItWorksSectionProps) => {
               )
             })}
           </div>
+          <p className="text-xs font-medium text-gray-500">
+            Tap to switch between seeker and owner steps
+          </p>
         </div>
 
         <div className="mx-auto mt-5 max-w-2xl rounded-[24px] border border-white/80 bg-white/75 px-5 py-4 shadow-sm backdrop-blur">
@@ -98,10 +102,6 @@ const HowItWorksSection = ({ workflows }: HowItWorksSectionProps) => {
                   </div>
                 </div>
 
-                <div className="mt-6 flex items-center gap-2 text-xs font-medium text-gray-400">
-                  <span className="h-2 w-2 rounded-full bg-orange-400" />
-                  <span>Simple, direct, no-broker flow</span>
-                </div>
               </article>
 
               {index < activeWorkflow.steps.length - 1 ? (

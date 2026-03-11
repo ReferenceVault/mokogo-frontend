@@ -7,16 +7,14 @@ import { useStore } from '@/store/useStore'
 import { Listing, VibeTagId } from '@/types'
 import { listingsApi, ListingResponse, subscriptionsApi, placesApi, AutocompletePrediction } from '@/services/api'
 import MikoVibeQuiz from '@/components/MikoVibeQuiz'
-import type { CityItem, LandingSearchFilters, SearchMode } from './landing/types'
+import type { CityItem, FeaturedListingItem, LandingSearchFilters, SearchMode } from './landing/types'
+import { isListingWithinRadius, sortListingsByDistance } from '@/utils/distance'
 import {
+  cityAreaHintExamples,
   faqItems,
-  featuredDummyListings,
   howItWorksWorkflows,
   mikoQuestionPills,
-  rotatingHeroPlaceholders,
-  searchCities,
   testimonials,
-  whatsappCommunityUrl,
   whyMokogoFeatures,
 } from './landing/data'
 import HeroSection from './landing/components/HeroSection'
@@ -53,6 +51,8 @@ const LandingPage = () => {
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [rateLimitMessage, setRateLimitMessage] = useState<string | null>(null)
   const rateLimitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [searchValidationMessage, setSearchValidationMessage] = useState<string | null>(null)
+  const autocompleteReqIdRef = useRef(0)
   const [searchMode, setSearchMode] = useState<SearchMode>('standard')
   const [isMikoOpen, setIsMikoOpen] = useState(false)
   const [subscribeEmail, setSubscribeEmail] = useState('')
@@ -67,16 +67,73 @@ const LandingPage = () => {
   const [notifySuccess, setNotifySuccess] = useState<string | null>(null)
   const [isNotifySubmitting, setIsNotifySubmitting] = useState(false)
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0)
+  const [nearbyListings, setNearbyListings] = useState<FeaturedListingItem[]>([])
+  const [locationState, setLocationState] = useState<'idle' | 'requesting' | 'granted' | 'denied' | 'unsupported' | 'no_listings'>('idle')
+  const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null)
+
+  const normalize = (v: string) => (v || '').trim().toLowerCase()
+
+  const canonicalizeCityKey = (city: string) => {
+    const c = normalize(city)
+    if (!c) return ''
+    if (c === 'new delhi' || c === 'delhi') return 'delhi ncr'
+    return c
+  }
+
+  const canonicalizeCityLabel = (city: string) => {
+    const key = canonicalizeCityKey(city)
+    if (!key) return ''
+    if (key === 'delhi ncr') return 'Delhi NCR'
+    // Preserve original formatting for everything else
+    return (city || '').trim()
+  }
+
+  const getCityMatchTokens = (city: string): string[] => {
+    const c = canonicalizeCityKey(city)
+    if (!c) return []
+    if (c === 'delhi ncr') {
+      return ['delhi', 'gurugram', 'gurgaon', 'noida', 'greater noida', 'ghaziabad', 'faridabad']
+    }
+    if (c === 'bangalore') {
+      return ['bangalore', 'bengaluru']
+    }
+    return [c]
+  }
+
+  const getCityHintKey = (city: string): string => {
+    const c = canonicalizeCityKey(city)
+    if (!c) return ''
+    if (c === 'bengaluru') return 'bangalore'
+    return c
+  }
+
+  const heroPlaceholders = useMemo(() => {
+    const city = searchFilters.city
+    const key = getCityHintKey(city)
+    if (!key) return ['Select a city first']
+
+    const examples = cityAreaHintExamples[key]
+    if (examples?.length) return examples
+
+    const cityLabel = (city || '').trim()
+    return cityLabel
+      ? [`Try: Enter an area in ${cityLabel}`]
+      : ['Select a city first']
+  }, [searchFilters.city])
 
   useEffect(() => {
     const interval = window.setInterval(() => {
-      setHeroPlaceholderIndex((prev) => (prev + 1) % rotatingHeroPlaceholders.length)
+      setHeroPlaceholderIndex((prev) => (prev + 1) % heroPlaceholders.length)
     }, 2000)
 
     return () => {
       window.clearInterval(interval)
     }
-  }, [])
+  }, [heroPlaceholders.length])
+
+  useEffect(() => {
+    setHeroPlaceholderIndex(0)
+  }, [searchFilters.city])
 
   // Fetch all live listings from API
   useEffect(() => {
@@ -88,8 +145,12 @@ const LandingPage = () => {
         const mappedListings: Listing[] = listings.map((listing: ListingResponse) => ({
           id: listing._id || listing.id,
           title: listing.title,
-          city: listing.city || '',
+          city: canonicalizeCityLabel(listing.city || ''),
           locality: listing.locality || '',
+          placeId: listing.placeId,
+          latitude: listing.latitude,
+          longitude: listing.longitude,
+          formattedAddress: listing.formattedAddress,
           societyName: listing.societyName,
           buildingType: listing.buildingType,
           bhkType: listing.bhkType || '',
@@ -124,6 +185,53 @@ const LandingPage = () => {
     fetchListings()
   }, [setAllListings])
 
+  const requestUserLocation = useCallback(() => {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      setLocationState('unsupported')
+      return
+    }
+
+    setLocationState('requesting')
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const lat = pos.coords.latitude
+        const lng = pos.coords.longitude
+        setUserCoords({ lat, lng })
+        setLocationState('granted')
+      },
+      () => {
+        setLocationState('denied')
+      },
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 1000 * 60 * 10 },
+    )
+  }, [])
+
+  useEffect(() => {
+    if (!userCoords || locationState !== 'granted') return
+
+    const live = allListings.filter((l) => l.status === 'live' && l.latitude && l.longitude)
+    const within = live.filter((l) => isListingWithinRadius(l, userCoords.lat, userCoords.lng, 15))
+    const sorted = sortListingsByDistance(within, userCoords.lat, userCoords.lng).slice(0, 12)
+
+    if (!sorted.length) {
+      setNearbyListings([])
+      setLocationState('no_listings')
+      return
+    }
+
+    const toFeatured = (l: Listing): FeaturedListingItem => ({
+      id: l.id,
+      image: l.photos?.[0] || '/pune-city.png',
+      furnishing: l.furnishingLevel || 'Furnished',
+      title: l.title || 'Room available',
+      location: `${l.locality || 'Area'}, ${l.city || ''}`.trim(),
+      preference: l.preferredGender ? `${l.preferredGender} preferred` : 'View details',
+      price: l.rent ? `₹${Number(l.rent).toLocaleString('en-IN')}/mo` : 'View price',
+    })
+
+    setNearbyListings(sorted.map(toFeatured))
+  }, [allListings, locationState, userCoords])
+
   // Calculate dropdown position based on input field
   const updateAreaDropdownPosition = useCallback(() => {
     if (areaInputRef.current) {
@@ -144,11 +252,29 @@ const LandingPage = () => {
       return
     }
 
+    const reqId = ++autocompleteReqIdRef.current
+    const requestedCity = city
+    const requestedInput = input.trim()
     setIsLoadingArea(true)
     try {
-      const results = await placesApi.getAutocomplete(input.trim(), city)
-      setAreaSuggestions(results)
-      if (results.length > 0) {
+      const results = await placesApi.getAutocomplete(requestedInput, requestedCity)
+      // Ignore stale responses (city/input changed while request was in-flight)
+      if (
+        reqId !== autocompleteReqIdRef.current ||
+        requestedCity !== city ||
+        requestedInput !== input.trim()
+      ) {
+        return
+      }
+
+      const tokens = getCityMatchTokens(requestedCity)
+      const filtered = results.filter((p) => {
+        const hay = `${p.structured_formatting?.secondary_text || ''} ${p.description || ''}`.toLowerCase()
+        return tokens.some((t) => hay.includes(t))
+      })
+
+      setAreaSuggestions(filtered)
+      if (filtered.length > 0) {
         setShowAreaSuggestions(true)
         updateAreaDropdownPosition()
       } else {
@@ -174,13 +300,18 @@ const LandingPage = () => {
         setShowAreaSuggestions(false)
       }
     } finally {
-      setIsLoadingArea(false)
+      if (reqId === autocompleteReqIdRef.current) {
+        setIsLoadingArea(false)
+      }
     }
   }, [updateAreaDropdownPosition])
 
   // Handle area input change
   const handleAreaInputChange = (value: string) => {
     setAreaInputValue(value)
+    if (searchValidationMessage) {
+      setSearchValidationMessage(null)
+    }
     
     // Clear rate limit message when user starts typing again
     if (rateLimitMessage) {
@@ -229,6 +360,9 @@ const LandingPage = () => {
     setAreaInputValue(prediction.structured_formatting.main_text)
     setShowAreaSuggestions(false)
     setAreaSuggestions([])
+    if (searchValidationMessage) {
+      setSearchValidationMessage(null)
+    }
 
     try {
       const placeDetails = await placesApi.getPlaceDetails(prediction.place_id)
@@ -315,6 +449,15 @@ const LandingPage = () => {
   }, [searchFilters.city])
 
   const handleSearch = () => {
+    setSearchValidationMessage(null)
+    if (!searchFilters.city) {
+      setSearchValidationMessage('Select a city to search.')
+      return
+    }
+    if (!searchFilters.areaPlaceId) {
+      setSearchValidationMessage('Select an area from the suggestions to search.')
+      return
+    }
     const params = new URLSearchParams()
     if (searchFilters.city) params.set('city', searchFilters.city)
     if (searchFilters.area && searchFilters.areaPlaceId) {
@@ -358,45 +501,72 @@ const LandingPage = () => {
     }
   }
 
+  const liveCityStats = useMemo(() => {
+    const map = new Map<string, { name: string; count: number }>()
+    allListings
+      .filter((l) => l.status === 'live')
+      .forEach((l) => {
+        const raw = (l.city || '').trim()
+        if (!raw) return
+        const key = canonicalizeCityKey(raw)
+        const label = canonicalizeCityLabel(raw)
+        const current = map.get(key)
+        if (current) current.count += 1
+        else map.set(key, { name: label || raw, count: 1 })
+      })
+    return map
+  }, [allListings])
 
-  // Get city listings count from actual listings
-  const getCityListingsCount = (cityName: string) => {
-    return allListings.filter(l => l.city === cityName && l.status === 'live').length
+  const cityImageByName: Record<string, string> = {
+    'pune': '/pune-city.png',
+    'mumbai': '/mumbai-city.png',
+    'bangalore': '/bangalore-city.png',
+    'bengaluru': '/bangalore-city.png',
+    'hyderabad': '/hyderabad-city.png',
+    'delhi ncr': '/delhi-city.png',
   }
 
-  const cities: CityItem[] = [
-    { 
-      name: 'Pune', 
-      image: '/pune-city.png', 
-      listings: getCityListingsCount('Pune'),
-      active: true
-    },
-    { 
-      name: 'Mumbai', 
-      image: '/mumbai-city.png', 
-      listings: getCityListingsCount('Mumbai'),
-      active: false
-    },
-    { 
-      name: 'Bangalore', 
-      image: '/bangalore-city.png', 
-      listings: getCityListingsCount('Bangalore'),
-      active: false
-    },
-    { 
-      name: 'Hyderabad', 
-      image: '/hyderabad-city.png', 
-      listings: getCityListingsCount('Hyderabad'),
-      active: false
-    },
-    {
-      name: 'Delhi NCR',
-      image: '/delhi-city.png',
-      listings: getCityListingsCount('Delhi NCR'),
-      active: false
-    }
-  ]
-  const featuredListingsLoop = useMemo(() => [...featuredDummyListings, ...featuredDummyListings], [])
+  const discoverCities: CityItem[] = useMemo(() => {
+    const baseOrder = ['Pune', 'Mumbai', 'Bangalore', 'Hyderabad', 'Delhi NCR']
+    const base = baseOrder.map((name) => {
+      const key = normalize(name)
+      const stat = liveCityStats.get(key)
+      const count = stat?.count ?? 0
+      return {
+        name,
+        image: cityImageByName[key] || '/pune-city.png',
+        listings: count,
+        active: count > 0,
+      }
+    })
+
+    // Add any extra cities that have live listings but aren't in the base list
+    const extras: CityItem[] = []
+    liveCityStats.forEach((stat, key) => {
+      if (base.some((c) => normalize(c.name) === key)) return
+      extras.push({
+        name: stat.name,
+        image: cityImageByName[key] || '/pune-city.png',
+        listings: stat.count,
+        active: true,
+      })
+    })
+
+    return [...base, ...extras].sort((a, b) => {
+      // Live cities first, then by listing count desc, then alphabetically
+      if (a.active !== b.active) return a.active ? -1 : 1
+      if (b.listings !== a.listings) return b.listings - a.listings
+      return a.name.localeCompare(b.name)
+    })
+  }, [liveCityStats])
+
+  const searchCities = useMemo(() => {
+    const cities = Array.from(liveCityStats.values())
+      .filter((c) => c.count > 0)
+      .map((c) => c.name)
+      .sort((a, b) => a.localeCompare(b))
+    return cities.length ? cities : ['Pune']
+  }, [liveCityStats])
   const testimonialsLoop = useMemo(() => [...testimonials, ...testimonials], [])
 
   const validateSubscribeEmail = (email: string) => {
@@ -518,14 +688,32 @@ const LandingPage = () => {
           onOpenMiko={() => setIsMikoOpen(true)}
           searchFilters={searchFilters}
           searchCities={searchCities}
-          onCityChange={(city) => setSearchFilters((prev) => ({ ...prev, city }))}
+          onCityChange={(city) => {
+            if (searchValidationMessage) {
+              setSearchValidationMessage(null)
+            }
+            setSearchFilters((prev) => ({
+              ...prev,
+              city,
+              area: '',
+              areaPlaceId: '',
+              areaLat: 0,
+              areaLng: 0,
+              moveInDate: '',
+            }))
+            setAreaInputValue('')
+            setAreaSuggestions([])
+            setShowAreaSuggestions(false)
+          }}
           areaInputRef={areaInputRef}
           areaInputValue={areaInputValue}
           onAreaInputChange={handleAreaInputChange}
           onAreaFocus={handleAreaFocus}
-          heroPlaceholder={rotatingHeroPlaceholders[heroPlaceholderIndex]}
+          heroPlaceholder={heroPlaceholders[heroPlaceholderIndex] || heroPlaceholders[0]}
           isLoadingArea={isLoadingArea}
           rateLimitMessage={rateLimitMessage}
+          searchValidationMessage={searchValidationMessage}
+          isStandardSearchReady={Boolean(searchFilters.city) && Boolean(searchFilters.areaPlaceId)}
           showAreaSuggestions={showAreaSuggestions}
           areaSuggestions={areaSuggestions}
           areaSuggestionsRef={areaSuggestionsRef}
@@ -536,13 +724,17 @@ const LandingPage = () => {
         />
         <div className="bg-gradient-to-br from-orange-50 via-orange-100/50 to-orange-50">
           <div className="space-y-10 px-4 py-8 sm:space-y-14 sm:px-6 sm:py-10 md:space-y-16 md:px-12 md:py-12">
-          <FeaturedListingsSection listings={featuredListingsLoop} />
-          <CitiesSection cities={cities} onNotify={openNotifyModal} />
-          <HowItWorksSection workflows={howItWorksWorkflows} />
+          <FeaturedListingsSection
+            listings={nearbyListings}
+            locationState={locationState}
+            onEnableLocation={requestUserLocation}
+          />
+          <CitiesSection cities={discoverCities} onNotify={openNotifyModal} />
           <MikoVibeSection questions={mikoQuestionPills} onTryMiko={() => setIsMikoOpen(true)} />
+          <HowItWorksSection workflows={howItWorksWorkflows} />
           <WhyMokogoSection features={whyMokogoFeatures} />
           <ListYourSpaceSection />
-          <TestimonialsSection testimonials={testimonialsLoop} />
+          {false && <TestimonialsSection testimonials={testimonialsLoop} />}
           <FaqSection
             items={faqItems}
             openIndex={openFaqIndex}
@@ -561,7 +753,6 @@ const LandingPage = () => {
           subscribeSuccess={subscribeSuccess}
           isSubscribing={isSubscribing}
           onSubscribe={handleSubscribe}
-          whatsappCommunityUrl={whatsappCommunityUrl}
         />
       </main>
 

@@ -19,7 +19,6 @@ const FaqSection = ({ items, openIndex, onToggle }: FaqSectionProps) => {
         <span className="inline-flex items-center rounded-full border border-orange-200/80 bg-white px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.26em] text-orange-600 shadow-sm">
           FAQs
         </span>
-        <h2 className="mt-4 text-3xl font-bold tracking-tight text-gray-900 md:text-4xl">Got Questions?</h2>
         <p className="mx-auto mt-3 max-w-2xl text-sm leading-7 text-gray-600 md:text-base">
           Everything you might want to know before searching, listing, or connecting on Mokogo.
         </p>

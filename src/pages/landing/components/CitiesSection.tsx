@@ -22,17 +22,17 @@ const CitiesSection = ({ cities, onNotify }: CitiesSectionProps) => {
             Discover Top Locations
           </span>
           <h2 className="text-2xl font-bold text-gray-900 md:text-3xl lg:text-4xl">
-            Cities We’re Launching In
+            Now Live In These Cities
           </h2>
           <p className="mx-auto max-w-2xl text-sm leading-relaxed text-gray-600 md:text-base">
-            We’re starting with Pune and rolling out city by city across India.
+            Cities go live automatically when verified listings are available.
           </p>
         </div>
 
-        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-5 lg:gap-6">
+        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-5 lg:gap-4">
           {cities.map((city, index) => {
             const wrapperClasses = [
-              'group relative h-[300px] overflow-hidden rounded-[28px] border shadow-lg transition-all duration-300',
+              'group relative h-[300px] overflow-hidden rounded-[28px] border shadow-lg transition-all duration-300 lg:h-[240px] lg:rounded-3xl',
               city.active
                 ? 'block cursor-pointer border-orange-200/70 bg-white hover:-translate-y-1 hover:border-orange-400 hover:shadow-2xl hover:shadow-orange-500/15'
                 : 'border-gray-200/80 bg-white/70 opacity-80 grayscale',

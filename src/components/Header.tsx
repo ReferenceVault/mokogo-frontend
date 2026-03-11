@@ -208,7 +208,7 @@ const Header = ({ forceGuest = false }: HeaderProps) => {
           </Link>
         </nav>
 
-        {/* Right section: List Your Space (primary CTA), Log in / Dashboard, User menu */}
+        {/* Right section: List Your Place (primary CTA), Log in / Dashboard, User menu */}
         <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
           {isAuthenticated ? (
             <>
@@ -216,7 +216,7 @@ const Header = ({ forceGuest = false }: HeaderProps) => {
                 onClick={handleListYourSpace}
                 className="group relative bg-gradient-to-r from-orange-400 to-orange-500 text-white px-3 py-2 sm:px-5 sm:py-2.5 rounded-full text-sm sm:text-base font-semibold transition-all duration-300 shadow-md hover:shadow-lg hover:shadow-orange-500/30 hover:scale-105 active:scale-95 overflow-hidden whitespace-nowrap"
               >
-                <span className="relative z-10">List Your Space</span>
+                <span className="relative z-10">List Your Place</span>
                 <span className="absolute inset-0 bg-gradient-to-r from-orange-500 to-orange-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               </button>
               {showDashboardCta && (
@@ -305,7 +305,7 @@ const Header = ({ forceGuest = false }: HeaderProps) => {
                 to="/auth?redirect=/dashboard&view=listings"
                 className="group relative bg-gradient-to-r from-orange-400 to-orange-500 text-white px-3 py-2 sm:px-5 sm:py-2.5 rounded-full text-sm sm:text-base font-semibold transition-all duration-300 shadow-md hover:shadow-lg hover:shadow-orange-500/30 hover:scale-105 active:scale-95 overflow-hidden whitespace-nowrap"
               >
-                <span className="relative z-10">List Your Space</span>
+                <span className="relative z-10">List Your Place</span>
                 <span className="absolute inset-0 bg-gradient-to-r from-orange-500 to-orange-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               </Link>
               <Link 

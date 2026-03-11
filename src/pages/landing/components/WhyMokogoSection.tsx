@@ -59,9 +59,6 @@ const WhyMokogoSection = ({ features }: WhyMokogoSectionProps) => {
                   <h3 className="text-base font-bold tracking-tight text-gray-900 md:text-lg">
                     {feature.title}
                   </h3>
-                  <span className="shrink-0 rounded-full bg-orange-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-orange-500">
-                    0{index + 1}
-                  </span>
                 </div>
 
                 <p className="mt-2 text-sm leading-6 text-gray-600">

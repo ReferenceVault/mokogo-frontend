@@ -20,6 +20,8 @@ interface HeroSectionProps {
   heroPlaceholder: string
   isLoadingArea: boolean
   rateLimitMessage: string | null
+  searchValidationMessage?: string | null
+  isStandardSearchReady?: boolean
   showAreaSuggestions: boolean
   areaSuggestions: AutocompletePrediction[]
   areaSuggestionsRef: RefObject<HTMLDivElement>
@@ -43,6 +45,8 @@ const HeroSection = ({
   heroPlaceholder,
   isLoadingArea,
   rateLimitMessage,
+  searchValidationMessage,
+  isStandardSearchReady = false,
   showAreaSuggestions,
   areaSuggestions,
   areaSuggestionsRef,
@@ -58,30 +62,26 @@ const HeroSection = ({
         <div className="absolute bottom-0 right-1/4 h-96 w-96 rounded-full bg-orange-300/20 blur-3xl" />
       </div>
 
-      <div className="relative mx-auto max-w-7xl px-4 pt-4 sm:px-6 sm:pt-5 md:px-12">
+      <div className="relative mx-auto max-w-7xl px-4 pt-3 sm:px-6 sm:pt-4 md:px-12">
         <div className="relative rounded-2xl border border-orange-100 bg-white/85 p-4 shadow-2xl backdrop-blur-xl sm:rounded-3xl sm:p-6 md:p-12">
           <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-orange-50/60 via-transparent to-orange-100/30 pointer-events-none" />
 
-          <div className="relative space-y-6 sm:space-y-8 md:space-y-10">
+          <div className="relative space-y-4 sm:space-y-6 md:space-y-7">
             <div className="space-y-3 text-center">
               <h1 className="px-1 text-2xl font-bold leading-tight text-gray-950 sm:text-3xl md:text-4xl lg:text-5xl">
-                <span>Flat & Flatmate Discovery</span>
-                <span className="bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent"> - Simplified.</span>
+                <span>Discover Rooms in Shared Flats</span>
               </h1>
               <p className="mx-auto flex max-w-[773px] flex-wrap justify-center gap-x-2 gap-y-1 text-xs font-semibold text-orange-600 sm:text-sm md:block md:text-base">
-                <span>⚡ Verified listings</span>
+                <span>⚡ Real listings</span>
                 <span className="hidden sm:inline md:hidden">•</span>
-                <span>🤝 Direct owner contact</span>
+                <span>🤝 Direct contact</span>
                 <span className="hidden sm:inline md:hidden">•</span>
                 <span>💸 Zero brokerage</span>
               </p>
-              <p className="mx-auto max-w-[773px] text-xs text-gray-600 sm:text-sm md:text-base">
-                Live in Pune. Expanding across India soon.
-              </p>
             </div>
 
-            <div className="relative rounded-2xl border border-orange-100 bg-white/95 p-4 shadow-xl sm:p-5 md:p-7">
-              <div className="mb-4 space-y-2 sm:mb-5">
+            <div className="relative rounded-2xl border border-orange-100 bg-white/95 p-4 shadow-xl sm:p-5 md:p-6">
+              <div className="mb-3 space-y-2 sm:mb-4">
                 <div className="flex flex-col items-center gap-2 sm:grid sm:grid-cols-[1fr_auto_1fr] sm:items-center">
                   <div className="hidden sm:block" />
                   <div className="inline-flex w-full justify-center rounded-full border border-orange-200 bg-orange-50 p-1 text-sm font-semibold shadow-sm sm:w-auto sm:justify-self-center">
@@ -105,14 +105,15 @@ const HeroSection = ({
                           : 'bg-orange-100/70 text-orange-600 hover:bg-orange-200/80 hover:text-orange-700'
                       }`}
                     >
-                      <span>🔮</span>
                       <span>Miko Vibe Search</span>
                     </button>
                   </div>
-                  <span className="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-600 sm:justify-self-end">
-                    <span>🔥</span>
-                    <span>14 new listings added today</span>
-                  </span>
+                  {false && (
+                    <span className="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-600 sm:justify-self-end">
+                      <span>🔥</span>
+                      <span>14 new listings added today</span>
+                    </span>
+                  )}
                 </div>
                 <div className="flex flex-col items-center gap-2 text-center">
                   {searchMode === 'miko' && (
@@ -124,7 +125,7 @@ const HeroSection = ({
               </div>
 
               {searchMode === 'standard' ? (
-                <div className="grid items-end gap-3.5 md:grid-cols-4">
+                <div className="grid items-end gap-3 md:grid-cols-4">
                   <div className="[&_button]:h-[50px] [&_button]:py-0">
                     <CustomSelect
                       label="Select City"
@@ -135,9 +136,9 @@ const HeroSection = ({
                     />
                   </div>
                   <div className="relative">
-                    <label className="mb-2 block text-sm font-medium text-stone-700">
-                      Area / Locality
-                    </label>
+                    <div className="mb-2 block text-sm font-medium text-stone-700 opacity-0 select-none">
+                      Locality
+                    </div>
                     <div className="relative">
                       <input
                         ref={areaInputRef}
@@ -146,7 +147,7 @@ const HeroSection = ({
                         onChange={(e) => onAreaInputChange(e.target.value)}
                         onFocus={onAreaFocus}
                         className="h-[50px] w-full rounded-lg border-2 border-gray-200 bg-white px-3.5 text-sm transition-all duration-300 hover:border-orange-300 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-400"
-                        placeholder={heroPlaceholder}
+                        placeholder={searchFilters.city ? heroPlaceholder : 'Select a city first'}
                         disabled={!searchFilters.city}
                       />
                       {isLoadingArea && (
@@ -192,7 +193,7 @@ const HeroSection = ({
                       )}
                     </div>
                   </div>
-                  <div className="overflow-visible [&_button]:h-[42px] [&_button]:py-0 md:[&_button]:h-[50px]">
+                  <div className="overflow-visible [&_button]:h-[50px] [&_button]:py-0">
                     <label className="mb-2 block text-sm font-medium text-stone-700">
                       Move-in Date
                     </label>
@@ -201,7 +202,8 @@ const HeroSection = ({
                       onChange={onMoveInDateChange}
                       min={new Date().toISOString().split('T')[0]}
                       hideLabel={true}
-                      className="!h-[42px] !rounded-lg !border-2 !border-gray-200 hover:!border-orange-300 focus:!border-orange-400 focus:!ring-2 focus:!ring-orange-400 md:!h-[50px]"
+                      disabled={!isStandardSearchReady}
+                      className="!h-[50px] !rounded-lg !border-2 !border-gray-200 hover:!border-orange-300 focus:!border-orange-400 focus:!ring-2 focus:!ring-orange-400"
                     />
                   </div>
                   <div>
@@ -211,13 +213,23 @@ const HeroSection = ({
                     <button
                       type="button"
                       onClick={onSearch}
-                      className="group relative flex h-[50px] w-full items-center justify-center gap-1.5 overflow-hidden rounded-lg bg-orange-500 text-sm font-semibold text-white shadow-lg transition-all duration-300 hover:scale-[1.02] hover:bg-orange-600 hover:shadow-xl hover:shadow-orange-500/30 active:scale-95"
+                      disabled={!isStandardSearchReady}
+                      className={`group relative flex h-[50px] w-full items-center justify-center gap-1.5 overflow-hidden rounded-lg bg-orange-500 text-sm font-semibold text-white shadow-lg transition-all duration-300 ${
+                        isStandardSearchReady
+                          ? 'hover:scale-[1.02] hover:bg-orange-600 hover:shadow-xl hover:shadow-orange-500/30 active:scale-95'
+                          : 'opacity-50 cursor-not-allowed'
+                      }`}
                     >
                       <svg className="relative z-10 h-4 w-4 transition-transform duration-300 group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                       </svg>
                       <span className="relative z-10">Search</span>
                     </button>
+                    {searchValidationMessage && (
+                      <p className="mt-2 text-xs text-amber-700">
+                        {searchValidationMessage}
+                      </p>
+                    )}
                   </div>
                 </div>
               ) : (
@@ -247,7 +259,7 @@ const HeroSection = ({
                 to="/auth?redirect=/dashboard&view=listings"
                 className="inline-flex items-center gap-2 rounded-full bg-orange-500 px-6 py-3 font-semibold text-white shadow-lg transition-colors hover:bg-orange-600"
               >
-                List Your Space
+                List Your Place
                 <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                 </svg>

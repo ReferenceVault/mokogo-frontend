@@ -4,11 +4,42 @@ import type { FeaturedListingItem } from '../types'
 
 interface FeaturedListingsSectionProps {
   listings: FeaturedListingItem[]
+  locationState?: 'idle' | 'requesting' | 'granted' | 'denied' | 'unsupported' | 'no_listings'
+  onEnableLocation?: () => void
 }
 
-const FeaturedListingsSection = ({ listings }: FeaturedListingsSectionProps) => {
+const FeaturedListingsSection = ({ listings, locationState = 'idle', onEnableLocation }: FeaturedListingsSectionProps) => {
+  if (locationState === 'denied' || locationState === 'unsupported' || locationState === 'no_listings') {
+    return null
+  }
+
+  if (locationState !== 'granted') {
+    return (
+      <section className="space-y-6 py-6 md:py-8">
+        <div className="mx-auto flex max-w-7xl flex-col items-center gap-4 text-center">
+          <h2 className="text-3xl font-bold text-gray-900">Recent Listings Near You</h2>
+          <p className="max-w-2xl text-sm text-gray-600">
+            Allow location access to see live listings near you.
+          </p>
+          <button
+            type="button"
+            onClick={onEnableLocation}
+            disabled={locationState === 'requesting' || !onEnableLocation}
+            className="inline-flex items-center justify-center rounded-full border-2 border-orange-500 bg-white px-5 py-2.5 text-sm font-semibold text-orange-600 shadow-sm transition-colors hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {locationState === 'requesting' ? 'Requesting location…' : 'Enable location'}
+          </button>
+        </div>
+      </section>
+    )
+  }
+
+  if (!listings.length) {
+    return null
+  }
+
   return (
-    <section className="-mx-4 space-y-6 bg-mokogo-off-white px-4 py-6 sm:-mx-6 sm:px-6 md:-mx-12 md:px-12 md:py-8">
+    <section className="space-y-6 py-6 md:py-8">
       <div className="mx-auto flex max-w-7xl flex-col items-center gap-4 text-center md:relative">
         <h2 className="text-3xl font-bold text-gray-900">Recent Listings Near You</h2>
         <Link
