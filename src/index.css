@@ -158,3 +158,42 @@ input[type="date"]::-webkit-clear-button {
     transform: translateY(0);
   }
 }
+
+/* Marquee placeholder (for long hint text inside inputs) */
+@keyframes mokogo-marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.mokogo-marquee-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 1rem; /* matches px-4 */
+  overflow: hidden;
+  white-space: nowrap;
+  pointer-events: none;
+  color: rgb(156 163 175); /* text-gray-400 */
+}
+
+.mokogo-marquee-placeholder__inner {
+  display: inline-flex;
+  align-items: center;
+  will-change: transform;
+  animation: mokogo-marquee 14s linear infinite;
+}
+
+.mokogo-marquee-placeholder__inner > span {
+  padding-right: 2.5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mokogo-marquee-placeholder__inner {
+    animation: none;
+  }
+}

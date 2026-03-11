@@ -59,6 +59,17 @@ const CityListings = () => {
 
   // Decode the city name from URL
   const decodedCityName = cityName ? decodeURIComponent(cityName) : ''
+  const [isAreaFocused, setIsAreaFocused] = useState(false)
+
+  const getAreaPlaceholderExamples = (city: string): string => {
+    const c = (city || '').trim().toLowerCase()
+    if (c === 'pune') return 'e.g., Baner, Wakad'
+    if (c === 'mumbai') return 'e.g., Andheri, Bandra'
+    if (c === 'bangalore' || c === 'bengaluru') return 'e.g., Koramangala, Indiranagar'
+    if (c === 'hyderabad') return 'e.g., Gachibowli, Hitech City'
+    if (c === 'delhi ncr') return 'e.g., Noida Sector 62, Gurgaon DLF Phase 3'
+    return 'e.g., Downtown, Central'
+  }
   
   // Get all listings for the city from backend (server-side filtering)
   useEffect(() => {
@@ -501,14 +512,28 @@ const CityListings = () => {
                       setFilters(prev => ({ ...prev, area: '' }))
                     }}
                     onFocus={() => {
+                      setIsAreaFocused(true)
                       if (areaSuggestions.length > 0 && areaInputValue.trim().length >= 2) {
                         setShowAreaSuggestions(true)
                         updateAreaDropdownPosition()
                       }
                     }}
-                    placeholder="Search area (e.g., Baner, Wakad)"
+                    onBlur={() => setIsAreaFocused(false)}
+                    placeholder=""
                     className="w-full h-[52px] px-4 rounded-xl border border-mokogo-gray focus:outline-none focus:ring-2 focus:ring-mokogo-primary bg-white/80"
                   />
+                  {!areaInputValue && !isAreaFocused && decodedCityName && (
+                    <div className="mokogo-marquee-placeholder text-sm">
+                      <div className="mokogo-marquee-placeholder__inner">
+                        <span>
+                          {`Search area in ${decodedCityName} (${getAreaPlaceholderExamples(decodedCityName)})`}
+                        </span>
+                        <span aria-hidden="true">
+                          {`Search area in ${decodedCityName} (${getAreaPlaceholderExamples(decodedCityName)})`}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                   {showAreaSuggestions && typeof document !== 'undefined' && createPortal(
                     <div
                       ref={areaSuggestionsRef}
@@ -519,6 +544,9 @@ const CityListings = () => {
                         width: `${areaDropdownPosition.width}px`,
                       }}
                     >
+                      <div className="px-4 py-2 text-xs font-semibold text-gray-600 bg-gray-50 border-b border-gray-200">
+                        Suggestions for {decodedCityName}
+                      </div>
                       {isLoadingArea ? (
                         <div className="px-4 py-3 text-sm text-gray-500">Searching areas...</div>
                       ) : (
