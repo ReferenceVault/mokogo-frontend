@@ -62,7 +62,17 @@ const ResetPassword = () => {
       if (err.response?.status === 429) {
         setError('Too many requests. Please wait a minute and try again.')
       } else if (err.response?.status === 400) {
-        setError('Invalid or expired reset token. Please request a new password reset.')
+        const apiMessage = err.response?.data?.message
+        const message =
+          Array.isArray(apiMessage) ? apiMessage.join(', ') : apiMessage
+
+        if (typeof message === 'string' && message.toLowerCase().includes('token')) {
+          setError('Invalid or expired reset token. Please request a new password reset.')
+        } else if (typeof message === 'string' && message.trim()) {
+          setError(message)
+        } else {
+          setError('Failed to reset password. Please try again.')
+        }
       } else {
         const errorMessage = err.response?.data?.message || err.message || 'Failed to reset password. Please try again.'
         setError(errorMessage)
