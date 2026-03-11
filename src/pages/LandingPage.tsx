@@ -1,16 +1,15 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import SocialSidebar from '@/components/SocialSidebar'
 import { useStore } from '@/store/useStore'
 import { Listing, VibeTagId } from '@/types'
-import { listingsApi, ListingResponse, subscriptionsApi, placesApi, AutocompletePrediction } from '@/services/api'
+import { listingsApi, ListingResponse, subscriptionsApi } from '@/services/api'
 import MikoVibeQuiz from '@/components/MikoVibeQuiz'
 import type { CityItem, FeaturedListingItem, LandingSearchFilters, SearchMode } from './landing/types'
 import { isListingWithinRadius, sortListingsByDistance } from '@/utils/distance'
 import {
-  cityAreaHintExamples,
   faqItems,
   howItWorksWorkflows,
   mikoQuestionPills,
@@ -35,31 +34,15 @@ const LandingPage = () => {
   const { allListings, setAllListings, user } = useStore()
   const [searchFilters, setSearchFilters] = useState<LandingSearchFilters>({
     city: '',
-    area: '',
-    areaPlaceId: '',
-    areaLat: 0,
-    areaLng: 0,
     moveInDate: '',
   })
-  const [areaSuggestions, setAreaSuggestions] = useState<AutocompletePrediction[]>([])
-  const [showAreaSuggestions, setShowAreaSuggestions] = useState(false)
-  const [isLoadingArea, setIsLoadingArea] = useState(false)
-  const [areaInputValue, setAreaInputValue] = useState('')
-  const [areaDropdownPosition, setAreaDropdownPosition] = useState({ top: 0, left: 0, width: 0 })
-  const areaSuggestionsRef = useRef<HTMLDivElement>(null)
-  const areaInputRef = useRef<HTMLInputElement>(null)
-  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const [rateLimitMessage, setRateLimitMessage] = useState<string | null>(null)
-  const rateLimitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [searchValidationMessage, setSearchValidationMessage] = useState<string | null>(null)
-  const autocompleteReqIdRef = useRef(0)
   const [searchMode, setSearchMode] = useState<SearchMode>('standard')
   const [isMikoOpen, setIsMikoOpen] = useState(false)
   const [subscribeEmail, setSubscribeEmail] = useState('')
   const [subscribeError, setSubscribeError] = useState<string | null>(null)
   const [subscribeSuccess, setSubscribeSuccess] = useState<string | null>(null)
   const [isSubscribing, setIsSubscribing] = useState(false)
-  const [heroPlaceholderIndex, setHeroPlaceholderIndex] = useState(0)
   const [isNotifyModalOpen, setIsNotifyModalOpen] = useState(false)
   const [notifyCity, setNotifyCity] = useState('')
   const [notifyEmail, setNotifyEmail] = useState('')
@@ -88,52 +71,7 @@ const LandingPage = () => {
     return (city || '').trim()
   }
 
-  const getCityMatchTokens = (city: string): string[] => {
-    const c = canonicalizeCityKey(city)
-    if (!c) return []
-    if (c === 'delhi ncr') {
-      return ['delhi', 'gurugram', 'gurgaon', 'noida', 'greater noida', 'ghaziabad', 'faridabad']
-    }
-    if (c === 'bangalore') {
-      return ['bangalore', 'bengaluru']
-    }
-    return [c]
-  }
-
-  const getCityHintKey = (city: string): string => {
-    const c = canonicalizeCityKey(city)
-    if (!c) return ''
-    if (c === 'bengaluru') return 'bangalore'
-    return c
-  }
-
-  const heroPlaceholders = useMemo(() => {
-    const city = searchFilters.city
-    const key = getCityHintKey(city)
-    if (!key) return ['Select a city first']
-
-    const examples = cityAreaHintExamples[key]
-    if (examples?.length) return examples
-
-    const cityLabel = (city || '').trim()
-    return cityLabel
-      ? [`Try: Enter an area in ${cityLabel}`]
-      : ['Select a city first']
-  }, [searchFilters.city])
-
-  useEffect(() => {
-    const interval = window.setInterval(() => {
-      setHeroPlaceholderIndex((prev) => (prev + 1) % heroPlaceholders.length)
-    }, 2000)
-
-    return () => {
-      window.clearInterval(interval)
-    }
-  }, [heroPlaceholders.length])
-
-  useEffect(() => {
-    setHeroPlaceholderIndex(0)
-  }, [searchFilters.city])
+  // Landing page standard search: city + move-in date only
 
   // Fetch all live listings from API
   useEffect(() => {
@@ -232,240 +170,14 @@ const LandingPage = () => {
     setNearbyListings(sorted.map(toFeatured))
   }, [allListings, locationState, userCoords])
 
-  // Calculate dropdown position based on input field
-  const updateAreaDropdownPosition = useCallback(() => {
-    if (areaInputRef.current) {
-      const rect = areaInputRef.current.getBoundingClientRect()
-      setAreaDropdownPosition({
-        top: rect.bottom + 4, // 4px spacing
-        left: rect.left,
-        width: rect.width,
-      })
-    }
-  }, [])
-
-  // Fetch area autocomplete suggestions with debouncing
-  const fetchAreaSuggestions = useCallback(async (input: string, city: string) => {
-    if (!input || input.trim().length < 2 || !city) {
-      setAreaSuggestions([])
-      setShowAreaSuggestions(false)
-      return
-    }
-
-    const reqId = ++autocompleteReqIdRef.current
-    const requestedCity = city
-    const requestedInput = input.trim()
-    setIsLoadingArea(true)
-    try {
-      const results = await placesApi.getAutocomplete(requestedInput, requestedCity)
-      // Ignore stale responses (city/input changed while request was in-flight)
-      if (
-        reqId !== autocompleteReqIdRef.current ||
-        requestedCity !== city ||
-        requestedInput !== input.trim()
-      ) {
-        return
-      }
-
-      const tokens = getCityMatchTokens(requestedCity)
-      const filtered = results.filter((p) => {
-        const hay = `${p.structured_formatting?.secondary_text || ''} ${p.description || ''}`.toLowerCase()
-        return tokens.some((t) => hay.includes(t))
-      })
-
-      setAreaSuggestions(filtered)
-      if (filtered.length > 0) {
-        setShowAreaSuggestions(true)
-        updateAreaDropdownPosition()
-      } else {
-        setShowAreaSuggestions(false)
-      }
-    } catch (error: any) {
-      // Gracefully handle 429 errors - show user-visible message
-      if (error?.response?.status === 429) {
-        setRateLimitMessage('Too many requests. Please type slower and wait a moment.')
-        setAreaSuggestions([])
-        setShowAreaSuggestions(false)
-        
-        // Auto-dismiss message after 5 seconds
-        if (rateLimitTimerRef.current) {
-          clearTimeout(rateLimitTimerRef.current)
-        }
-        rateLimitTimerRef.current = setTimeout(() => {
-          setRateLimitMessage(null)
-        }, 5000)
-      } else {
-        console.error('Error fetching area suggestions:', error)
-        setAreaSuggestions([])
-        setShowAreaSuggestions(false)
-      }
-    } finally {
-      if (reqId === autocompleteReqIdRef.current) {
-        setIsLoadingArea(false)
-      }
-    }
-  }, [updateAreaDropdownPosition])
-
-  // Handle area input change
-  const handleAreaInputChange = (value: string) => {
-    setAreaInputValue(value)
-    if (searchValidationMessage) {
-      setSearchValidationMessage(null)
-    }
-    
-    // Clear rate limit message when user starts typing again
-    if (rateLimitMessage) {
-      setRateLimitMessage(null)
-      if (rateLimitTimerRef.current) {
-        clearTimeout(rateLimitTimerRef.current)
-      }
-    }
-    
-    setSearchFilters(prev => ({
-      ...prev,
-      area: value,
-      areaPlaceId: '',
-      areaLat: 0,
-      areaLng: 0,
-    }))
-    setShowAreaSuggestions(false)
-
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current)
-    }
-
-    if (searchFilters.city && value.trim().length >= 2) {
-      debounceTimerRef.current = setTimeout(() => {
-        fetchAreaSuggestions(value, searchFilters.city)
-      }, 400)
-    }
-  }
-
-  const handleAreaFocus = () => {
-    updateAreaDropdownPosition()
-    if (areaSuggestions.length > 0 && areaInputValue.trim().length >= 2) {
-      setShowAreaSuggestions(true)
-    }
-  }
-
-  // Update position when suggestions are shown or input is focused
-  useEffect(() => {
-    if (showAreaSuggestions) {
-      updateAreaDropdownPosition()
-    }
-  }, [showAreaSuggestions, updateAreaDropdownPosition])
-
-  // Handle area suggestion selection
-  const handleAreaSuggestionSelect = async (prediction: AutocompletePrediction) => {
-    setAreaInputValue(prediction.structured_formatting.main_text)
-    setShowAreaSuggestions(false)
-    setAreaSuggestions([])
-    if (searchValidationMessage) {
-      setSearchValidationMessage(null)
-    }
-
-    try {
-      const placeDetails = await placesApi.getPlaceDetails(prediction.place_id)
-      setSearchFilters(prev => ({
-        ...prev,
-        area: prediction.structured_formatting.main_text,
-        areaPlaceId: placeDetails.place_id,
-        areaLat: placeDetails.geometry.location.lat,
-        areaLng: placeDetails.geometry.location.lng,
-      }))
-    } catch (error) {
-      console.error('Error fetching area details:', error)
-      setSearchFilters(prev => ({
-        ...prev,
-        area: prediction.structured_formatting.main_text,
-        areaPlaceId: prediction.place_id,
-      }))
-    }
-  }
-
-  // Handle scroll and resize to update dropdown position
-  useEffect(() => {
-    if (!showAreaSuggestions) return
-
-    const handleScroll = () => {
-      updateAreaDropdownPosition()
-    }
-
-    const handleResize = () => {
-      updateAreaDropdownPosition()
-    }
-
-    window.addEventListener('scroll', handleScroll, true)
-    window.addEventListener('resize', handleResize)
-    
-    return () => {
-      window.removeEventListener('scroll', handleScroll, true)
-      window.removeEventListener('resize', handleResize)
-    }
-  }, [showAreaSuggestions, updateAreaDropdownPosition])
-
-  // Close suggestions when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        areaSuggestionsRef.current &&
-        !areaSuggestionsRef.current.contains(event.target as Node) &&
-        areaInputRef.current &&
-        !areaInputRef.current.contains(event.target as Node)
-      ) {
-        setShowAreaSuggestions(false)
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [])
-
-  // Cleanup rate limit timer on unmount
-  useEffect(() => {
-    return () => {
-      if (rateLimitTimerRef.current) {
-        clearTimeout(rateLimitTimerRef.current)
-      }
-    }
-  }, [])
-
-  // Clear area when city changes
-  useEffect(() => {
-    if (!searchFilters.city) {
-      setAreaInputValue('')
-      setSearchFilters(prev => ({
-        ...prev,
-        area: '',
-        areaPlaceId: '',
-        areaLat: 0,
-        areaLng: 0,
-      }))
-      setAreaSuggestions([])
-      setShowAreaSuggestions(false)
-    }
-  }, [searchFilters.city])
-
   const handleSearch = () => {
     setSearchValidationMessage(null)
     if (!searchFilters.city) {
       setSearchValidationMessage('Select a city to search.')
       return
     }
-    if (!searchFilters.areaPlaceId) {
-      setSearchValidationMessage('Select an area from the suggestions to search.')
-      return
-    }
     const params = new URLSearchParams()
     if (searchFilters.city) params.set('city', searchFilters.city)
-    if (searchFilters.area && searchFilters.areaPlaceId) {
-      params.set('area', searchFilters.area)
-      params.set('areaPlaceId', searchFilters.areaPlaceId)
-      if (searchFilters.areaLat) params.set('areaLat', searchFilters.areaLat.toString())
-      if (searchFilters.areaLng) params.set('areaLng', searchFilters.areaLng.toString())
-    }
     if (searchFilters.moveInDate) params.set('moveInDate', searchFilters.moveInDate)
 
     navigate(`/explore?${params.toString()}`)
@@ -486,12 +198,6 @@ const LandingPage = () => {
       params.set('city', searchFilters.city)
     }
     if (searchFilters.moveInDate) params.set('moveInDate', searchFilters.moveInDate)
-    if (searchFilters.area && searchFilters.areaPlaceId) {
-      params.set('area', searchFilters.area)
-      params.set('areaPlaceId', searchFilters.areaPlaceId)
-      if (searchFilters.areaLat) params.set('areaLat', searchFilters.areaLat.toString())
-      if (searchFilters.areaLng) params.set('areaLng', searchFilters.areaLng.toString())
-    }
 
     setIsMikoOpen(false)
     if (user) {
@@ -695,30 +401,11 @@ const LandingPage = () => {
             setSearchFilters((prev) => ({
               ...prev,
               city,
-              area: '',
-              areaPlaceId: '',
-              areaLat: 0,
-              areaLng: 0,
               moveInDate: '',
             }))
-            setAreaInputValue('')
-            setAreaSuggestions([])
-            setShowAreaSuggestions(false)
           }}
-          areaInputRef={areaInputRef}
-          areaInputValue={areaInputValue}
-          onAreaInputChange={handleAreaInputChange}
-          onAreaFocus={handleAreaFocus}
-          heroPlaceholder={heroPlaceholders[heroPlaceholderIndex] || heroPlaceholders[0]}
-          isLoadingArea={isLoadingArea}
-          rateLimitMessage={rateLimitMessage}
           searchValidationMessage={searchValidationMessage}
-          isStandardSearchReady={Boolean(searchFilters.city) && Boolean(searchFilters.areaPlaceId)}
-          showAreaSuggestions={showAreaSuggestions}
-          areaSuggestions={areaSuggestions}
-          areaSuggestionsRef={areaSuggestionsRef}
-          areaDropdownPosition={areaDropdownPosition}
-          onAreaSuggestionSelect={handleAreaSuggestionSelect}
+          isStandardSearchReady={Boolean(searchFilters.city)}
           onMoveInDateChange={(date) => setSearchFilters((prev) => ({ ...prev, moveInDate: date }))}
           onSearch={handleSearch}
         />

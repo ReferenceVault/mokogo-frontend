@@ -1,10 +1,7 @@
-import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
-import type { RefObject } from 'react'
 import CustomSelect from '@/components/CustomSelect'
 import { MoveInDateField } from '@/components/MoveInDateField'
-import type { AutocompletePrediction } from '@/services/api'
-import type { DropdownPosition, LandingSearchFilters, SearchMode } from '../types'
+import type { LandingSearchFilters, SearchMode } from '../types'
 
 interface HeroSectionProps {
   searchMode: SearchMode
@@ -13,20 +10,8 @@ interface HeroSectionProps {
   searchFilters: LandingSearchFilters
   searchCities: string[]
   onCityChange: (city: string) => void
-  areaInputRef: RefObject<HTMLInputElement>
-  areaInputValue: string
-  onAreaInputChange: (value: string) => void
-  onAreaFocus: () => void
-  heroPlaceholder: string
-  isLoadingArea: boolean
-  rateLimitMessage: string | null
   searchValidationMessage?: string | null
   isStandardSearchReady?: boolean
-  showAreaSuggestions: boolean
-  areaSuggestions: AutocompletePrediction[]
-  areaSuggestionsRef: RefObject<HTMLDivElement>
-  areaDropdownPosition: DropdownPosition
-  onAreaSuggestionSelect: (prediction: AutocompletePrediction) => void
   onMoveInDateChange: (date: string) => void
   onSearch: () => void
 }
@@ -38,20 +23,8 @@ const HeroSection = ({
   searchFilters,
   searchCities,
   onCityChange,
-  areaInputRef,
-  areaInputValue,
-  onAreaInputChange,
-  onAreaFocus,
-  heroPlaceholder,
-  isLoadingArea,
-  rateLimitMessage,
   searchValidationMessage,
   isStandardSearchReady = false,
-  showAreaSuggestions,
-  areaSuggestions,
-  areaSuggestionsRef,
-  areaDropdownPosition,
-  onAreaSuggestionSelect,
   onMoveInDateChange,
   onSearch,
 }: HeroSectionProps) => {
@@ -125,7 +98,7 @@ const HeroSection = ({
               </div>
 
               {searchMode === 'standard' ? (
-                <div className="grid items-end gap-3 md:grid-cols-4">
+                <div className="grid items-end gap-3 md:grid-cols-3">
                   <div className="[&_button]:h-[50px] [&_button]:py-0">
                     <CustomSelect
                       label="Select City"
@@ -134,64 +107,6 @@ const HeroSection = ({
                       placeholder="Select your city"
                       options={searchCities.map((city) => ({ value: city, label: city }))}
                     />
-                  </div>
-                  <div className="relative">
-                    <div className="mb-2 block text-sm font-medium text-stone-700 opacity-0 select-none">
-                      Locality
-                    </div>
-                    <div className="relative">
-                      <input
-                        ref={areaInputRef}
-                        type="text"
-                        value={areaInputValue}
-                        onChange={(e) => onAreaInputChange(e.target.value)}
-                        onFocus={onAreaFocus}
-                        className="h-[50px] w-full rounded-lg border-2 border-gray-200 bg-white px-3.5 text-sm transition-all duration-300 hover:border-orange-300 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-400"
-                        placeholder={searchFilters.city ? heroPlaceholder : 'Select a city first'}
-                        disabled={!searchFilters.city}
-                      />
-                      {isLoadingArea && (
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                          <svg className="h-5 w-5 animate-spin text-orange-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                          </svg>
-                        </div>
-                      )}
-                      {rateLimitMessage && (
-                        <div className="absolute left-0 right-0 top-full z-50 mt-1 rounded-lg border border-amber-200 bg-amber-50 p-2 text-xs text-amber-800">
-                          {rateLimitMessage}
-                        </div>
-                      )}
-                      {showAreaSuggestions && areaSuggestions.length > 0 && createPortal(
-                        <div
-                          ref={areaSuggestionsRef}
-                          className="fixed z-[99999] max-h-60 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg"
-                          style={{
-                            top: `${areaDropdownPosition.top}px`,
-                            left: `${areaDropdownPosition.left}px`,
-                            width: `${areaDropdownPosition.width}px`,
-                          }}
-                        >
-                          {areaSuggestions.map((prediction) => (
-                            <button
-                              key={prediction.place_id}
-                              type="button"
-                              onClick={() => onAreaSuggestionSelect(prediction)}
-                              className="w-full border-b border-gray-100 px-4 py-3 text-left transition-colors hover:bg-gray-50 last:border-b-0"
-                            >
-                              <div className="font-medium text-gray-900">
-                                {prediction.structured_formatting.main_text}
-                              </div>
-                              <div className="mt-0.5 text-sm text-gray-500">
-                                {prediction.structured_formatting.secondary_text}
-                              </div>
-                            </button>
-                          ))}
-                        </div>,
-                        document.body,
-                      )}
-                    </div>
                   </div>
                   <div className="overflow-visible [&_button]:h-[50px] [&_button]:py-0">
                     <label className="mb-2 block text-sm font-medium text-stone-700">
@@ -202,7 +117,7 @@ const HeroSection = ({
                       onChange={onMoveInDateChange}
                       min={new Date().toISOString().split('T')[0]}
                       hideLabel={true}
-                      disabled={!isStandardSearchReady}
+                      disabled={!searchFilters.city}
                       className="!h-[50px] !rounded-lg !border-2 !border-gray-200 hover:!border-orange-300 focus:!border-orange-400 focus:!ring-2 focus:!ring-orange-400"
                     />
                   </div>

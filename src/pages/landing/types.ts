@@ -4,10 +4,6 @@ export type SearchMode = 'standard' | 'miko'
 
 export interface LandingSearchFilters {
   city: string
-  area: string
-  areaPlaceId: string
-  areaLat: number
-  areaLng: number
   moveInDate: string
 }
 
