@@ -10,9 +10,10 @@ interface MoveInDateFieldProps {
   hideLabel?: boolean; // Hide internal label when external label is provided
   className?: string; // Allow custom className for different contexts
   numberOfMonths?: number; // Number of months to show (default 1)
+  disabled?: boolean;
 }
 
-export function MoveInDateField({ value, onChange, min, hideLabel = false, className = "", numberOfMonths = 1 }: MoveInDateFieldProps) {
+export function MoveInDateField({ value, onChange, min, hideLabel = false, className = "", numberOfMonths = 1, disabled = false }: MoveInDateFieldProps) {
   const [open, setOpen] = useState(false);
   const [positionReady, setPositionReady] = useState(false);
   
@@ -166,6 +167,10 @@ export function MoveInDateField({ value, onChange, min, hideLabel = false, class
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
+
+            if (disabled) {
+              return;
+            }
             
             if (!open) {
               // Calculate position BEFORE opening to prevent flicker
@@ -188,7 +193,9 @@ export function MoveInDateField({ value, onChange, min, hideLabel = false, class
                        : "bg-[rgba(255,255,255,0.72)] backdrop-blur-md min-w-[200px] border border-[#DED8D1] hover:border-[#E58C4A]"}
                      transition text-left
                      ${hideLabel ? "h-[42px] md:h-[50px] rounded-lg md:rounded-xl" : "h-[42px] md:h-[56px] rounded-xl md:rounded-2xl"}
+                     ${disabled ? "opacity-50 cursor-not-allowed hover:border-mokogo-gray" : ""}
                      ${className}`}
+          aria-disabled={disabled}
         >
           {!hideLabel && (
             <span className="text-[12px] font-medium text-[#7A746E]">

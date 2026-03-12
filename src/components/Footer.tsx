@@ -92,7 +92,7 @@ const Footer = () => {
                   className="text-gray-600 hover:text-orange-500 transition-all duration-300 inline-flex items-center gap-2 group"
                 >
                   <span className="w-1.5 h-1.5 rounded-full bg-orange-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  <span className="group-hover:translate-x-1 transition-transform duration-300">List Your Space</span>
+                  <span className="group-hover:translate-x-1 transition-transform duration-300">List Your Place</span>
                 </Link>
               </li>
             </ul>
