@@ -24,34 +24,23 @@ const WhyMokogoSection = ({ features }: WhyMokogoSectionProps) => {
         </p>
       </div>
 
-      <div className="relative mt-8 grid gap-3 md:grid-cols-2 lg:mt-10">
-        {features.map((feature, index) => (
+      <div className="relative mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4 lg:mt-10 items-stretch">
+        {features.map((feature) => (
           <div
             key={feature.title}
             className={[
-              'group relative overflow-hidden rounded-[24px] border p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md md:p-5',
-              index === 0
-                ? 'border-orange-200/80 bg-white shadow-orange-100/30'
-                : '',
-              index === 1
-                ? 'border-orange-200/80 bg-[#FFFCF8] shadow-orange-100/30'
-                : '',
-              index === 2
-                ? 'border-orange-200/80 bg-white shadow-orange-100/30'
-                : '',
-              index === 3
-                ? 'border-orange-200/80 bg-[#FFFCF8] shadow-orange-100/30'
-                : '',
+              'group relative flex h-full flex-col overflow-hidden rounded-[26px] border border-orange-100 bg-white/95 p-5 shadow-[0_18px_40px_rgba(15,23,42,0.08)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_24px_60px_rgba(15,23,42,0.16)] md:p-6',
             ].join(' ')}
           >
             <div className="pointer-events-none absolute inset-0">
-              <div className="absolute -right-6 -top-6 h-20 w-20 rounded-full bg-white/60 blur-2xl" />
-              <div className="absolute bottom-0 right-0 h-16 w-16 rounded-tl-[22px] bg-white/35" />
+              <div className="absolute -right-10 -top-10 h-24 w-24 rounded-full bg-orange-100/80 blur-3xl" />
+              <div className="absolute bottom-0 left-0 h-20 w-20 rounded-tr-[22px] bg-amber-50/70" />
             </div>
 
-            <div className="relative flex items-start gap-4">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/85 text-2xl shadow-sm ring-1 ring-white/90">
-                <span>{feature.icon}</span>
+            <div className="relative flex flex-1 flex-col gap-4">
+              <div className="flex items-start gap-4">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500 to-amber-400 text-2xl text-white shadow-lg shadow-orange-300/50 ring-2 ring-white">
+                <span className="drop-shadow-sm">{feature.icon}</span>
               </div>
 
               <div className="min-w-0 flex-1">
@@ -61,11 +50,12 @@ const WhyMokogoSection = ({ features }: WhyMokogoSectionProps) => {
                   </h3>
                 </div>
 
-                <p className="mt-2 text-sm leading-6 text-gray-600">
+                <p className="mt-2 text-sm leading-6 text-gray-600 md:text-[15px]">
                   {feature.description}
                 </p>
 
-                <div className="mt-3 h-px w-full bg-gradient-to-r from-orange-300/70 via-white/80 to-transparent" />
+                <div className="mt-4 h-px w-full bg-gradient-to-r from-orange-300/70 via-orange-100/40 to-transparent" />
+              </div>
               </div>
             </div>
           </div>

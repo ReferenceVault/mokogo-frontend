@@ -5,36 +5,10 @@ import type { FeaturedListingItem } from '../types'
 interface FeaturedListingsSectionProps {
   listings: FeaturedListingItem[]
   locationState?: 'idle' | 'requesting' | 'granted' | 'denied' | 'unsupported' | 'no_listings'
-  onEnableLocation?: () => void
 }
 
-const FeaturedListingsSection = ({ listings, locationState = 'idle', onEnableLocation }: FeaturedListingsSectionProps) => {
-  if (locationState === 'denied' || locationState === 'unsupported' || locationState === 'no_listings') {
-    return null
-  }
-
-  if (locationState !== 'granted') {
-    return (
-      <section className="space-y-6 py-6 md:py-8">
-        <div className="mx-auto flex max-w-7xl flex-col items-center gap-4 text-center">
-          <h2 className="text-3xl font-bold text-gray-900">Recent Listings Near You</h2>
-          <p className="max-w-2xl text-sm text-gray-600">
-            Allow location access to see live listings near you.
-          </p>
-          <button
-            type="button"
-            onClick={onEnableLocation}
-            disabled={locationState === 'requesting' || !onEnableLocation}
-            className="inline-flex items-center justify-center rounded-full border-2 border-orange-500 bg-white px-5 py-2.5 text-sm font-semibold text-orange-600 shadow-sm transition-colors hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {locationState === 'requesting' ? 'Requesting location…' : 'Enable location'}
-          </button>
-        </div>
-      </section>
-    )
-  }
-
-  if (!listings.length) {
+const FeaturedListingsSection = ({ listings, locationState = 'idle' }: FeaturedListingsSectionProps) => {
+  if (locationState !== 'granted' || !listings.length) {
     return null
   }
 

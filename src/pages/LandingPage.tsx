@@ -210,7 +210,7 @@ const LandingPage = () => {
   const liveCityStats = useMemo(() => {
     const map = new Map<string, { name: string; count: number }>()
     allListings
-      .filter((l) => l.status === 'live')
+      .filter((l) => normalize(l.status as string) === 'live')
       .forEach((l) => {
         const raw = (l.city || '').trim()
         if (!raw) return
@@ -259,9 +259,9 @@ const LandingPage = () => {
     })
 
     return [...base, ...extras].sort((a, b) => {
-      // Live cities first, then by listing count desc, then alphabetically
+      // Live cities (listings > 0) first, then by listing count DESC, then alphabetically
       if (a.active !== b.active) return a.active ? -1 : 1
-      if (b.listings !== a.listings) return b.listings - a.listings
+      if (a.listings !== b.listings) return b.listings - a.listings
       return a.name.localeCompare(b.name)
     })
   }, [liveCityStats])
@@ -388,6 +388,43 @@ const LandingPage = () => {
       <SocialSidebar />
       
       <main className="flex-1">
+        {(locationState === 'idle' || locationState === 'requesting') && (
+          <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/35 backdrop-blur-sm">
+            <div className="max-w-md w-full mx-4 rounded-3xl border border-orange-200/80 bg-gradient-to-br from-orange-50 via-white to-orange-100 p-6 shadow-[0_22px_70px_rgba(15,23,42,0.5)] transform transition-transform duration-200 ease-out">
+              <div className="flex flex-col items-center text-center gap-3">
+                <div className="inline-flex items-center gap-2 rounded-full bg-orange-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-orange-700">
+                  <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />
+                  Location-based results
+                </div>
+                <div className="space-y-2">
+                  <p className="text-base font-semibold text-gray-900">
+                    Enable location to find listings near your place easily
+                  </p>
+                  <p className="text-sm leading-relaxed text-gray-600">
+                    We’ll use your approximate location to surface nearby live rooms first. No exact address is stored, and you can turn this off anytime from your browser.
+                  </p>
+                </div>
+              </div>
+              <div className="mt-5 flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={requestUserLocation}
+                  className="inline-flex flex-1 items-center justify-center rounded-full bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white shadow-md transition-transform transition-colors hover:bg-orange-600 hover:scale-[1.02] active:scale-95"
+                >
+                  {locationState === 'requesting' ? 'Requesting…' : 'Enable location'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLocationState('denied')}
+                  className="rounded-full px-3 py-1.5 text-sm font-medium text-gray-500 hover:text-gray-700"
+                >
+                  Not now
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <HeroSection
           searchMode={searchMode}
           onSearchModeChange={setSearchMode}
@@ -414,7 +451,6 @@ const LandingPage = () => {
           <FeaturedListingsSection
             listings={nearbyListings}
             locationState={locationState}
-            onEnableLocation={requestUserLocation}
           />
           <CitiesSection cities={discoverCities} onNotify={openNotifyModal} />
           <MikoVibeSection questions={mikoQuestionPills} onTryMiko={() => setIsMikoOpen(true)} />

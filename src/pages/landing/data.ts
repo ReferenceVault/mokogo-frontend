@@ -116,7 +116,7 @@ export const whyMokogoFeatures: WhyMokogoFeature[] = [
   },
   {
     icon: '💸',
-    title: 'Zero Brokerage. Always.',
+    title: 'Zero Brokerage',
     description: 'Pay no commission. Talk directly to the owner and save thousands.',
   },
   {
