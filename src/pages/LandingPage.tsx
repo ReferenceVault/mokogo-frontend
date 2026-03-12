@@ -51,7 +51,18 @@ const LandingPage = () => {
   const [isNotifySubmitting, setIsNotifySubmitting] = useState(false)
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0)
   const [nearbyListings, setNearbyListings] = useState<FeaturedListingItem[]>([])
-  const [locationState, setLocationState] = useState<'idle' | 'requesting' | 'granted' | 'denied' | 'unsupported' | 'no_listings'>('idle')
+  const [locationState, setLocationState] = useState<'idle' | 'requesting' | 'granted' | 'denied' | 'unsupported' | 'no_listings'>(() => {
+    if (typeof window === 'undefined') return 'idle'
+    try {
+      const stored = window.sessionStorage.getItem('mokogo-location-prompt-state')
+      if (stored === 'granted' || stored === 'denied' || stored === 'no_listings' || stored === 'unsupported') {
+        return stored as any
+      }
+    } catch {
+      // ignore
+    }
+    return 'idle'
+  })
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null)
 
   const normalize = (v: string) => (v || '').trim().toLowerCase()
@@ -126,6 +137,11 @@ const LandingPage = () => {
   const requestUserLocation = useCallback(() => {
     if (typeof navigator === 'undefined' || !navigator.geolocation) {
       setLocationState('unsupported')
+      try {
+        window.sessionStorage.setItem('mokogo-location-prompt-state', 'unsupported')
+      } catch {
+        // ignore
+      }
       return
     }
 
@@ -136,9 +152,19 @@ const LandingPage = () => {
         const lng = pos.coords.longitude
         setUserCoords({ lat, lng })
         setLocationState('granted')
+        try {
+          window.sessionStorage.setItem('mokogo-location-prompt-state', 'granted')
+        } catch {
+          // ignore
+        }
       },
       () => {
         setLocationState('denied')
+        try {
+          window.sessionStorage.setItem('mokogo-location-prompt-state', 'denied')
+        } catch {
+          // ignore
+        }
       },
       { enableHighAccuracy: false, timeout: 10000, maximumAge: 1000 * 60 * 10 },
     )
@@ -154,6 +180,11 @@ const LandingPage = () => {
     if (!sorted.length) {
       setNearbyListings([])
       setLocationState('no_listings')
+      try {
+        window.sessionStorage.setItem('mokogo-location-prompt-state', 'no_listings')
+      } catch {
+        // ignore
+      }
       return
     }
 
@@ -415,7 +446,14 @@ const LandingPage = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setLocationState('denied')}
+                  onClick={() => {
+                    setLocationState('denied')
+                    try {
+                      window.sessionStorage.setItem('mokogo-location-prompt-state', 'denied')
+                    } catch {
+                      // ignore
+                    }
+                  }}
                   className="rounded-full px-3 py-1.5 text-sm font-medium text-gray-500 hover:text-gray-700"
                 >
                   Not now
