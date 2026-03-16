@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { X } from 'lucide-react'
 import { reportsApi, ReportReason, CreateReportRequest } from '@/services/api'
 
@@ -35,6 +35,15 @@ const ReportUserModal = ({
   const [description, setDescription] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!isOpen) return
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = prevOverflow
+    }
+  }, [isOpen])
 
   if (!isOpen) return null
 
@@ -100,7 +109,7 @@ const ReportUserModal = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[80] p-4">
-      <div className="relative bg-white rounded-2xl p-6 max-w-md w-full border border-gray-200 shadow-2xl">
+      <div className="relative bg-white rounded-2xl max-w-md w-full border border-gray-200 shadow-2xl max-h-[90vh] overflow-hidden flex flex-col">
         {/* Close Button */}
         <button
           onClick={handleClose}
@@ -112,7 +121,7 @@ const ReportUserModal = ({
         </button>
 
         {/* Header */}
-        <div className="mb-6">
+        <div className="p-6 pb-4 flex-shrink-0">
           <h2 className="text-xl font-bold text-gray-900 mb-2">Report User</h2>
           <p className="text-sm text-gray-600">
             Report <span className="font-semibold">{reportedUserName}</span> for inappropriate behavior
@@ -120,64 +129,66 @@ const ReportUserModal = ({
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Reason Selection */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-900 mb-2">
-              Reason for reporting <span className="text-red-500">*</span>
-            </label>
-            <div className="space-y-2">
-              {REPORT_REASONS.map((reason) => (
-                <label
-                  key={reason.value}
-                  className="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
-                >
-                  <input
-                    type="radio"
-                    name="reason"
-                    value={reason.value}
-                    checked={selectedReason === reason.value}
-                    onChange={(e) => setSelectedReason(e.target.value as ReportReason)}
-                    disabled={isSubmitting}
-                    className="w-4 h-4 text-orange-400 border-gray-300 focus:ring-orange-400 focus:ring-2"
-                  />
-                  <span className="ml-3 text-sm text-gray-900">{reason.label}</span>
-                </label>
-              ))}
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+          <div className="flex-1 min-h-0 overflow-y-auto px-6 space-y-4">
+            {/* Reason Selection */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-900 mb-2">
+                Reason for reporting <span className="text-red-500">*</span>
+              </label>
+              <div className="space-y-2">
+                {REPORT_REASONS.map((reason) => (
+                  <label
+                    key={reason.value}
+                    className="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                  >
+                    <input
+                      type="radio"
+                      name="reason"
+                      value={reason.value}
+                      checked={selectedReason === reason.value}
+                      onChange={(e) => setSelectedReason(e.target.value as ReportReason)}
+                      disabled={isSubmitting}
+                      className="w-4 h-4 text-orange-400 border-gray-300 focus:ring-orange-400 focus:ring-2"
+                    />
+                    <span className="ml-3 text-sm text-gray-900">{reason.label}</span>
+                  </label>
+                ))}
+              </div>
             </div>
-          </div>
 
-          {/* Description (Optional) */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-900 mb-2">
-              Additional details (optional)
-            </label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              disabled={isSubmitting}
-              rows={4}
-              placeholder="Provide any additional information that might help us understand the issue..."
-              className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed resize-none"
-            />
-          </div>
-
-          {/* Error Message */}
-          {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-sm text-red-600">{error}</p>
+            {/* Description (Optional) */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-900 mb-2">
+                Additional details (optional)
+              </label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                disabled={isSubmitting}
+                rows={4}
+                placeholder="Provide any additional information that might help us understand the issue..."
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed resize-none"
+              />
             </div>
-          )}
 
-          {/* Info Message */}
-          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-xs text-blue-700">
-              Your report will be reviewed by our team. We take all reports seriously and will take appropriate action.
-            </p>
+            {/* Error Message */}
+            {error && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-600">{error}</p>
+              </div>
+            )}
+
+            {/* Info Message */}
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-xs text-blue-700">
+                Your report will be reviewed by our team. We take all reports seriously and will take appropriate action.
+              </p>
+            </div>
           </div>
 
           {/* Submit Button */}
-          <div className="flex gap-3 pt-2">
+          <div className="flex gap-3 p-6 pt-4 border-t border-gray-100 bg-white flex-shrink-0">
             <button
               type="button"
               onClick={handleClose}

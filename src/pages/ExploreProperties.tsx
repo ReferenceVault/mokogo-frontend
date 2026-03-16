@@ -69,11 +69,20 @@ const ExploreProperties = () => {
       try {
         // Build backend filter object
         const backendFilters: any = {}
-        // Default to Pune when no city selected (Pune is the only active city)
-        backendFilters.city = filters.city || 'Pune'
-        if (filters.area) backendFilters.area = filters.area
-        if (filters.areaLat != null) backendFilters.areaLat = filters.areaLat
-        if (filters.areaLng != null) backendFilters.areaLng = filters.areaLng
+        // Only apply city when explicitly selected; otherwise fetch across all cities
+        if (filters.city) {
+          backendFilters.city = filters.city
+        }
+        const normalize = (v: string) => (v || '').trim().toLowerCase()
+        const isCityWideAreaSelected =
+          Boolean(filters.area) && normalize(filters.area) === normalize(backendFilters.city || '')
+
+        // If "area" is the same as city (e.g., Pune + Pune), treat it as "all areas"
+        if (filters.area && !isCityWideAreaSelected) backendFilters.area = filters.area
+        if (!isCityWideAreaSelected) {
+          if (filters.areaLat != null) backendFilters.areaLat = filters.areaLat
+          if (filters.areaLng != null) backendFilters.areaLng = filters.areaLng
+        }
         if (filters.minRent) backendFilters.minRent = parseInt(filters.minRent)
         if (filters.maxRent) backendFilters.maxRent = parseInt(filters.maxRent)
         if (filters.moveInDate) backendFilters.moveInDate = filters.moveInDate
@@ -228,7 +237,9 @@ const ExploreProperties = () => {
 
   // Calculate listings count per city from actual fetched listings (no exaggerated fallbacks)
   const getCityListingsCount = (cityName: string) => {
-    return exploreListings.filter(l => l.city === cityName && l.status === 'live').length
+    const normalize = (v: string) => (v || '').trim().toLowerCase()
+    const target = normalize(cityName)
+    return exploreListings.filter(l => normalize(l.city) === target && l.status === 'live').length
   }
 
   const cities = [
@@ -236,31 +247,31 @@ const ExploreProperties = () => {
       name: 'Pune', 
       image: '/pune-city.png', 
       listings: getCityListingsCount('Pune'),
-      active: true
+      active: getCityListingsCount('Pune') > 0
     },
     { 
       name: 'Mumbai', 
       image: '/mumbai-city.png', 
       listings: getCityListingsCount('Mumbai'),
-      active: false
+      active: getCityListingsCount('Mumbai') > 0
     },
     { 
       name: 'Hyderabad', 
       image: '/hyderabad-city.png', 
       listings: getCityListingsCount('Hyderabad'),
-      active: false
+      active: getCityListingsCount('Hyderabad') > 0
     },
     { 
       name: 'Bangalore', 
       image: '/bangalore-city.png', 
       listings: getCityListingsCount('Bangalore'),
-      active: false
+      active: getCityListingsCount('Bangalore') > 0
     },
     {
       name: 'Delhi NCR',
       image: '/delhi-city.png',
       listings: getCityListingsCount('Delhi NCR'),
-      active: false
+      active: getCityListingsCount('Delhi NCR') > 0
     }
   ]
 
@@ -311,7 +322,7 @@ const ExploreProperties = () => {
                   
                 </div>
                 <p className="text-gray-700 text-base max-w-2xl mx-auto">
-                  Starting with Pune. More cities coming soon.
+                  Cities will appear here automatically when live listings are available.
                 </p>
               </div>
 
@@ -444,16 +455,18 @@ const ExploreProperties = () => {
                   >
                     <span>Filter</span>
                     <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-orange-500 text-[11px] text-white">
-                      {[
-                        filters.maxRent,
-                        filters.minRent,
-                        filters.preferredGender,
-                        filters.roomTypes.length,
-                        filters.bhkTypes.length,
-                        filters.furnishingLevels.length,
-                        filters.bathroomTypes.length,
-                        filters.lgbtqFriendly,
-                      ].filter(Boolean).length}
+                      {(() => {
+                        const hasPrice = Boolean(filters.minRent || filters.maxRent)
+                        return (
+                          (hasPrice ? 1 : 0) +
+                          (filters.preferredGender ? 1 : 0) +
+                          (filters.roomTypes.length ? 1 : 0) +
+                          (filters.bhkTypes.length ? 1 : 0) +
+                          (filters.furnishingLevels.length ? 1 : 0) +
+                          (filters.bathroomTypes.length ? 1 : 0) +
+                          (filters.lgbtqFriendly ? 1 : 0)
+                        )
+                      })()}
                     </span>
                   </button>
                 </div>

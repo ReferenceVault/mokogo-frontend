@@ -45,7 +45,7 @@ const Step3Details = ({ data, onChange, error, onClearError }: Step3DetailsProps
         error && onClearError) {
       onClearError()
     }
-  }, [data.bhkType, data.roomType, data.furnishingLevel, error, onClearError])
+  }, [data.buildingType, data.bhkType, data.roomType, data.furnishingLevel, error, onClearError])
 
   const handleChange = (field: keyof Listing, value: any) => {
     onChange({ [field]: value })
@@ -114,6 +114,7 @@ const Step3Details = ({ data, onChange, error, onClearError }: Step3DetailsProps
                 onValueChange={(value) => handleChange('bhkType', value)}
                 placeholder="Select BHK type"
                 options={[
+                  { value: '1RK', label: '1 RK' },
                   { value: '1BHK', label: '1 BHK' },
                   { value: '2BHK', label: '2 BHK' },
                   { value: '3BHK', label: '3 BHK' },
@@ -160,16 +161,18 @@ const Step3Details = ({ data, onChange, error, onClearError }: Step3DetailsProps
         {/* Amenities */}
         <AmenitiesSelector
           selected={[
-            ...(data.flatAmenities || []).filter(a => ['WiFi', 'Washing machine', 'AC', 'Geyser', 'Fridge', 'TV', 'Kitchen', 'Sofa', 'Bed'].includes(a)),
+            ...(data.flatAmenities || []).filter(a => ['WiFi', 'Washing machine', 'AC', 'Geyser', 'Fridge', 'TV', 'Sofa', 'Bed'].includes(a)),
             ...(data.societyAmenities || []).filter(a => ['Gym', 'Pool', 'Security', 'Parking'].includes(a))
           ]}
           onChange={(amenities) => {
             // Split amenities into flat and society based on their categories
-            const flatAmenitiesList = amenities.filter(a => ['WiFi', 'Washing machine', 'AC', 'Geyser', 'Fridge', 'TV', 'Kitchen', 'Sofa', 'Bed'].includes(a))
+            const flatAmenitiesList = amenities.filter(a => ['WiFi', 'Washing machine', 'AC', 'Geyser', 'Fridge', 'TV', 'Sofa', 'Bed'].includes(a))
             const societyAmenitiesList = amenities.filter(a => ['Gym', 'Pool', 'Security', 'Parking'].includes(a))
             
             // Preserve other amenities that aren't in the selector
-            const otherFlatAmenities = (data.flatAmenities || []).filter(a => !['WiFi', 'Washing machine', 'AC', 'Geyser', 'Fridge', 'TV', 'Kitchen', 'Sofa', 'Bed'].includes(a))
+            const otherFlatAmenities = (data.flatAmenities || [])
+              .filter(a => a !== 'Kitchen')
+              .filter(a => !['WiFi', 'Washing machine', 'AC', 'Geyser', 'Fridge', 'TV', 'Sofa', 'Bed'].includes(a))
             const otherSocietyAmenities = (data.societyAmenities || []).filter(a => !['Gym', 'Pool', 'Security', 'Parking'].includes(a))
             
             onChange({ 

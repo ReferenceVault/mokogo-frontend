@@ -8,6 +8,7 @@ import ReportUserModal from './ReportUserModal'
 import BlockUserModal from './BlockUserModal'
 import UnblockUserModal from './UnblockUserModal'
 import ArchiveConversationModal from './ArchiveConversationModal'
+import UnarchiveConversationModal from './UnarchiveConversationModal'
 import { 
   Shield,
   Image as ImageIcon,
@@ -44,6 +45,7 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
   const [showBlockModal, setShowBlockModal] = useState(false)
   const [showUnblockModal, setShowUnblockModal] = useState(false)
   const [showArchiveModal, setShowArchiveModal] = useState(false)
+  const [showUnarchiveModal, setShowUnarchiveModal] = useState(false)
   const [activeTab, setActiveTab] = useState<'active' | 'archived' | 'blocked'>('active')
   const [archivedConversations, setArchivedConversations] = useState<ConversationResponse[]>([])
   const [blockedUserIds, setBlockedUserIds] = useState<string[]>([])
@@ -665,6 +667,10 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
     (conversationFromUrl && (conversationFromUrl._id || conversationFromUrl.id) === selectedConversationId ? conversationFromUrl : null)
   const otherUser = selectedConversation ? getOtherUser(selectedConversation) : null
 
+  const isSelectedConversationArchived = !!selectedConversationId && archivedConversations.some(
+    c => (c._id || c.id) === selectedConversationId
+  )
+
   // Check if current user blocked the other user
   const [didCurrentUserBlock, setDidCurrentUserBlock] = useState<boolean>(false)
   const [isBlockedConversation, setIsBlockedConversation] = useState<boolean>(false)
@@ -1285,11 +1291,17 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
                   </button>
                 )}
                 <button 
-                  onClick={() => setShowArchiveModal(true)}
+                  onClick={() => {
+                    if (isSelectedConversationArchived) {
+                      setShowUnarchiveModal(true)
+                    } else {
+                      setShowArchiveModal(true)
+                    }
+                  }}
                   className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors flex items-center gap-2"
                 >
                   <Archive className="w-4 h-4" />
-                  Archive Conversation
+                  {isSelectedConversationArchived ? 'Unarchive Conversation' : 'Archive Conversation'}
                 </button>
               </div>
               <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
@@ -1389,12 +1401,50 @@ const MessagesContent = ({ initialConversationId }: MessagesContentProps) => {
           onClose={() => setShowArchiveModal(false)}
           conversationId={selectedConversationId}
           onSuccess={() => {
-            // Refresh conversations to update list
+            const convId = selectedConversationId
+            // Optimistically move conversation to Archived
+            const moved =
+              conversations.find(c => (c._id || c.id) === convId) ||
+              archivedConversations.find(c => (c._id || c.id) === convId) ||
+              null
+            if (moved) {
+              setConversations(prev => prev.filter(c => (c._id || c.id) !== convId))
+              setArchivedConversations(prev => {
+                const next = prev.some(c => (c._id || c.id) === convId) ? prev : [moved, ...prev]
+                return next.sort((a, b) => new Date(b.lastMessageAt || 0).getTime() - new Date(a.lastMessageAt || 0).getTime())
+              })
+            }
+            setActiveTab('archived')
+            // Refresh conversations to ensure server is source of truth
             fetchConversations()
-            // Clear selected conversation
-            setSelectedConversationId(null)
-            setMessages([])
             console.log('Conversation archived successfully')
+          }}
+        />
+      )}
+
+      {/* Unarchive Conversation Modal */}
+      {selectedConversationId && (
+        <UnarchiveConversationModal
+          isOpen={showUnarchiveModal}
+          onClose={() => setShowUnarchiveModal(false)}
+          conversationId={selectedConversationId}
+          onSuccess={() => {
+            const convId = selectedConversationId
+            // Optimistically move conversation to Active
+            const moved =
+              archivedConversations.find(c => (c._id || c.id) === convId) ||
+              conversations.find(c => (c._id || c.id) === convId) ||
+              null
+            if (moved) {
+              setArchivedConversations(prev => prev.filter(c => (c._id || c.id) !== convId))
+              setConversations(prev => {
+                const next = prev.some(c => (c._id || c.id) === convId) ? prev : [moved, ...prev]
+                return next.sort((a, b) => new Date(b.lastMessageAt || 0).getTime() - new Date(a.lastMessageAt || 0).getTime())
+              })
+            }
+            setActiveTab('active')
+            fetchConversations()
+            console.log('Conversation unarchived successfully')
           }}
         />
       )}

@@ -24,7 +24,7 @@ const DEFAULT_MAX_RENT = 0
 
 const ALL_ROOM_TYPES = ['Private Room', 'Shared Room', 'Master Room']
 const ALL_FURNISHING = ['Fully Furnished', 'Semi-furnished', 'Unfurnished']
-const ALL_BHK_TYPES = ['1BHK', '2BHK', '3BHK']
+const ALL_BHK_TYPES = ['1RK', '1BHK', '2BHK', '3BHK']
 const ALL_BATHROOM_TYPES = ['Attached', 'Common']
 
 export const ListingFilters = ({
@@ -94,9 +94,9 @@ export const ListingFilters = ({
     onClear()
   }
 
+  const hasPriceFilter = minRent !== DEFAULT_MIN_RENT || maxRent !== DEFAULT_MAX_RENT
   const selectedCount =
-    (minRent !== DEFAULT_MIN_RENT ? 1 : 0) +
-    (maxRent !== DEFAULT_MAX_RENT ? 1 : 0) +
+    (hasPriceFilter ? 1 : 0) +
     (roomTypes.length ? 1 : 0) +
     (furnishingLevels.length ? 1 : 0) +
     (preferredGender ? 1 : 0) +

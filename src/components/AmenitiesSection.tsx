@@ -6,7 +6,6 @@ import {
   Waves,
   Wind,
   Tv,
-  CookingPot,
   WashingMachine,
   Refrigerator,
   Armchair,
@@ -35,7 +34,6 @@ const AmenitiesSection = ({ listing, className = '' }: AmenitiesSectionProps) =>
     'Gym': Dumbbell,
     'Pool': Waves,
     'Security': Shield,
-    'Kitchen': CookingPot,
     'Washing machine': WashingMachine,
     'Fridge': Refrigerator,
     'Sofa': Armchair,
@@ -44,7 +42,9 @@ const AmenitiesSection = ({ listing, className = '' }: AmenitiesSectionProps) =>
     'Balcony': Sun,
   }
 
-  const allAmenities = [...(listing.flatAmenities || []), ...(listing.societyAmenities || [])]
+  const allAmenities = [...(listing.flatAmenities || []), ...(listing.societyAmenities || [])].filter(
+    (a) => a !== 'Kitchen',
+  )
 
   // Don't render if there are no amenities
   if (allAmenities.length === 0) {
