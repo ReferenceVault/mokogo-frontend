@@ -68,18 +68,57 @@ const LandingPage = () => {
   const normalize = (v: string) => (v || '').trim().toLowerCase()
 
   const canonicalizeCityKey = (city: string) => {
+    // Normalize city input and map common variants to the 5 supported landing cities.
     const c = normalize(city)
     if (!c) return ''
-    if (c === 'new delhi' || c === 'delhi') return 'delhi ncr'
+
+    // Remove spaces/hyphens/etc so we can match "Pimpri-Chinchwad", "Pimpri Chinchwad", "Pimprichinchwad" etc.
+    const compact = c.replace(/[^a-z]/g, '')
+
+    // Delhi / NCR
+    if (compact === 'delhi' || compact === 'newdelhi' || compact === 'delhincr') return 'delhi ncr'
+
+    // Pune + Pimpri-Chinchwad (treated as Pune)
+    if (compact === 'pune' || compact === 'pimprichinchwad') return 'pune'
+
+    // Mumbai
+    if (compact === 'mumbai') return 'mumbai'
+
+    // Bangalore / Bengaluru
+    if (compact === 'bangalore' || compact === 'bengaluru') return 'bangalore'
+
+    // Hyderabad + Secunderabad (treated as Hyderabad)
+    if (
+      compact === 'hyderabad' ||
+      compact === 'secunderabad' ||
+      compact === 'secundrabad' ||
+      compact === 'hyd'
+    )
+      return 'hyderabad'
+
+    // Fallback: keep the normalized key as-is
     return c
   }
 
   const canonicalizeCityLabel = (city: string) => {
     const key = canonicalizeCityKey(city)
     if (!key) return ''
-    if (key === 'delhi ncr') return 'Delhi NCR'
-    // Preserve original formatting for everything else
-    return (city || '').trim()
+
+    switch (key) {
+      case 'pune':
+        return 'Pune'
+      case 'mumbai':
+        return 'Mumbai'
+      case 'bangalore':
+        return 'Bangalore'
+      case 'hyderabad':
+        return 'Hyderabad'
+      case 'delhi ncr':
+        return 'Delhi NCR'
+      default:
+        // Preserve original formatting for anything outside our supported landing set.
+        return (city || '').trim()
+    }
   }
 
   // Landing page standard search: city + move-in date only
@@ -263,8 +302,10 @@ const LandingPage = () => {
     'delhi ncr': '/delhi-city.png',
   }
 
+  const fixedLandingCityOrder = ['Pune', 'Mumbai', 'Bangalore', 'Hyderabad', 'Delhi NCR']
+
   const discoverCities: CityItem[] = useMemo(() => {
-    const baseOrder = ['Pune', 'Mumbai', 'Bangalore', 'Hyderabad', 'Delhi NCR']
+    const baseOrder = fixedLandingCityOrder
     const base = baseOrder.map((name) => {
       const key = normalize(name)
       const stat = liveCityStats.get(key)
@@ -276,33 +317,18 @@ const LandingPage = () => {
         active: count > 0,
       }
     })
-
-    // Add any extra cities that have live listings but aren't in the base list
-    const extras: CityItem[] = []
-    liveCityStats.forEach((stat, key) => {
-      if (base.some((c) => normalize(c.name) === key)) return
-      extras.push({
-        name: stat.name,
-        image: cityImageByName[key] || '/pune-city.png',
-        listings: stat.count,
-        active: true,
-      })
-    })
-
-    return [...base, ...extras].sort((a, b) => {
-      // Live cities (listings > 0) first, then by listing count DESC, then alphabetically
-      if (a.active !== b.active) return a.active ? -1 : 1
-      if (a.listings !== b.listings) return b.listings - a.listings
-      return a.name.localeCompare(b.name)
-    })
+    return base
   }, [liveCityStats])
 
   const searchCities = useMemo(() => {
-    const cities = Array.from(liveCityStats.values())
-      .filter((c) => c.count > 0)
-      .map((c) => c.name)
-      .sort((a, b) => a.localeCompare(b))
-    return cities.length ? cities : ['Pune']
+    // Keep hero search aligned with the same 5 supported landing cities.
+    const citiesInOrder = fixedLandingCityOrder
+      .filter((name) => {
+        const key = normalize(name)
+        const stat = liveCityStats.get(key)
+        return (stat?.count ?? 0) > 0
+      })
+    return citiesInOrder.length ? citiesInOrder : ['Pune']
   }, [liveCityStats])
   const testimonialsLoop = useMemo(() => [...testimonials, ...testimonials], [])
 
