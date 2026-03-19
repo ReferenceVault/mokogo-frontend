@@ -459,7 +459,7 @@ const LandingPage = () => {
       <main className="flex-1">
         {(locationState === 'idle' || locationState === 'requesting') && (
           <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/35 backdrop-blur-sm p-4 overflow-x-hidden">
-            <div className="w-full max-w-md rounded-3xl border border-orange-200/80 bg-gradient-to-br from-orange-50 via-white to-orange-100 p-6 shadow-[0_22px_70px_rgba(15,23,42,0.5)] transform transition-transform duration-200 ease-out max-h-[90vh] overflow-y-auto">
+            <div className="w-full max-w-md rounded-3xl border border-orange-200/80 bg-gradient-to-br from-orange-50 via-white to-orange-100 p-4 sm:p-6 shadow-[0_22px_70px_rgba(15,23,42,0.5)] transform transition-transform duration-200 ease-out max-h-[90vh] overflow-y-auto">
               <div className="flex flex-col items-center text-center gap-3">
                 <div className="inline-flex items-center gap-2 rounded-full bg-orange-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-orange-700">
                   <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />
