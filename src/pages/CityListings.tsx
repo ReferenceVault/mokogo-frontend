@@ -59,6 +59,17 @@ const CityListings = () => {
 
   // Decode the city name from URL
   const decodedCityName = cityName ? decodeURIComponent(cityName) : ''
+  const [isAreaFocused, setIsAreaFocused] = useState(false)
+
+  const getAreaPlaceholderExamples = (city: string): string => {
+    const c = (city || '').trim().toLowerCase()
+    if (c === 'pune') return 'e.g., Baner, Wakad'
+    if (c === 'mumbai') return 'e.g., Andheri, Bandra'
+    if (c === 'bangalore' || c === 'bengaluru') return 'e.g., Koramangala, Indiranagar'
+    if (c === 'hyderabad') return 'e.g., Gachibowli, Hitech City'
+    if (c === 'delhi ncr') return 'e.g., Noida Sector 62, Gurgaon DLF Phase 3'
+    return 'e.g., Downtown, Central'
+  }
   
   // Get all listings for the city from backend (server-side filtering)
   useEffect(() => {
@@ -120,9 +131,24 @@ const CityListings = () => {
   // Apply filters to listings
   const cityListings = useMemo(() => {
     return cityListingsBase.filter(listing => {
+      const normalize = (v: string) => (v || '').trim().toLowerCase()
+
       // Area filter
-      if (filters.area && listing.locality !== filters.area) {
-        return false
+      // Special rules:
+      // - If selected area === city (e.g., Pune + Pune), treat as "all areas" (no area filtering)
+      // - Listings with locality === city (e.g., Pune,Pune) should appear in every area of that city
+      if (filters.area) {
+        const areaNorm = normalize(filters.area)
+        const cityNorm = normalize(decodedCityName)
+        const listingLocalityNorm = normalize(listing.locality || '')
+
+        if (areaNorm !== cityNorm) {
+          const matchesSelectedArea = listingLocalityNorm === areaNorm
+          const isCityWideListing = listingLocalityNorm === cityNorm
+          if (!matchesSelectedArea && !isCityWideListing) {
+            return false
+          }
+        }
       }
       
       // Move-in Date filter
@@ -197,9 +223,11 @@ const CityListings = () => {
       bathroomTypes,
       lgbtqFriendly,
     } = advancedFilters
+    const hasPriceFilter =
+      (minRent !== undefined && minRent !== DEFAULT_MIN_RENT) ||
+      (maxRent !== undefined && maxRent !== DEFAULT_MAX_RENT)
     return (
-      (minRent !== undefined && minRent !== DEFAULT_MIN_RENT ? 1 : 0) +
-      (maxRent !== undefined && maxRent !== DEFAULT_MAX_RENT ? 1 : 0) +
+      (hasPriceFilter ? 1 : 0) +
       (roomTypes && roomTypes.length ? 1 : 0) +
       (furnishingLevels && furnishingLevels.length ? 1 : 0) +
       (preferredGender ? 1 : 0) +
@@ -218,7 +246,11 @@ const CityListings = () => {
       const backendFilters: any = { city: decodedCityName }
 
       // keep inline/base filters as server filters where it makes sense
-      if (filters.area) backendFilters.area = filters.area
+      if (filters.area) {
+        const normalize = (v: string) => (v || '').trim().toLowerCase()
+        const isCityWideAreaSelected = normalize(filters.area) === normalize(decodedCityName)
+        if (!isCityWideAreaSelected) backendFilters.area = filters.area
+      }
       if (filters.moveInDate) backendFilters.moveInDate = filters.moveInDate
       // Gender: popup selection overrides inline selection for consistency
       if (state.preferredGender) {
@@ -286,7 +318,11 @@ const CityListings = () => {
     setIsLoading(true)
     try {
       const backendFilters: any = { city: decodedCityName }
-      if (filters.area) backendFilters.area = filters.area
+      if (filters.area) {
+        const normalize = (v: string) => (v || '').trim().toLowerCase()
+        const isCityWideAreaSelected = normalize(filters.area) === normalize(decodedCityName)
+        if (!isCityWideAreaSelected) backendFilters.area = filters.area
+      }
       if (filters.moveInDate) backendFilters.moveInDate = filters.moveInDate
       // Do NOT send gender here so inline gender becomes a pure client-side filter again
 
@@ -476,14 +512,28 @@ const CityListings = () => {
                       setFilters(prev => ({ ...prev, area: '' }))
                     }}
                     onFocus={() => {
+                      setIsAreaFocused(true)
                       if (areaSuggestions.length > 0 && areaInputValue.trim().length >= 2) {
                         setShowAreaSuggestions(true)
                         updateAreaDropdownPosition()
                       }
                     }}
-                    placeholder="Search area (e.g., Baner, Wakad)"
+                    onBlur={() => setIsAreaFocused(false)}
+                    placeholder=""
                     className="w-full h-[52px] px-4 rounded-xl border border-mokogo-gray focus:outline-none focus:ring-2 focus:ring-mokogo-primary bg-white/80"
                   />
+                  {!areaInputValue && !isAreaFocused && decodedCityName && (
+                    <div className="mokogo-marquee-placeholder text-sm">
+                      <div className="mokogo-marquee-placeholder__inner">
+                        <span>
+                          {`Search area in ${decodedCityName} (${getAreaPlaceholderExamples(decodedCityName)})`}
+                        </span>
+                        <span aria-hidden="true">
+                          {`Search area in ${decodedCityName} (${getAreaPlaceholderExamples(decodedCityName)})`}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                   {showAreaSuggestions && typeof document !== 'undefined' && createPortal(
                     <div
                       ref={areaSuggestionsRef}
@@ -494,6 +544,9 @@ const CityListings = () => {
                         width: `${areaDropdownPosition.width}px`,
                       }}
                     >
+                      <div className="px-4 py-2 text-xs font-semibold text-gray-600 bg-gray-50 border-b border-gray-200">
+                        Suggestions for {decodedCityName}
+                      </div>
                       {isLoadingArea ? (
                         <div className="px-4 py-3 text-sm text-gray-500">Searching areas...</div>
                       ) : (

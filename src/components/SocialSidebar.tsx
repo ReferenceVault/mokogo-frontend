@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Facebook, Instagram, Twitter, Linkedin, Youtube } from 'lucide-react'
+import { Facebook, Instagram, Twitter, Linkedin } from 'lucide-react'
 
 interface SocialSidebarProps {
   position?: 'left' | 'right'
@@ -25,7 +25,6 @@ const SocialSidebar = ({ position = 'left' }: SocialSidebarProps) => {
     { icon: Instagram, href: 'https://www.instagram.com/getmokogo/', label: 'Instagram' },
     { icon: Twitter, href: 'https://x.com/getmokogo', label: 'Twitter' },
     { icon: Linkedin, href: 'https://linkedin.com/company/mokogo', label: 'LinkedIn' },
-    { icon: Youtube, href: '#', label: 'YouTube' }
   ]
 
   const isRight = position === 'right'

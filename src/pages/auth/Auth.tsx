@@ -134,26 +134,17 @@ const Auth = () => {
   }
 
   const formatPhoneNumber = (value: string) => {
-    // Allow international format: keep + and digits
-    const cleaned = value.replace(/[^\d+]/g, '').replace(/(?<=\+)\+/g, '') // Remove duplicates of +
-    // Don't format if it starts with + (international format)
-    if (cleaned.startsWith('+')) {
-      return cleaned
-    }
-    // Format local numbers (up to 10 digits) with space
+    // India-only: format a 10-digit number with a space for readability
+    const cleaned = value.replace(/[^\d]/g, '')
     if (cleaned.length <= 5) return cleaned
-    if (cleaned.length <= 10) {
-      return `${cleaned.slice(0, 5)} ${cleaned.slice(5)}`
-    }
-    return cleaned
+    if (cleaned.length <= 10) return `${cleaned.slice(0, 5)} ${cleaned.slice(5)}`
+    return cleaned.slice(0, 10)
   }
 
   const validatePhone = (phoneNumber: string) => {
     if (!phoneNumber || phoneNumber.trim() === '') return true // Optional field
-    // Allow international format: + followed by country code and number (1-15 digits total)
-    const phoneRegex = /^\+?[1-9]\d{1,14}$/
-    const cleaned = phoneNumber.trim().replace(/\s|-|\(|\)/g, '') // Remove spaces, dashes, parentheses
-    return phoneRegex.test(cleaned)
+    const digits = phoneNumber.replace(/\D/g, '')
+    return /^\d{10}$/.test(digits)
   }
 
   const validateEmail = (email: string) => {
@@ -169,17 +160,20 @@ const Auth = () => {
     
     setError('')
 
-    if (!email.trim()) {
+    const normalizedEmail = email.trim()
+    const normalizedPassword = password.trim()
+
+    if (!normalizedEmail) {
       setError('Email is required')
       return
     }
 
-    if (!validateEmail(email)) {
+    if (!validateEmail(normalizedEmail)) {
       setError('Please enter a valid email address')
       return
     }
 
-    if (!password.trim()) {
+    if (!normalizedPassword) {
       setError('Password is required')
       return
     }
@@ -187,7 +181,7 @@ const Auth = () => {
     setIsLoading(true)
     
     try {
-      const response = await authApi.login({ email, password })
+      const response = await authApi.login({ email: normalizedEmail, password: normalizedPassword })
       
       localStorage.setItem('mokogo-access-token', response.accessToken)
       if (response.refreshToken) {
@@ -235,37 +229,48 @@ const Auth = () => {
     
     setError('')
 
-    if (!name.trim()) {
+    const normalizedName = name.trim()
+    const normalizedEmail = email.trim()
+    const normalizedPassword = password.trim()
+    const normalizedConfirmPassword = confirmPassword.trim()
+    const phoneDigits = phone.replace(/\D/g, '')
+
+    if (!normalizedName) {
       setError('Name is required')
       return
     }
 
-    if (!email.trim()) {
+    if (!normalizedEmail) {
       setError('Email is required')
       return
     }
 
-    if (!validateEmail(email)) {
+    if (!validateEmail(normalizedEmail)) {
       setError('Please enter a valid email address')
       return
     }
 
-    if (phone && !validatePhone(phone)) {
-      setError('Please enter a valid phone number (international format supported)')
+    if (phoneDigits && !validatePhone(phoneDigits)) {
+      setError('Please enter a valid 10-digit Indian mobile number')
       return
     }
 
-    if (!password.trim()) {
+    if (!normalizedPassword) {
       setError('Password is required')
       return
     }
 
-    if (password.length < 8) {
+    if (/\s/.test(normalizedPassword)) {
+      setError('Password must not contain spaces')
+      return
+    }
+
+    if (normalizedPassword.length < 8) {
       setError('Password must be at least 8 characters')
       return
     }
 
-    if (password !== confirmPassword) {
+    if (normalizedPassword !== normalizedConfirmPassword) {
       setError('Passwords do not match')
       return
     }
@@ -279,19 +284,19 @@ const Auth = () => {
     
     try {
       const signupData: any = {
-        name: name.trim(),
-        email: email.trim(),
-        password,
+        name: normalizedName,
+        email: normalizedEmail,
+        password: normalizedPassword,
         termsAccepted: agreeToTerms,
       }
       
-      if (phone && phone.replace(/\D/g, '').length === 10) {
-        signupData.phoneNumber = `+91${phone.replace(/\D/g, '')}`
+      if (phoneDigits) {
+        signupData.phoneNumber = phoneDigits
       }
       
       await authApi.signup(signupData)
       
-      const loginResponse = await authApi.login({ email: email.trim(), password })
+      const loginResponse = await authApi.login({ email: normalizedEmail, password: normalizedPassword })
       
       localStorage.setItem('mokogo-access-token', loginResponse.accessToken)
       if (loginResponse.refreshToken) {
@@ -301,7 +306,7 @@ const Auth = () => {
       setUser({
         id: loginResponse.user.id,
         email: loginResponse.user.email,
-        name: name.trim(),
+        name: normalizedName,
         phone: phone,
       })
 

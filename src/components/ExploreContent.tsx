@@ -40,9 +40,33 @@ const ExploreContent = ({
   const [areaSuggestions, setAreaSuggestions] = useState<AutocompletePrediction[]>([])
   const [showAreaSuggestions, setShowAreaSuggestions] = useState(false)
   const [isLoadingArea, setIsLoadingArea] = useState(false)
+  const [isAreaFocused, setIsAreaFocused] = useState(false)
   const skipNextAreaFetchRef = useRef(false)
+  const autocompleteReqIdRef = useRef(0)
   const areaInputRef = useRef<HTMLDivElement>(null)
   const [areaDropdownPosition, setAreaDropdownPosition] = useState({ top: 0, left: 0, width: 0 })
+
+  const getCityMatchTokens = (city: string): string[] => {
+    const c = (city || '').trim().toLowerCase()
+    if (!c) return []
+    if (c === 'delhi ncr') {
+      return ['delhi', 'gurugram', 'gurgaon', 'noida', 'greater noida', 'ghaziabad', 'faridabad']
+    }
+    if (c === 'bangalore') {
+      return ['bangalore', 'bengaluru']
+    }
+    return [c]
+  }
+
+  const getAreaPlaceholderExamples = (city: string): string => {
+    const c = (city || '').trim().toLowerCase()
+    if (c === 'pune') return 'e.g., Baner, Wakad'
+    if (c === 'mumbai') return 'e.g., Andheri, Bandra'
+    if (c === 'bangalore' || c === 'bengaluru') return 'e.g., Koramangala, Indiranagar'
+    if (c === 'hyderabad') return 'e.g., Gachibowli, Hitech City'
+    if (c === 'delhi ncr') return 'e.g., Noida Sector 62, Gurgaon DLF Phase 3'
+    return 'e.g., Downtown, Central'
+  }
 
   // Filter state
   const [filters, setFilters] = useState(() => {
@@ -137,6 +161,44 @@ const ExploreContent = ({
   // Get all live listings
   const allLiveListings = exploreListings.filter(listing => listing.status === 'live')
 
+  const cityOptions = useMemo(() => {
+    const normalize = (v: string) => (v || '').trim().toLowerCase()
+    const byKey = new Map<string, { value: string; label: string; count: number }>()
+
+    allLiveListings.forEach((listing) => {
+      const rawCity = (listing.city || '').trim()
+      if (!rawCity) return
+      const key = normalize(rawCity)
+      const current = byKey.get(key)
+      if (current) {
+        current.count += 1
+      } else {
+        byKey.set(key, { value: rawCity, label: rawCity, count: 1 })
+      }
+    })
+
+    let options = Array.from(byKey.values())
+      .filter((o) => o.count > 0)
+      .sort((a, b) => a.label.localeCompare(b.label))
+      .map(({ value, label }) => ({ value, label }))
+
+    // Ensure currently selected city remains visible even if backend data is inconsistent
+    if (filters.city) {
+      const selectedKey = normalize(filters.city)
+      const exists = options.some((o) => normalize(o.value) === selectedKey)
+      if (!exists) {
+        options = [{ value: filters.city, label: filters.city }, ...options]
+      }
+    }
+
+    // Fallback: keep Pune available if nothing loads
+    if (options.length === 0) {
+      return [{ value: 'Pune', label: 'Pune' }]
+    }
+
+    return options
+  }, [allLiveListings, filters.city])
+
   useEffect(() => {
     const params = new URLSearchParams(location.search)
     setFilters({
@@ -167,18 +229,25 @@ const ExploreContent = ({
 
   // Apply filters to listings
   const filteredListings = useMemo(() => {
-    const filtered = allLiveListings.filter(listing => {
-      const hasMikoFilters =
-        Boolean(filters.city || filters.area || filters.moveInDate || filters.preferredGender) ||
-        Boolean(roomTypePreference) ||
-        mikoTags.length > 0
+    const normalize = (v: string) => (v || '').trim().toLowerCase()
+    const isCityWideAreaSelected =
+      Boolean(filters.city) && Boolean(filters.area) && normalize(filters.city) === normalize(filters.area)
 
-      const cityMatch = filters.city ? listing.city === filters.city : false
+    const filtered = allLiveListings.filter(listing => {
+      const cityMatch = filters.city ? normalize(listing.city) === normalize(filters.city) : false
       
       // Area matching: if coordinates provided, use distance (within 10km), otherwise exact match
       let areaMatch = false
       if (filters.area) {
-        if (filters.areaLat !== null && filters.areaLng !== null && listing.latitude && listing.longitude) {
+        const listingLocalityNorm = normalize(listing.locality || '')
+        const cityNorm = normalize(filters.city || '')
+        const isCityWideListing = Boolean(cityNorm) && listingLocalityNorm === cityNorm
+
+        // If "area" is the same as city (e.g., Pune + Pune), treat it as "all areas"
+        // Also, city-wide listings (locality === city) should appear in every area of that city
+        if (isCityWideAreaSelected || isCityWideListing) {
+          areaMatch = true
+        } else if (filters.areaLat !== null && filters.areaLng !== null && listing.latitude && listing.longitude) {
           // Use distance-based matching (within 10km)
           areaMatch = isListingWithinRadius(
             listing,
@@ -188,7 +257,7 @@ const ExploreContent = ({
           )
         } else {
           // Fallback to exact locality match
-          areaMatch = listing.locality === filters.area
+          areaMatch = normalize(listing.locality || '') === normalize(filters.area)
         }
       }
       // Move-in date match
@@ -242,23 +311,12 @@ const ExploreContent = ({
 
       if (isMikoMode) {
         if (filters.city && !cityMatch) return false
-
-        const hasOtherFilters =
-          Boolean(filters.area || filters.moveInDate || filters.preferredGender) ||
-          Boolean(roomTypePreference) ||
-          mikoTags.length > 0
-
-        if (!hasMikoFilters || !hasOtherFilters) {
-          return true
-        }
-
-        return (
-          areaMatch ||
-          moveInDateMatch ||
-          genderMatch ||
-          roomTypeMatch ||
-          mikoTagsMatch
-        )
+        if (filters.area && !areaMatch) return false
+        if (filters.moveInDate && !moveInDateMatch) return false
+        if (filters.preferredGender && !genderMatch) return false
+        if (roomTypePreference && !roomTypeMatch) return false
+        if (mikoTags.length > 0 && !mikoTagsMatch) return false
+        return true
       }
 
       // Standard search: all selected filters must match
@@ -272,7 +330,7 @@ const ExploreContent = ({
     })
 
     // Sort by distance if area coordinates are provided
-    if (filters.area && filters.areaLat !== null && filters.areaLng !== null) {
+    if (!isCityWideAreaSelected && filters.area && filters.areaLat !== null && filters.areaLng !== null) {
       return sortListingsByDistance(filtered, filters.areaLat, filters.areaLng)
     }
 
@@ -330,9 +388,11 @@ const ExploreContent = ({
       bathroomTypes,
       lgbtqFriendly,
     } = advancedFilters
+    const hasPriceFilter =
+      (minRent !== undefined && minRent !== DEFAULT_MIN_RENT) ||
+      (maxRent !== undefined && maxRent !== DEFAULT_MAX_RENT)
     return (
-      (minRent !== undefined && minRent !== DEFAULT_MIN_RENT ? 1 : 0) +
-      (maxRent !== undefined && maxRent !== DEFAULT_MAX_RENT ? 1 : 0) +
+      (hasPriceFilter ? 1 : 0) +
       (roomTypes && roomTypes.length ? 1 : 0) +
       (furnishingLevels && furnishingLevels.length ? 1 : 0) +
       (preferredGender ? 1 : 0) +
@@ -359,6 +419,8 @@ const ExploreContent = ({
 
     // Clear area filter if city changes
     if (key === 'city') {
+      // Invalidate any in-flight autocomplete requests
+      autocompleteReqIdRef.current += 1
       setFilters(prev => ({
         ...prev,
         city: value,
@@ -368,6 +430,8 @@ const ExploreContent = ({
         areaLng: null,
       }))
       setAreaInputValue('')
+      setAreaSuggestions([])
+      setShowAreaSuggestions(false)
     }
   }
 
@@ -397,9 +461,14 @@ const ExploreContent = ({
 
       // Include basic explore filters (city/area/date/gender) where relevant
       if (filters.city) backendFilters.city = filters.city
-      if (filters.area) backendFilters.area = filters.area
-      if (filters.areaLat != null) backendFilters.areaLat = filters.areaLat
-      if (filters.areaLng != null) backendFilters.areaLng = filters.areaLng
+      const normalize = (v: string) => (v || '').trim().toLowerCase()
+      const isCityWideAreaSelected =
+        Boolean(filters.city) && Boolean(filters.area) && normalize(filters.city) === normalize(filters.area)
+      if (filters.area && !isCityWideAreaSelected) backendFilters.area = filters.area
+      if (!isCityWideAreaSelected) {
+        if (filters.areaLat != null) backendFilters.areaLat = filters.areaLat
+        if (filters.areaLng != null) backendFilters.areaLng = filters.areaLng
+      }
       if (filters.moveInDate) backendFilters.moveInDate = filters.moveInDate
 
       // Gender: popup selection overrides inline selection for consistency
@@ -468,9 +537,14 @@ const ExploreContent = ({
     try {
       const backendFilters: any = {}
       if (filters.city) backendFilters.city = filters.city
-      if (filters.area) backendFilters.area = filters.area
-      if (filters.areaLat != null) backendFilters.areaLat = filters.areaLat
-      if (filters.areaLng != null) backendFilters.areaLng = filters.areaLng
+      const normalize = (v: string) => (v || '').trim().toLowerCase()
+      const isCityWideAreaSelected =
+        Boolean(filters.city) && Boolean(filters.area) && normalize(filters.city) === normalize(filters.area)
+      if (filters.area && !isCityWideAreaSelected) backendFilters.area = filters.area
+      if (!isCityWideAreaSelected) {
+        if (filters.areaLat != null) backendFilters.areaLat = filters.areaLat
+        if (filters.areaLng != null) backendFilters.areaLng = filters.areaLng
+      }
       if (filters.moveInDate) backendFilters.moveInDate = filters.moveInDate
       // Do NOT send preferredGender here so inline gender becomes a pure client-side filter again
 
@@ -533,17 +607,36 @@ const ExploreContent = ({
         setShowAreaSuggestions(false)
         return
       }
+      const reqId = ++autocompleteReqIdRef.current
+      const requestedCity = filters.city
+      const requestedInput = areaInputValue.trim()
       setIsLoadingArea(true)
       try {
-        const results = await placesApi.getAutocomplete(areaInputValue.trim(), filters.city)
-        setAreaSuggestions(results)
-        setShowAreaSuggestions(results.length > 0)
+        const results = await placesApi.getAutocomplete(requestedInput, requestedCity)
+        // Ignore stale responses (city/input changed while request was in-flight)
+        if (
+          reqId !== autocompleteReqIdRef.current ||
+          requestedCity !== filters.city ||
+          requestedInput !== areaInputValue.trim()
+        ) {
+          return
+        }
+        const tokens = getCityMatchTokens(filters.city)
+        const filtered = results.filter((p) => {
+          const hay = `${p.structured_formatting?.secondary_text || ''} ${p.description || ''}`.toLowerCase()
+          return tokens.some((t) => hay.includes(t))
+        })
+        setAreaSuggestions(filtered)
+        setShowAreaSuggestions(filtered.length > 0)
       } catch (error) {
         console.error('Error fetching area suggestions:', error)
         setAreaSuggestions([])
         setShowAreaSuggestions(false)
       } finally {
-        setIsLoadingArea(false)
+        // Only stop loading if this is still the latest request
+        if (reqId === autocompleteReqIdRef.current) {
+          setIsLoadingArea(false)
+        }
       }
     }
 
@@ -645,9 +738,7 @@ const ExploreContent = ({
                 value={filters.city}
                 onValueChange={(value) => handleFilterChange('city', value)}
                 placeholder="Select your city"
-                options={[
-                  { value: 'Pune', label: 'Pune' },
-                ]}
+                options={cityOptions}
               />
             </div>
             {filters.city && (
@@ -655,13 +746,29 @@ const ExploreContent = ({
                 <label className="block text-sm font-medium text-stone-700 mb-2">
                   Area
                 </label>
-                <input
-                  type="text"
-                  value={areaInputValue}
-                  onChange={(e) => setAreaInputValue(e.target.value)}
-                  placeholder="Search area (e.g., Baner, Wakad)"
-                  className="w-full min-w-0 h-[52px] px-4 rounded-xl border border-mokogo-gray focus:outline-none focus:ring-2 focus:ring-mokogo-primary bg-white/80 text-base sm:text-sm"
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={areaInputValue}
+                    onChange={(e) => setAreaInputValue(e.target.value)}
+                    onFocus={() => setIsAreaFocused(true)}
+                    onBlur={() => setIsAreaFocused(false)}
+                    placeholder=""
+                    className="w-full min-w-0 h-[52px] px-4 rounded-xl border border-mokogo-gray focus:outline-none focus:ring-2 focus:ring-mokogo-primary bg-white/80 text-base sm:text-sm"
+                  />
+                  {!areaInputValue && !isAreaFocused && (
+                    <div className="mokogo-marquee-placeholder text-base sm:text-sm">
+                      <div className="mokogo-marquee-placeholder__inner">
+                        <span>
+                          {`Search area in ${filters.city} (${getAreaPlaceholderExamples(filters.city)})`}
+                        </span>
+                        <span aria-hidden="true">
+                          {`Search area in ${filters.city} (${getAreaPlaceholderExamples(filters.city)})`}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
                 {showAreaSuggestions && typeof document !== 'undefined' && createPortal(
                   <div
                     className="fixed z-[99999] bg-white border border-gray-200 rounded-xl shadow-xl max-h-[50vh] sm:max-h-60 overflow-auto min-w-[280px]"
@@ -671,6 +778,9 @@ const ExploreContent = ({
                       width: `${Math.max(areaDropdownPosition.width, 280)}px`
                     }}
                   >
+                    <div className="px-4 py-2 text-xs font-semibold text-gray-600 bg-gray-50 border-b border-gray-200">
+                      Suggestions for {filters.city}
+                    </div>
                     {isLoadingArea ? (
                       <div className="px-4 py-3 text-sm text-gray-500">Searching areas...</div>
                     ) : (

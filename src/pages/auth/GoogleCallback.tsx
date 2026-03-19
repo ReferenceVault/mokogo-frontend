@@ -94,7 +94,7 @@ const GoogleCallback = () => {
 
         setTimeout(() => {
           sessionStorage.removeItem('mokogo-auth-redirect')
-          navigate(redirectUrl)
+          navigate(redirectUrl, { replace: true })
         }, 500)
       } catch (err: any) {
         setError(
@@ -151,7 +151,7 @@ const GoogleCallback = () => {
                   </h2>
                   <p className="text-red-600 mt-2 mb-6">{error}</p>
                   <button
-                    onClick={() => navigate('/auth')}
+                    onClick={() => navigate('/auth', { replace: true })}
                     className="btn-primary w-full"
                   >
                     Back to Sign In

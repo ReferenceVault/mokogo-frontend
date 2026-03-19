@@ -10,6 +10,7 @@ import { useStore } from '@/store/useStore'
 import { Listing } from '@/types'
 import { handleLogout as handleLogoutUtil } from '@/utils/auth'
 import { isListingLimitError } from '@/utils/errorHandler'
+import { normalizeVibeTagsOnePerGroup } from '@/utils/miko'
 
 import { listingsApi, CreateListingRequest } from '@/services/api'
 import { Search, LayoutGrid, Home, MessageSquare, Bookmark, Calendar, Plus, Sparkles } from 'lucide-react'
@@ -173,6 +174,7 @@ const ListingWizard = () => {
       const formattedListing = {
         ...currentListing,
         moveInDate: formatDateForInput(currentListing.moveInDate),
+        mikoTags: normalizeVibeTagsOnePerGroup(currentListing.mikoTags),
       }
       listingDataRef.current = formattedListing
       setListingData(formattedListing)
@@ -186,6 +188,7 @@ const ListingWizard = () => {
       const formattedListing = {
         ...currentListing,
         moveInDate: formatDateForInput(currentListing.moveInDate),
+        mikoTags: normalizeVibeTagsOnePerGroup(currentListing.mikoTags),
       }
       listingDataRef.current = formattedListing
       setListingData(formattedListing)
@@ -291,6 +294,9 @@ const ListingWizard = () => {
         if (dataToSave.societyName && dataToSave.societyName.trim()) {
           draftData.societyName = dataToSave.societyName
         }
+        if (dataToSave.buildingType && dataToSave.buildingType.trim()) {
+          draftData.buildingType = dataToSave.buildingType
+        }
         if (dataToSave.bhkType && dataToSave.bhkType.trim()) {
           draftData.bhkType = dataToSave.bhkType
         }
@@ -355,6 +361,9 @@ const ListingWizard = () => {
           if (dataToSave.societyName && dataToSave.societyName.trim()) {
             draftData.societyName = dataToSave.societyName
           }
+          if (dataToSave.buildingType && dataToSave.buildingType.trim()) {
+            draftData.buildingType = dataToSave.buildingType
+          }
           if (dataToSave.bhkType && dataToSave.bhkType.trim()) {
             draftData.bhkType = dataToSave.bhkType
           }
@@ -403,7 +412,9 @@ const ListingWizard = () => {
           if (dataToSave.lgbtqFriendly !== undefined) {
             draftData.lgbtqFriendly = dataToSave.lgbtqFriendly
           }
-          // mikoTags is not sent to API - backend doesn't accept it
+          if (dataToSave.mikoTags) {
+            draftData.mikoTags = dataToSave.mikoTags
+          }
         } else {
           // Continue button: ONLY include fields from validated steps
           // Only include photos if photos step is validated
@@ -426,6 +437,9 @@ const ListingWizard = () => {
 
           // Only include details fields if details step (step 2) is validated
           if (validatedSteps.has(2)) {
+            if (dataToSave.buildingType && dataToSave.buildingType.trim()) {
+              draftData.buildingType = dataToSave.buildingType
+            }
             if (dataToSave.bhkType && dataToSave.bhkType.trim()) {
               draftData.bhkType = dataToSave.bhkType
             }
@@ -482,11 +496,17 @@ const ListingWizard = () => {
             }
           }
 
+          // Only include MIKO tags if MIKO step (step 5) is validated
+          if (validatedSteps.has(5)) {
+            if (dataToSave.mikoTags) {
+              draftData.mikoTags = dataToSave.mikoTags
+            }
+          }
+
           // Description can be included if provided (not step-specific)
           if (dataToSave.description && dataToSave.description.trim()) {
             draftData.description = dataToSave.description
           }
-          // mikoTags is not sent to API - backend doesn't accept it
         }
       }
 
@@ -511,6 +531,7 @@ const ListingWizard = () => {
         city: savedListing.city,
         locality: savedListing.locality,
         societyName: savedListing.societyName,
+        buildingType: savedListing.buildingType,
         bhkType: savedListing.bhkType,
         roomType: savedListing.roomType,
         rent: savedListing.rent,
@@ -621,6 +642,16 @@ const ListingWizard = () => {
         if (!dataToValidate.moveInDate || dataToValidate.moveInDate.trim() === '') {
           stepErrors.moveInDate = 'Available date is required'
           newErrors[stepId] = newErrors[stepId] || 'Available date is required'
+        } else {
+          const today = new Date()
+          today.setHours(0, 0, 0, 0)
+          const selected = new Date(dataToValidate.moveInDate)
+          selected.setHours(0, 0, 0, 0)
+          if (selected < today) {
+            const message = 'Move-in date cannot be in the past'
+            stepErrors.moveInDate = message
+            newErrors[stepId] = newErrors[stepId] || message
+          }
         }
         break
       case 'preferences':
@@ -732,6 +763,7 @@ const ListingWizard = () => {
         
         // Include details fields if details step (step 2) is validated
         if (updatedValidatedSteps.has(2)) {
+          if (dataToSave.buildingType && dataToSave.buildingType.trim()) updateData.buildingType = dataToSave.buildingType
           if (dataToSave.bhkType && dataToSave.bhkType.trim()) updateData.bhkType = dataToSave.bhkType
           if (dataToSave.roomType && dataToSave.roomType.trim()) updateData.roomType = dataToSave.roomType
           if (dataToSave.furnishingLevel && dataToSave.furnishingLevel.trim()) updateData.furnishingLevel = dataToSave.furnishingLevel
@@ -759,7 +791,11 @@ const ListingWizard = () => {
           }
         }
 
-        // MIKO tags are not sent to API - backend doesn't accept mikoTags property
+        // Include MIKO vibe tags if MIKO step (step 5) is validated
+        if (updatedValidatedSteps.has(5)) {
+          if (dataToSave.mikoTags) updateData.mikoTags = dataToSave.mikoTags
+        }
+
         // Include description if provided
         if (dataToSave.description && dataToSave.description.trim()) {
           updateData.description = dataToSave.description
@@ -779,6 +815,7 @@ const ListingWizard = () => {
           longitude: savedListing.longitude ?? dataToSave.longitude,
           formattedAddress: savedListing.formattedAddress || dataToSave.formattedAddress,
           societyName: savedListing.societyName || dataToSave.societyName,
+          buildingType: (savedListing as any).buildingType || dataToSave.buildingType,
           bhkType: savedListing.bhkType || dataToSave.bhkType || '',
           roomType: savedListing.roomType || dataToSave.roomType || '',
           rent: savedListing.rent ?? dataToSave.rent ?? 0,
@@ -1037,6 +1074,7 @@ const ListingWizard = () => {
         city: dataToSave.city || '',
         locality: dataToSave.locality || '',
         societyName: dataToSave.societyName,
+        buildingType: dataToSave.buildingType,
         bhkType: dataToSave.bhkType || '',
         roomType: dataToSave.roomType || '',
         rent: dataToSave.rent || 0,
@@ -1068,6 +1106,7 @@ const ListingWizard = () => {
         city: savedListing.city,
         locality: savedListing.locality,
         societyName: savedListing.societyName,
+        buildingType: (savedListing as any).buildingType,
         bhkType: savedListing.bhkType,
         roomType: savedListing.roomType,
         rent: savedListing.rent,
@@ -1109,7 +1148,7 @@ const ListingWizard = () => {
       } else {
         // Clear any toast messages before navigating
         setShowToast(false)
-        navigate('/dashboard')
+        navigate('/dashboard', { replace: true })
       }
     } catch (error: any) {
       console.error('Error creating listing:', error)
@@ -1225,6 +1264,7 @@ const ListingWizard = () => {
           city: updated.city || undefined,
           locality: updated.locality || undefined,
           societyName: updated.societyName || undefined,
+          buildingType: updated.buildingType || undefined,
           bhkType: updated.bhkType || undefined,
           roomType: updated.roomType || undefined,
           rent: updated.rent || undefined,
@@ -1255,6 +1295,7 @@ const ListingWizard = () => {
           city: savedListing.city || updated.city || '',
           locality: savedListing.locality || updated.locality || '',
           societyName: savedListing.societyName || updated.societyName,
+          buildingType: (savedListing as any).buildingType || updated.buildingType,
           bhkType: savedListing.bhkType || updated.bhkType || '',
           roomType: savedListing.roomType || updated.roomType || '',
           rent: savedListing.rent || updated.rent || 0,
@@ -1457,7 +1498,7 @@ const ListingWizard = () => {
           {/* Page Header */}
           <div className="mb-3">
             <h1 className="text-xl sm:text-[1.375rem] font-bold text-gray-900 mb-0.5">
-              {isEditing ? 'Edit Your Listing' : 'List Your Space'}
+              {isEditing ? 'Edit Your Listing' : 'List Your Place'}
             </h1>
             <p className="text-[0.825rem] text-gray-600">
               {isEditing ? 'Update your listing details below' : 'Find your perfect flatmate in under 5 minutes'}
@@ -1619,7 +1660,7 @@ const ListingWizard = () => {
         onClose={() => {
           setShowListingLimitModal(false)
           setListingSavedAsDraft(false)
-          navigate('/dashboard')
+          navigate('/dashboard', { replace: true })
         }}
         savedAsDraft={listingSavedAsDraft}
       />

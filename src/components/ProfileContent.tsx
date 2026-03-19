@@ -377,7 +377,7 @@ const ProfileContent = () => {
             message = 'Your profile is successfully saved — redirecting you to the property.'
             redirectTo = returnUrl
           } else if (action === 'list_your_space') {
-            message = "Profile successfully saved — redirecting you to 'List Your Space' page."
+            message = "Profile successfully saved — redirecting you to 'List Your Place' page."
             redirectTo = '/listing/wizard'
           }
         }

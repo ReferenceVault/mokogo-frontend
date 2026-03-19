@@ -59,7 +59,7 @@ const AdminLogin = () => {
         roles: response.user.roles
       } as any)
 
-      navigate('/admin/dashboard')
+      navigate('/admin/dashboard', { replace: true })
     } catch (err: any) {
       const message = err.response?.data?.message || err.message || 'Login failed. Please try again.'
       setError(message)

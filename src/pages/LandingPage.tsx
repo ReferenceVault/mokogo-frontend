@@ -1,60 +1,92 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
-import { createPortal } from 'react-dom'
-import { Link, useNavigate } from 'react-router-dom'
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import SocialSidebar from '@/components/SocialSidebar'
 import { useStore } from '@/store/useStore'
 import { Listing, VibeTagId } from '@/types'
-import { listingsApi, ListingResponse, subscriptionsApi, placesApi, AutocompletePrediction } from '@/services/api'
-import CustomSelect from '@/components/CustomSelect'
-import { formatRent } from '@/utils/formatters'
-import { MoveInDateField } from '@/components/MoveInDateField'
+import { listingsApi, ListingResponse, subscriptionsApi } from '@/services/api'
 import MikoVibeQuiz from '@/components/MikoVibeQuiz'
-import { Quote, Star, ChevronLeft, ChevronRight } from 'lucide-react'
-import ListingFilters, { ListingFilterState } from '@/components/ListingFilters'
-import { getListingBadgeLabel } from '@/utils/listingTags'
+import type { CityItem, FeaturedListingItem, LandingSearchFilters, SearchMode } from './landing/types'
+import { isListingWithinRadius, sortListingsByDistance } from '@/utils/distance'
+import {
+  faqItems,
+  howItWorksWorkflows,
+  mikoQuestionPills,
+  testimonials,
+  whyMokogoFeatures,
+} from './landing/data'
+import HeroSection from './landing/components/HeroSection'
+import FeaturedListingsSection from './landing/components/FeaturedListingsSection'
+import CitiesSection from './landing/components/CitiesSection'
+import HowItWorksSection from './landing/components/HowItWorksSection'
+import MikoVibeSection from './landing/components/MikoVibeSection'
+import WhyMokogoSection from './landing/components/WhyMokogoSection'
+import ListYourSpaceSection from './landing/components/ListYourSpaceSection'
+import TestimonialsSection from './landing/components/TestimonialsSection'
+import FaqSection from './landing/components/FaqSection'
+import NewsletterSection from './landing/components/NewsletterSection'
+import NotifyCityModal from './landing/components/NotifyCityModal'
+import MarqueeStyles from './landing/components/MarqueeStyles'
 
 const LandingPage = () => {
   const navigate = useNavigate()
   const { allListings, setAllListings, user } = useStore()
-  const [searchFilters, setSearchFilters] = useState({
+  const [searchFilters, setSearchFilters] = useState<LandingSearchFilters>({
     city: '',
-    area: '',
-    areaPlaceId: '',
-    areaLat: 0,
-    areaLng: 0,
     moveInDate: '',
   })
-  const [areaSuggestions, setAreaSuggestions] = useState<AutocompletePrediction[]>([])
-  const [showAreaSuggestions, setShowAreaSuggestions] = useState(false)
-  const [isLoadingArea, setIsLoadingArea] = useState(false)
-  const [areaInputValue, setAreaInputValue] = useState('')
-  const [areaDropdownPosition, setAreaDropdownPosition] = useState({ top: 0, left: 0, width: 0 })
-  const areaSuggestionsRef = useRef<HTMLDivElement>(null)
-  const areaInputRef = useRef<HTMLInputElement>(null)
-  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const [rateLimitMessage, setRateLimitMessage] = useState<string | null>(null)
-  const rateLimitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const [searchMode, setSearchMode] = useState<'standard' | 'miko'>('standard')
+  const [searchValidationMessage, setSearchValidationMessage] = useState<string | null>(null)
+  const [searchMode, setSearchMode] = useState<SearchMode>('standard')
   const [isMikoOpen, setIsMikoOpen] = useState(false)
-  const [isLoadingListings, setIsLoadingListings] = useState(true)
   const [subscribeEmail, setSubscribeEmail] = useState('')
   const [subscribeError, setSubscribeError] = useState<string | null>(null)
   const [subscribeSuccess, setSubscribeSuccess] = useState<string | null>(null)
   const [isSubscribing, setIsSubscribing] = useState(false)
-  const [isFilterOpen, setIsFilterOpen] = useState(false)
-  const [filteredListings, setFilteredListings] = useState<Listing[] | null>(null)
-  const [activeFilters, setActiveFilters] = useState<ListingFilterState | null>(null)
+  const [isNotifyModalOpen, setIsNotifyModalOpen] = useState(false)
+  const [notifyCity, setNotifyCity] = useState('')
+  const [notifyEmail, setNotifyEmail] = useState('')
+  const [notifyError, setNotifyError] = useState<string | null>(null)
+  const [notifySuccess, setNotifySuccess] = useState<string | null>(null)
+  const [isNotifySubmitting, setIsNotifySubmitting] = useState(false)
+  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0)
+  const [nearbyListings, setNearbyListings] = useState<FeaturedListingItem[]>([])
+  const [locationState, setLocationState] = useState<'idle' | 'requesting' | 'granted' | 'denied' | 'unsupported' | 'no_listings'>(() => {
+    if (typeof window === 'undefined') return 'idle'
+    try {
+      const stored = window.sessionStorage.getItem('mokogo-location-prompt-state')
+      if (stored === 'granted' || stored === 'denied' || stored === 'no_listings' || stored === 'unsupported') {
+        return stored as any
+      }
+    } catch {
+      // ignore
+    }
+    return 'idle'
+  })
+  const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null)
 
-  const searchCities = [
-    'Pune'
-  ]
+  const normalize = (v: string) => (v || '').trim().toLowerCase()
+
+  const canonicalizeCityKey = (city: string) => {
+    const c = normalize(city)
+    if (!c) return ''
+    if (c === 'new delhi' || c === 'delhi') return 'delhi ncr'
+    return c
+  }
+
+  const canonicalizeCityLabel = (city: string) => {
+    const key = canonicalizeCityKey(city)
+    if (!key) return ''
+    if (key === 'delhi ncr') return 'Delhi NCR'
+    // Preserve original formatting for everything else
+    return (city || '').trim()
+  }
+
+  // Landing page standard search: city + move-in date only
 
   // Fetch all live listings from API
   useEffect(() => {
     const fetchListings = async () => {
-      setIsLoadingListings(true)
       try {
         const listings = await listingsApi.getAllPublic('live')
         
@@ -62,8 +94,12 @@ const LandingPage = () => {
         const mappedListings: Listing[] = listings.map((listing: ListingResponse) => ({
           id: listing._id || listing.id,
           title: listing.title,
-          city: listing.city || '',
+          city: canonicalizeCityLabel(listing.city || ''),
           locality: listing.locality || '',
+          placeId: listing.placeId,
+          latitude: listing.latitude,
+          longitude: listing.longitude,
+          formattedAddress: listing.formattedAddress,
           societyName: listing.societyName,
           buildingType: listing.buildingType,
           bhkType: listing.bhkType || '',
@@ -92,206 +128,87 @@ const LandingPage = () => {
       } catch (error) {
         console.error('Error fetching public listings:', error)
         // Keep existing listings or empty array on error
-      } finally {
-        setIsLoadingListings(false)
       }
     }
 
     fetchListings()
   }, [setAllListings])
 
-  // Calculate dropdown position based on input field
-  const updateAreaDropdownPosition = useCallback(() => {
-    if (areaInputRef.current) {
-      const rect = areaInputRef.current.getBoundingClientRect()
-      setAreaDropdownPosition({
-        top: rect.bottom + 4, // 4px spacing
-        left: rect.left,
-        width: rect.width,
-      })
-    }
-  }, [])
-
-  // Fetch area autocomplete suggestions with debouncing
-  const fetchAreaSuggestions = useCallback(async (input: string, city: string) => {
-    if (!input || input.trim().length < 2 || !city) {
-      setAreaSuggestions([])
-      setShowAreaSuggestions(false)
+  const requestUserLocation = useCallback(() => {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      setLocationState('unsupported')
+      try {
+        window.sessionStorage.setItem('mokogo-location-prompt-state', 'unsupported')
+      } catch {
+        // ignore
+      }
       return
     }
 
-    setIsLoadingArea(true)
-    try {
-      const results = await placesApi.getAutocomplete(input.trim(), city)
-      setAreaSuggestions(results)
-      if (results.length > 0) {
-        setShowAreaSuggestions(true)
-        updateAreaDropdownPosition()
-      } else {
-        setShowAreaSuggestions(false)
-      }
-    } catch (error: any) {
-      // Gracefully handle 429 errors - show user-visible message
-      if (error?.response?.status === 429) {
-        setRateLimitMessage('Too many requests. Please type slower and wait a moment.')
-        setAreaSuggestions([])
-        setShowAreaSuggestions(false)
-        
-        // Auto-dismiss message after 5 seconds
-        if (rateLimitTimerRef.current) {
-          clearTimeout(rateLimitTimerRef.current)
+    setLocationState('requesting')
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const lat = pos.coords.latitude
+        const lng = pos.coords.longitude
+        setUserCoords({ lat, lng })
+        setLocationState('granted')
+        try {
+          window.sessionStorage.setItem('mokogo-location-prompt-state', 'granted')
+        } catch {
+          // ignore
         }
-        rateLimitTimerRef.current = setTimeout(() => {
-          setRateLimitMessage(null)
-        }, 5000)
-      } else {
-        console.error('Error fetching area suggestions:', error)
-        setAreaSuggestions([])
-        setShowAreaSuggestions(false)
-      }
-    } finally {
-      setIsLoadingArea(false)
-    }
-  }, [updateAreaDropdownPosition])
-
-  // Handle area input change
-  const handleAreaInputChange = (value: string) => {
-    setAreaInputValue(value)
-    
-    // Clear rate limit message when user starts typing again
-    if (rateLimitMessage) {
-      setRateLimitMessage(null)
-      if (rateLimitTimerRef.current) {
-        clearTimeout(rateLimitTimerRef.current)
-      }
-    }
-    
-    setSearchFilters(prev => ({
-      ...prev,
-      area: value,
-      areaPlaceId: '',
-      areaLat: 0,
-      areaLng: 0,
-    }))
-    setShowAreaSuggestions(false)
-
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current)
-    }
-
-    if (searchFilters.city && value.trim().length >= 2) {
-      debounceTimerRef.current = setTimeout(() => {
-        fetchAreaSuggestions(value, searchFilters.city)
-      }, 400)
-    }
-  }
-
-  // Update position when suggestions are shown or input is focused
-  useEffect(() => {
-    if (showAreaSuggestions) {
-      updateAreaDropdownPosition()
-    }
-  }, [showAreaSuggestions, updateAreaDropdownPosition])
-
-  // Handle area suggestion selection
-  const handleAreaSuggestionSelect = async (prediction: AutocompletePrediction) => {
-    setAreaInputValue(prediction.structured_formatting.main_text)
-    setShowAreaSuggestions(false)
-    setAreaSuggestions([])
-
-    try {
-      const placeDetails = await placesApi.getPlaceDetails(prediction.place_id)
-      setSearchFilters(prev => ({
-        ...prev,
-        area: prediction.structured_formatting.main_text,
-        areaPlaceId: placeDetails.place_id,
-        areaLat: placeDetails.geometry.location.lat,
-        areaLng: placeDetails.geometry.location.lng,
-      }))
-    } catch (error) {
-      console.error('Error fetching area details:', error)
-      setSearchFilters(prev => ({
-        ...prev,
-        area: prediction.structured_formatting.main_text,
-        areaPlaceId: prediction.place_id,
-      }))
-    }
-  }
-
-  // Handle scroll and resize to update dropdown position
-  useEffect(() => {
-    if (!showAreaSuggestions) return
-
-    const handleScroll = () => {
-      updateAreaDropdownPosition()
-    }
-
-    const handleResize = () => {
-      updateAreaDropdownPosition()
-    }
-
-    window.addEventListener('scroll', handleScroll, true)
-    window.addEventListener('resize', handleResize)
-    
-    return () => {
-      window.removeEventListener('scroll', handleScroll, true)
-      window.removeEventListener('resize', handleResize)
-    }
-  }, [showAreaSuggestions, updateAreaDropdownPosition])
-
-  // Close suggestions when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        areaSuggestionsRef.current &&
-        !areaSuggestionsRef.current.contains(event.target as Node) &&
-        areaInputRef.current &&
-        !areaInputRef.current.contains(event.target as Node)
-      ) {
-        setShowAreaSuggestions(false)
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
+      },
+      () => {
+        setLocationState('denied')
+        try {
+          window.sessionStorage.setItem('mokogo-location-prompt-state', 'denied')
+        } catch {
+          // ignore
+        }
+      },
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 1000 * 60 * 10 },
+    )
   }, [])
 
-  // Cleanup rate limit timer on unmount
   useEffect(() => {
-    return () => {
-      if (rateLimitTimerRef.current) {
-        clearTimeout(rateLimitTimerRef.current)
-      }
-    }
-  }, [])
+    if (!userCoords || locationState !== 'granted') return
 
-  // Clear area when city changes
-  useEffect(() => {
-    if (!searchFilters.city) {
-      setAreaInputValue('')
-      setSearchFilters(prev => ({
-        ...prev,
-        area: '',
-        areaPlaceId: '',
-        areaLat: 0,
-        areaLng: 0,
-      }))
-      setAreaSuggestions([])
-      setShowAreaSuggestions(false)
+    const live = allListings.filter((l) => l.status === 'live' && l.latitude && l.longitude)
+    const within = live.filter((l) => isListingWithinRadius(l, userCoords.lat, userCoords.lng, 15))
+    const sorted = sortListingsByDistance(within, userCoords.lat, userCoords.lng).slice(0, 12)
+
+    if (!sorted.length) {
+      setNearbyListings([])
+      setLocationState('no_listings')
+      try {
+        window.sessionStorage.setItem('mokogo-location-prompt-state', 'no_listings')
+      } catch {
+        // ignore
+      }
+      return
     }
-  }, [searchFilters.city])
+
+    const toFeatured = (l: Listing): FeaturedListingItem => ({
+      id: l.id,
+      image: l.photos?.[0] || '/pune-city.png',
+      furnishing: l.furnishingLevel || 'Furnished',
+      title: l.title || 'Room available',
+      location: `${l.locality || 'Area'}, ${l.city || ''}`.trim(),
+      preference: l.preferredGender ? `${l.preferredGender} preferred` : 'View details',
+      price: l.rent ? `₹${Number(l.rent).toLocaleString('en-IN')}/mo` : 'View price',
+    })
+
+    setNearbyListings(sorted.map(toFeatured))
+  }, [allListings, locationState, userCoords])
 
   const handleSearch = () => {
+    setSearchValidationMessage(null)
+    if (!searchFilters.city) {
+      setSearchValidationMessage('Select a city to search.')
+      return
+    }
     const params = new URLSearchParams()
     if (searchFilters.city) params.set('city', searchFilters.city)
-    if (searchFilters.area && searchFilters.areaPlaceId) {
-      params.set('area', searchFilters.area)
-      params.set('areaPlaceId', searchFilters.areaPlaceId)
-      if (searchFilters.areaLat) params.set('areaLat', searchFilters.areaLat.toString())
-      if (searchFilters.areaLng) params.set('areaLng', searchFilters.areaLng.toString())
-    }
     if (searchFilters.moveInDate) params.set('moveInDate', searchFilters.moveInDate)
 
     navigate(`/explore?${params.toString()}`)
@@ -312,12 +229,6 @@ const LandingPage = () => {
       params.set('city', searchFilters.city)
     }
     if (searchFilters.moveInDate) params.set('moveInDate', searchFilters.moveInDate)
-    if (searchFilters.area && searchFilters.areaPlaceId) {
-      params.set('area', searchFilters.area)
-      params.set('areaPlaceId', searchFilters.areaPlaceId)
-      if (searchFilters.areaLat) params.set('areaLat', searchFilters.areaLat.toString())
-      if (searchFilters.areaLng) params.set('areaLng', searchFilters.areaLng.toString())
-    }
 
     setIsMikoOpen(false)
     if (user) {
@@ -327,123 +238,73 @@ const LandingPage = () => {
     }
   }
 
+  const liveCityStats = useMemo(() => {
+    const map = new Map<string, { name: string; count: number }>()
+    allListings
+      .filter((l) => normalize(l.status as string) === 'live')
+      .forEach((l) => {
+        const raw = (l.city || '').trim()
+        if (!raw) return
+        const key = canonicalizeCityKey(raw)
+        const label = canonicalizeCityLabel(raw)
+        const current = map.get(key)
+        if (current) current.count += 1
+        else map.set(key, { name: label || raw, count: 1 })
+      })
+    return map
+  }, [allListings])
 
-  // Get city listings count from actual listings
-  const getCityListingsCount = (cityName: string) => {
-    return allListings.filter(l => l.city === cityName && l.status === 'live').length
+  const cityImageByName: Record<string, string> = {
+    'pune': '/pune-city.png',
+    'mumbai': '/mumbai-city.png',
+    'bangalore': '/bangalore-city.png',
+    'bengaluru': '/bangalore-city.png',
+    'hyderabad': '/hyderabad-city.png',
+    'delhi ncr': '/delhi-city.png',
   }
 
-  const cities = [
-    { 
-      name: 'Pune', 
-      image: '/pune-city.png', 
-      listings: getCityListingsCount('Pune'),
-      active: true
-    },
-    { 
-      name: 'Mumbai', 
-      image: '/mumbai-city.png', 
-      listings: getCityListingsCount('Mumbai'),
-      active: false
-    },
-    { 
-      name: 'Bangalore', 
-      image: '/bangalore-city.png', 
-      listings: getCityListingsCount('Bangalore'),
-      active: false
-    },
-    { 
-      name: 'Hyderabad', 
-      image: '/hyderabad-city.png', 
-      listings: getCityListingsCount('Hyderabad'),
-      active: false
-    },
-    {
-      name: 'Delhi NCR',
-      image: '/delhi-city.png',
-      listings: getCityListingsCount('Delhi NCR'),
-      active: false
-    }
-  ]
+  const discoverCities: CityItem[] = useMemo(() => {
+    const baseOrder = ['Pune', 'Mumbai', 'Bangalore', 'Hyderabad', 'Delhi NCR']
+    const base = baseOrder.map((name) => {
+      const key = normalize(name)
+      const stat = liveCityStats.get(key)
+      const count = stat?.count ?? 0
+      return {
+        name,
+        image: cityImageByName[key] || '/pune-city.png',
+        listings: count,
+        active: count > 0,
+      }
+    })
 
+    // Add any extra cities that have live listings but aren't in the base list
+    const extras: CityItem[] = []
+    liveCityStats.forEach((stat, key) => {
+      if (base.some((c) => normalize(c.name) === key)) return
+      extras.push({
+        name: stat.name,
+        image: cityImageByName[key] || '/pune-city.png',
+        listings: stat.count,
+        active: true,
+      })
+    })
 
-  const testimonials = [
-    {
-      id: 1,
-      name: 'Aarohi Kulkarni',
-      role: 'Product Analyst',
-      location: 'Pune, India',
-      image: 'https://i.pravatar.cc/150?img=44',
-      rating: 5,
-      text: 'No brokers, no hassle. Direct contact with the owner saved me so much time and money!'
-    },
-    {
-      id: 2,
-      name: 'Sahil Mehta',
-      role: 'Startup Founder',
-      location: 'Pune, India',
-      image: 'https://i.pravatar.cc/150?img=12',
-      rating: 5,
-      text: 'Real listings and real people. I found a great place without any middlemen.'
-    },
-    {
-      id: 3,
-      name: 'Neha Joshi',
-      role: 'UX Designer',
-      location: 'Pune, India',
-      image: 'https://i.pravatar.cc/150?img=5',
-      rating: 5,
-      text: 'Direct owner contact made the process fast and transparent. Highly recommend!'
-    }
-  ]
+    return [...base, ...extras].sort((a, b) => {
+      // Live cities (listings > 0) first, then by listing count DESC, then alphabetically
+      if (a.active !== b.active) return a.active ? -1 : 1
+      if (a.listings !== b.listings) return b.listings - a.listings
+      return a.name.localeCompare(b.name)
+    })
+  }, [liveCityStats])
 
-  const [activeTestimonialIndex, setActiveTestimonialIndex] = useState(0)
-
-  const nextTestimonial = () => {
-    setActiveTestimonialIndex((prev) => (prev + 1) % testimonials.length)
-  }
-
-  const prevTestimonial = () => {
-    setActiveTestimonialIndex((prev) => (prev - 1 + testimonials.length) % testimonials.length)
-  }
-
-  const getCirclePosition = (index: number) => {
-    const total = testimonials.length
-    const angle = ((index - activeTestimonialIndex) * (360 / total)) - 90
-    const radius = 157 // Reduced by 30% from 224
-    const x = Math.cos((angle * Math.PI) / 180) * radius
-    const y = Math.sin((angle * Math.PI) / 180) * radius
-    return { x, y }
-  }
-
-  const liveListings = allListings.filter(l => l.status === 'live')
-  const displayedListings = (filteredListings ?? liveListings).slice(0, 8)
-
-  const landingFilterCount = useMemo(() => {
-    if (!activeFilters) return 0
-    const DEFAULT_MIN_RENT = 0
-    const DEFAULT_MAX_RENT = 0
-    const {
-      minRent,
-      maxRent,
-      roomTypes,
-      furnishingLevels,
-      preferredGender,
-      bhkTypes,
-      bathroomTypes,
-      lgbtqFriendly,
-    } = activeFilters
-    return (
-      (minRent !== undefined && minRent !== DEFAULT_MIN_RENT ? 1 : 0) +
-      (maxRent !== undefined && maxRent !== DEFAULT_MAX_RENT ? 1 : 0) +
-      (roomTypes && roomTypes.length ? 1 : 0) +
-      (furnishingLevels && furnishingLevels.length ? 1 : 0) +
-      (preferredGender ? 1 : 0) +
-      (bhkTypes && bhkTypes.length ? 1 : 0) +
-      (bathroomTypes && bathroomTypes.length ? 1 : 0) +
-      (lgbtqFriendly ? 1 : 0)
-    )
-  }, [activeFilters])
+  const searchCities = useMemo(() => {
+    const cities = Array.from(liveCityStats.values())
+      .filter((c) => c.count > 0)
+      .map((c) => c.name)
+      .sort((a, b) => a.localeCompare(b))
+    return cities.length ? cities : ['Pune']
+  }, [liveCityStats])
+  const testimonialsLoop = useMemo(() => [...testimonials, ...testimonials], [])
 
   const validateSubscribeEmail = (email: string) => {
     const trimmed = email.trim()
@@ -505,61 +366,51 @@ const LandingPage = () => {
     }
   }
 
-  const handleApplyFilters = async (state: ListingFilterState) => {
-    setIsFilterOpen(false)
-    setIsLoadingListings(true)
-    try {
-    setActiveFilters(state)
-      const backendFilters: any = {}
-    if (state.minRent != null && state.minRent > 0) backendFilters.minRent = state.minRent
-    if (state.maxRent != null && state.maxRent > 0) backendFilters.maxRent = state.maxRent
-      if (state.preferredGender) backendFilters.preferredGender = state.preferredGender
-      if (state.roomTypes.length) backendFilters.roomTypes = state.roomTypes
-      if (state.bhkTypes.length) backendFilters.bhkTypes = state.bhkTypes
-      if (state.furnishingLevels.length) backendFilters.furnishingLevels = state.furnishingLevels
-      if (state.bathroomTypes.length) backendFilters.bathroomTypes = state.bathroomTypes
-      if (state.lgbtqFriendly) backendFilters.lgbtqFriendly = true
-
-      const listings = await listingsApi.getAllPublic('live', backendFilters)
-      const mappedListings: Listing[] = listings.map((listing: ListingResponse) => ({
-        id: listing._id || listing.id,
-        title: listing.title,
-        city: listing.city || '',
-        locality: listing.locality || '',
-        societyName: listing.societyName,
-        bhkType: listing.bhkType || '',
-        roomType: listing.roomType || '',
-        rent: listing.rent || 0,
-        deposit: listing.deposit || 0,
-        moveInDate: listing.moveInDate || '',
-        furnishingLevel: listing.furnishingLevel || '',
-        bathroomType: listing.bathroomType,
-        flatAmenities: listing.flatAmenities || [],
-        societyAmenities: listing.societyAmenities || [],
-        preferredGender: listing.preferredGender || '',
-        foodPreference: listing.foodPreference,
-        petPolicy: listing.petPolicy,
-        smokingPolicy: listing.smokingPolicy,
-        drinkingPolicy: listing.drinkingPolicy,
-        description: listing.description,
-        photos: listing.photos || [],
-        status: listing.status,
-        createdAt: listing.createdAt,
-        updatedAt: listing.updatedAt,
-        lgbtqFriendly: (listing as any).lgbtqFriendly,
-      }))
-      setFilteredListings(mappedListings)
-    } catch (error) {
-      console.error('Error applying filters on landing:', error)
-      setFilteredListings(null)
-    } finally {
-      setIsLoadingListings(false)
-    }
+  const openNotifyModal = (cityName: string) => {
+    setNotifyCity(cityName)
+    setNotifyEmail('')
+    setNotifyError(null)
+    setNotifySuccess(null)
+    setIsNotifyModalOpen(true)
   }
 
-  const handleClearFilters = () => {
-    setFilteredListings(null)
-  setActiveFilters(null)
+  const closeNotifyModal = () => {
+    setIsNotifyModalOpen(false)
+    setNotifyEmail('')
+    setNotifyError(null)
+    setNotifySuccess(null)
+  }
+
+  const handleNotifySubmit = async () => {
+    setNotifySuccess(null)
+    const error = validateSubscribeEmail(notifyEmail)
+    if (error) {
+      setNotifyError(error)
+      return
+    }
+
+    setNotifyError(null)
+    setIsNotifySubmitting(true)
+    try {
+      await subscriptionsApi.subscribe({
+        email: notifyEmail.trim(),
+      })
+      setNotifySuccess(`Nice. We’ll let you know when ${notifyCity} goes live on Mokogo.`)
+      setNotifyEmail('')
+    } catch (error: any) {
+      const status = error?.response?.status
+      const message = error?.response?.data?.message
+
+      if (status === 409 || (typeof message === 'string' && message.toLowerCase().includes('already'))) {
+        setNotifyError('You’re already on the list for launch updates.')
+      } else if (typeof message === 'string' && message.toLowerCase().includes('email')) {
+        setNotifyError('Please enter a valid email address')
+      } else {
+        setNotifyError('Something went wrong while saving your request. Please try again in a moment.')
+      }
+    } finally {
+      setIsNotifySubmitting(false)
+    }
   }
 
   return (
@@ -568,760 +419,118 @@ const LandingPage = () => {
       <SocialSidebar />
       
       <main className="flex-1">
-        {/* Hero Section with Search - Full Width Background */}
-        <section className="relative w-full bg-gradient-to-br from-orange-50 via-orange-100/50 to-orange-50 pb-12 sm:pb-16 md:pb-20 overflow-hidden">
-          {/* Decorative Background Elements */}
-          <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute top-0 left-1/4 w-96 h-96 bg-orange-200/30 rounded-full blur-3xl animate-pulse" />
-            <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-orange-300/30 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-orange-200/20 rounded-full blur-3xl" />
-          </div>
-
-          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 md:px-12 pt-4 sm:pt-5">
-            <div className="relative bg-white/80 backdrop-blur-xl border border-orange-200/50 shadow-2xl rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-12">
-              {/* Inner decorative gradient */}
-              <div className="absolute inset-0 bg-gradient-to-br from-orange-50/50 via-transparent to-orange-100/30 pointer-events-none rounded-3xl" />
-              
-              <div className="relative space-y-6 sm:space-y-8 md:space-y-10">
-                <div className="text-center space-y-2">
-                  <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold leading-tight px-1">
-                    <span className="text-black">Flat & Flatmate Discovery</span>
-                    <span className="bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent"> - Simplified.</span>
-                  </h1>
-                  <p className="text-orange-600 text-xs sm:text-sm md:text-base max-w-[773px] mx-auto font-semibold flex flex-wrap justify-center gap-x-2 gap-y-1 md:block">
-                    <span>⚡ Verified listings</span>
-                    <span className="hidden sm:inline md:hidden">•</span>
-                    <span>🤝 Direct owner contact</span>
-                    <span className="hidden sm:inline md:hidden">•</span>
-                    <span>💸 Zero brokerage</span>
+        {(locationState === 'idle' || locationState === 'requesting') && (
+          <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/35 backdrop-blur-sm">
+            <div className="max-w-md w-full mx-4 rounded-3xl border border-orange-200/80 bg-gradient-to-br from-orange-50 via-white to-orange-100 p-6 shadow-[0_22px_70px_rgba(15,23,42,0.5)] transform transition-transform duration-200 ease-out">
+              <div className="flex flex-col items-center text-center gap-3">
+                <div className="inline-flex items-center gap-2 rounded-full bg-orange-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-orange-700">
+                  <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />
+                  Location-based results
+                </div>
+                <div className="space-y-2">
+                  <p className="text-base font-semibold text-gray-900">
+                    Enable location to find listings near your place easily
                   </p>
-                  <p className="text-gray-600 text-xs sm:text-sm md:text-base max-w-[773px] mx-auto">
-                    Live in Pune. Expanding across India soon.
+                  <p className="text-sm leading-relaxed text-gray-600">
+                    We’ll use your approximate location to surface nearby live rooms first. No exact address is stored, and you can turn this off anytime from your browser.
                   </p>
                 </div>
-
-                {/* Search Card */}
-                <div className="relative bg-white/90 backdrop-blur-md rounded-xl p-4 sm:p-5 md:p-7 shadow-xl border border-orange-200/50 hover:shadow-2xl transition-all duration-300 hover:border-orange-300">
-                  <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 sm:justify-between mb-4 sm:mb-5">
-                    <div className="inline-flex rounded-full bg-orange-50 border border-orange-200 p-1 text-sm font-semibold w-full sm:w-auto justify-center">
-                      <button
-                        type="button"
-                        onClick={() => setSearchMode('standard')}
-                        className={`px-4 py-2 rounded-full transition-all ${
-                          searchMode === 'standard'
-                            ? 'bg-white text-orange-600 shadow-md'
-                            : 'text-orange-500 hover:text-orange-600'
-                        }`}
-                      >
-                        Standard Search
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setSearchMode('miko')}
-                        className={`px-4 py-2 rounded-full transition-all ${
-                          searchMode === 'miko'
-                            ? 'bg-white text-orange-600 shadow-md'
-                            : 'text-orange-500 hover:text-orange-600'
-                        }`}
-                      >
-                        🔮 Miko Vibe Search
-                      </button>
-                    </div>
-                    <span className="text-xs md:text-sm text-gray-600">
-                      Answer 6 quick questions. Get vibe-matched homes.
-                    </span>
-                  </div>
-
-                  {searchMode === 'standard' ? (
-                    <div className="grid md:grid-cols-4 gap-3.5 items-end">
-                      <div className="[&_button]:h-[50px] [&_button]:py-0 group">
-                        <CustomSelect
-                          label="Select City"
-                          value={searchFilters.city}
-                          onValueChange={(value) => setSearchFilters({ ...searchFilters, city: value })}
-                          placeholder="Select your city"
-                          options={searchCities.map(city => ({ value: city, label: city }))}
-                        />
-                      </div>
-                      <div className="[&_button]:h-[50px] [&_button]:py-0 group relative">
-                        <label className="block text-sm font-medium text-stone-700 mb-2">
-                          Area / Locality
-                        </label>
-                        <div className="relative">
-                          <input
-                            ref={areaInputRef}
-                            type="text"
-                            value={areaInputValue}
-                            onChange={(e) => handleAreaInputChange(e.target.value)}
-                            onFocus={() => {
-                              updateAreaDropdownPosition()
-                              if (areaSuggestions.length > 0 && areaInputValue.trim().length >= 2) {
-                                setShowAreaSuggestions(true)
-                              }
-                            }}
-                            className="w-full h-[50px] px-3.5 rounded-lg border-2 border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400 bg-white transition-all duration-300 hover:border-orange-300 text-sm"
-                            placeholder={searchFilters.city ? "Start typing area..." : "Select city first"}
-                            disabled={!searchFilters.city}
-                          />
-                          {isLoadingArea && (
-                            <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                              <svg className="animate-spin h-5 w-5 text-orange-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                              </svg>
-                            </div>
-                          )}
-                          {rateLimitMessage && (
-                            <div className="absolute top-full left-0 right-0 mt-1 p-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800 z-50">
-                              {rateLimitMessage}
-                            </div>
-                          )}
-                          {showAreaSuggestions && areaSuggestions.length > 0 && createPortal(
-                            <div 
-                              ref={areaSuggestionsRef}
-                              className="fixed z-[99999] bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto"
-                              style={{
-                                top: `${areaDropdownPosition.top}px`,
-                                left: `${areaDropdownPosition.left}px`,
-                                width: `${areaDropdownPosition.width}px`,
-                              }}
-                            >
-                              {areaSuggestions.map((prediction) => (
-                                <button
-                                  key={prediction.place_id}
-                                  type="button"
-                                  onClick={() => handleAreaSuggestionSelect(prediction)}
-                                  className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0"
-                                >
-                                  <div className="font-medium text-gray-900">
-                                    {prediction.structured_formatting.main_text}
-                                  </div>
-                                  <div className="text-sm text-gray-500 mt-0.5">
-                                    {prediction.structured_formatting.secondary_text}
-                                  </div>
-                                </button>
-                              ))}
-                            </div>,
-                            document.body
-                          )}
-                        </div>
-                      </div>
-                      <div className="[&_button]:h-[42px] md:[&_button]:h-[50px] [&_button]:py-0 group overflow-visible">
-                        <label className="block text-sm font-medium text-stone-700 mb-2">
-                          Move-in Date
-                        </label>
-                        <MoveInDateField
-                          value={searchFilters.moveInDate}
-                          onChange={(date) => setSearchFilters({ ...searchFilters, moveInDate: date })}
-                          min={new Date().toISOString().split('T')[0]}
-                          hideLabel={true}
-                          className="!h-[42px] md:!h-[50px] !rounded-lg !border-2 !border-gray-200 hover:!border-orange-300 focus:!ring-2 focus:!ring-orange-400 focus:!border-orange-400"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-stone-700 mb-1.5 opacity-0">
-                          Search
-                        </label>
-                        <button
-                          type="button"
-                          onClick={handleSearch}
-                          className="group relative w-full h-[50px] bg-gradient-to-r from-orange-400 to-orange-500 text-white rounded-lg font-semibold flex items-center justify-center gap-1.5 shadow-lg hover:shadow-xl hover:shadow-orange-500/30 transition-all duration-300 hover:scale-105 active:scale-95 overflow-hidden text-sm"
-                        >
-                          <span className="absolute inset-0 bg-gradient-to-r from-orange-500 to-orange-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                          <svg className="w-4 h-4 relative z-10 transition-transform duration-300 group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                          </svg>
-                          <span className="relative z-10">Search</span>
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                      <div className="text-left">
-                        <p className="text-lg font-semibold text-gray-900">Find your vibe with Miko</p>
-                        <p className="text-sm text-gray-600">
-                          Get matched with homes that fit your lifestyle, not just your budget.
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setIsMikoOpen(true)}
-                        className="w-full md:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-orange-400 to-orange-500 text-white font-semibold shadow-lg hover:shadow-xl hover:shadow-orange-500/30 transition-all duration-300"
-                      >
-                        Start Miko Vibe Search
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                {/* List Your Space CTA */}
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4 sm:pt-6 border-t border-orange-200/50 mt-6 sm:mt-8">
-                  <p className="text-gray-600 text-sm sm:text-base font-medium">
-                    Have a room to rent?
-                  </p>
-                  <Link
-                    to="/auth?redirect=/dashboard&view=listings"
-                    className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-orange-400 to-orange-500 text-white font-semibold shadow-lg hover:shadow-xl hover:shadow-orange-500/30 transition-all duration-300 hover:scale-105 active:scale-95"
-                  >
-                    List Your Space
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                    </svg>
-                  </Link>
-                </div>
-
               </div>
-            </div>
-          </div>
-        </section>
-
-        <div className="space-y-10 sm:space-y-14 md:space-y-16 py-8 sm:py-10 md:py-12 px-4 sm:px-6 md:px-12">
-          {/* Listings Grid */}
-          <section className="max-w-7xl mx-auto space-y-6">
-            <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center justify-between gap-3">
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 shrink-0">
-                {isLoadingListings ? 'Loading...' : `${allListings.filter(l => l.status === 'live').length} Available Properties`}
-              </h2>
-              <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+              <div className="mt-5 flex items-center gap-3">
                 <button
                   type="button"
-                  onClick={() => setIsFilterOpen(true)}
-                  className="inline-flex items-center gap-2 rounded-full border border-orange-300 bg-white px-4 py-2 text-xs font-semibold text-orange-600 shadow-sm hover:bg-orange-50"
+                  onClick={requestUserLocation}
+                  className="inline-flex flex-1 items-center justify-center rounded-full bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white shadow-md transition-transform transition-colors hover:bg-orange-600 hover:scale-[1.02] active:scale-95"
                 >
-                  <span>Filter</span>
-                  <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-orange-500 text-[11px] text-white">
-                    {landingFilterCount}
-                  </span>
+                  {locationState === 'requesting' ? 'Requesting…' : 'Enable location'}
                 </button>
-                <Link 
-                  to="/explore"
-                  className="text-orange-500 font-semibold flex items-center gap-2 hover:gap-3 transition-all group hover:text-orange-600"
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLocationState('denied')
+                    try {
+                      window.sessionStorage.setItem('mokogo-location-prompt-state', 'denied')
+                    } catch {
+                      // ignore
+                    }
+                  }}
+                  className="rounded-full px-3 py-1.5 text-sm font-medium text-gray-500 hover:text-gray-700"
                 >
-                  View All
-                  <svg className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </Link>
-              </div>
-            </div>
-
-            {isLoadingListings ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="text-center">
-                  <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
-                  <p className="mt-4 text-gray-600">Loading listings...</p>
-                </div>
-              </div>
-            ) : displayedListings.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-gray-600">No listings available at the moment. Check back soon!</p>
-              </div>
-            ) : (
-              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                {displayedListings.map((listing) => {
-                  return (
-                    <Link
-                      key={listing.id}
-                      to={`/listings/${listing.id}`}
-                      className="bg-white/50 backdrop-blur-md rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all group border border-white/60 block"
-                    >
-                      {/* Image */}
-                      <div className="relative h-48 overflow-hidden">
-                        {listing.photos && listing.photos.length > 0 ? (
-                          <img
-                            src={listing.photos[0]}
-                            alt={listing.title}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-mokogo-gray" />
-                        )}
-                        {getListingBadgeLabel(listing) && (
-                          <span className="absolute top-3 left-3 px-3 py-1 bg-mokogo-primary text-white rounded-full text-xs font-medium shadow-md whitespace-normal break-words">
-                            {getListingBadgeLabel(listing)}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Content */}
-                      <div className="p-4 space-y-3">
-                        <div className="flex items-start justify-between gap-2">
-                          <h3 className="font-semibold text-gray-900 line-clamp-1 text-sm">
-                            {listing.title.split('·')[0].trim()}
-                          </h3>
-                        </div>
-
-                        <div className="flex items-center gap-2 text-gray-600 text-sm">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                          </svg>
-                          <span className="line-clamp-1">{listing.locality}, {listing.city}</span>
-                        </div>
-
-                        <div className="flex items-center justify-between pt-2 border-t border-gray-200">
-                          <div>
-                            <p className="text-xl font-bold text-gray-900">{formatRent(listing.rent)}</p>
-                            <p className="text-xs text-gray-600">per person per month</p>
-                          </div>
-                          <span className="btn-primary text-sm px-4 py-2 inline-block text-center">
-                            View Details
-                          </span>
-                        </div>
-                      </div>
-                    </Link>
-                  )
-                })}
-              </div>
-            )}
-
-            {!isLoadingListings && displayedListings.length > 0 && (
-              <div className="text-center pt-4">
-                <Link to="/explore">
-                  <button className="btn-secondary">
-                    Load More Listings
-                  </button>
-                </Link>
-              </div>
-            )}
-          </section>
-
-          {/* Popular Areas */}
-          <section className="relative max-w-7xl mx-auto py-8 md:py-9 overflow-hidden">
-            {/* Background Decorations */}
-            <div className="absolute inset-0 pointer-events-none">
-              <div className="absolute top-0 right-1/4 w-96 h-96 bg-orange-200/15 rounded-full blur-3xl" />
-              <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-orange-300/15 rounded-full blur-3xl" />
-            </div>
-
-            <div className="relative space-y-10">
-              {/* Header */}
-              <div className="text-center space-y-3">
-                <span className="inline-flex items-center gap-2 rounded-full border border-orange-300/50 bg-orange-200/30 px-3 py-0.5 text-[10px] font-semibold uppercase tracking-[0.35em] text-orange-800/80">
-                  Discover • Top Locations
-                </span>
-                <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900">
-                  Cities We’re Launching In
-                </h2>
-                <p className="text-gray-700 text-base max-w-2xl mx-auto leading-relaxed">
-                  We’re starting with Pune and rolling out city by city across India.
-                </p>
-              </div>
-
-              {/* Cities Grid */}
-              <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-5 lg:gap-6">
-                {cities.map((city, index) => {
-                  const wrapperClasses = [
-                    'group relative h-52 md:h-56 rounded-xl overflow-hidden shadow-lg border border-orange-200/30 block transform transition-all duration-300',
-                    city.active
-                      ? 'cursor-pointer hover:shadow-2xl hover:shadow-orange-500/20 hover:border-orange-400 hover:scale-105'
-                      : 'cursor-not-allowed opacity-70 grayscale'
-                  ].join(' ')
-
-                  const cardContent = (
-                    <>
-                      {/* Image */}
-                      <img
-                        src={city.image}
-                        alt={city.name}
-                        className={`w-full h-full object-cover ${city.active ? 'group-hover:scale-110 transition-transform duration-700' : ''}`}
-                      />
-                      
-                      {/* Gradient Overlay */}
-                      <div
-                        className={`absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent ${
-                          city.active ? 'group-hover:from-black/90 group-hover:via-black/40 transition-all duration-300' : ''
-                        }`}
-                      />
-                      
-                      {/* Content */}
-                      <div className="absolute bottom-0 left-0 right-0 p-5 md:p-6 text-white">
-                        <div className="flex items-center justify-between mb-2">
-                          <h3 className={`text-xl md:text-2xl font-bold ${city.active ? 'group-hover:text-orange-300 transition-colors duration-300' : ''}`}>
-                            {city.name}
-                          </h3>
-                          {city.active && (
-                            <div className="opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-2 group-hover:translate-x-0">
-                              <div className="bg-white/95 backdrop-blur-sm rounded-full p-2 shadow-lg">
-                                <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
-                                </svg>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                        {city.active ? (
-                          <p className="text-sm text-white/90 font-medium">Live</p>
-                        ) : (
-                          <p className="text-sm text-white/90 font-medium">Coming soon</p>
-                        )}
-                      </div>
-
-                      {/* Top Badge */}
-                      {city.active ? (
-                        <div className="absolute top-4 left-4">
-                          <div className="bg-green-500/90 backdrop-blur-sm rounded-full px-3 py-1.5 text-xs font-semibold text-white shadow-lg">
-                            Live
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="absolute top-4 left-4">
-                          <div className="bg-gray-800/80 backdrop-blur-sm rounded-full px-3 py-1.5 text-xs font-semibold text-white shadow-lg">
-                            Coming soon
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Shine Effect */}
-                      {city.active && (
-                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                      )}
-                    </>
-                  )
-
-                  return city.active ? (
-                    <Link
-                      key={city.name}
-                      to={`/city/${encodeURIComponent(city.name)}`}
-                      className={wrapperClasses}
-                      style={{ animation: `fadeInUp 0.6s ease-out ${index * 0.1}s both` }}
-                    >
-                      {cardContent}
-                    </Link>
-                  ) : (
-                    <div
-                      key={city.name}
-                      className={wrapperClasses}
-                      style={{ animation: `fadeInUp 0.6s ease-out ${index * 0.1}s both` }}
-                    >
-                      {cardContent}
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          </section>
-
-          {/* Success Stories - Circular Testimonials */}
-          <section className="py-[48px] bg-gradient-to-b from-orange-50/50 to-white relative overflow-hidden">
-            {/* Background Decorations */}
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[560px] h-[560px] bg-orange-100/50 rounded-full blur-3xl" />
-            <div 
-              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[420px] h-[420px] border-2 border-dashed border-orange-200/50 rounded-full"
-              style={{
-                animation: 'spin 60s linear infinite'
-              }}
-            />
-            <div 
-              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[525px] h-[525px] border border-orange-200/30 rounded-full"
-              style={{
-                animation: 'spin 80s linear infinite reverse'
-              }}
-            />
-
-            <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
-              {/* Section Header */}
-              <div className="text-center mb-4">
-                <span className="inline-block bg-gradient-to-r from-orange-500 to-orange-600 text-transparent bg-clip-text text-[10px] font-semibold tracking-wider uppercase mb-1.5">
-                  Success Stories
-                </span>
-                <h2 className="text-xl lg:text-2xl font-bold text-gray-900 mb-1.5">
-                  Voices of
-                  <span className="text-orange-500"> Success</span>
-                </h2>
-                <p className="text-xs text-gray-600">
-                  See what our happy users have to say about their experience
-                </p>
-              </div>
-
-              {/* Circular Testimonials Layout */}
-              <div className="relative min-h-[392px] flex items-center justify-center">
-                {/* Orbiting Profile Circles - Desktop - Show ALL */}
-                <div className="hidden lg:block absolute inset-0">
-                  {testimonials.map((testimonial, index) => {
-                    const pos = getCirclePosition(index)
-                    const isActive = index === activeTestimonialIndex
-                    
-                    return (
-                      <div
-                        key={testimonial.id}
-                        className="absolute left-1/2 top-1/2 cursor-pointer"
-                        style={{
-                          transform: `translate(${pos.x - 22}px, ${pos.y - 22}px) scale(${isActive ? 1.3 : 0.9})`,
-                          zIndex: isActive ? 20 : 10,
-                          transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)'
-                        }}
-                        onClick={() => setActiveTestimonialIndex(index)}
-                      >
-                        <div 
-                          className={`relative w-11 h-11 rounded-full overflow-hidden border-[3px] transition-all duration-300 ${
-                            isActive 
-                              ? 'border-orange-500 shadow-xl shadow-orange-500/30' 
-                              : 'border-white shadow-lg hover:border-orange-300'
-                          }`}
-                          onMouseEnter={(e) => {
-                            if (!isActive) {
-                              e.currentTarget.style.transform = 'scale(1.1)'
-                            }
-                          }}
-                          onMouseLeave={(e) => {
-                            if (!isActive) {
-                              e.currentTarget.style.transform = 'scale(1)'
-                            }
-                          }}
-                        >
-                          <img 
-                            src={testimonial.image}
-                            alt={testimonial.name}
-                            className="w-full h-full object-cover"
-                          />
-                          {isActive && (
-                            <div 
-                              className="absolute inset-0 bg-orange-500/20"
-                              style={{
-                                animation: 'fadeIn 0.3s ease-in'
-                              }}
-                            />
-                          )}
-                        </div>
-                        
-                        {/* Active Indicator Ring */}
-                        {isActive && (
-                          <div 
-                            className="absolute -inset-2 border-2 border-orange-400 rounded-full"
-                            style={{
-                              animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
-                            }}
-                          />
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-
-                {/* Center Content Card */}
-                <div className="relative z-30 max-w-lg mx-auto">
-                  <div
-                    key={activeTestimonialIndex}
-                    className="bg-white rounded-2xl shadow-2xl shadow-orange-100/50 p-4 lg:p-6 text-center"
-                    style={{
-                      animation: 'fadeInScale 0.4s ease-out'
-                    }}
-                  >
-                    {/* Quote Icon */}
-                    <div 
-                      className="w-8 h-8 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center mx-auto mb-3 -mt-8 shadow-lg"
-                      style={{
-                        animation: 'rotateIn 0.4s ease-out'
-                      }}
-                    >
-                      <Quote className="w-4 h-4 text-white" />
-                    </div>
-
-                    {/* Mobile Profile Image */}
-                    <div className="lg:hidden mb-3">
-                      <div className="w-14 h-14 rounded-full overflow-hidden border-[3px] border-orange-200 mx-auto shadow-lg">
-                        <img 
-                          src={testimonials[activeTestimonialIndex].image}
-                          alt={testimonials[activeTestimonialIndex].name}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Rating */}
-                    <div className="flex justify-center gap-0.5 mb-3">
-                      {[...Array(testimonials[activeTestimonialIndex].rating)].map((_, i) => (
-                        <div
-                          key={i}
-                          style={{
-                            animation: `fadeInScale 0.3s ease-out ${i * 0.1}s both`
-                          }}
-                        >
-                          <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Quote */}
-                    <p className="text-sm lg:text-base text-gray-700 leading-relaxed mb-3.5 italic">
-                      &ldquo;{testimonials[activeTestimonialIndex].text}&rdquo;
-                    </p>
-
-                    {/* Divider */}
-                    <div className="w-8 h-0.5 bg-gradient-to-r from-orange-500 to-orange-600 rounded-full mx-auto mb-3" />
-
-                    {/* Name & Info */}
-                    <h3 className="text-base font-bold text-gray-900 mb-0.5">
-                      {testimonials[activeTestimonialIndex].name}
-                    </h3>
-                    <p className="text-orange-600 text-xs mb-1.5">
-                      {testimonials[activeTestimonialIndex].location}
-                    </p>
-                    
-                    <div className="inline-flex items-center gap-1.5 bg-orange-50 px-2 py-1 rounded-full">
-                      <span className="text-xs text-gray-700">{testimonials[activeTestimonialIndex].role}</span>
-                    </div>
-                  </div>
-
-                  {/* Navigation Buttons */}
-                  <div className="flex justify-center gap-3 mt-4">
-                    <button
-                      type="button"
-                      onClick={prevTestimonial}
-                      className="w-9 h-9 rounded-full border-2 border-orange-200 bg-white hover:border-orange-500 hover:bg-orange-50 transition-all flex items-center justify-center shadow-md"
-                      aria-label="Previous testimonial"
-                    >
-                      <ChevronLeft className="w-3 h-3 text-orange-500" />
-                    </button>
-
-                    {/* Dots - Mobile */}
-                    <div className="flex items-center gap-1.5 lg:hidden">
-                      {testimonials.map((_, index) => (
-                        <button
-                          key={index}
-                          type="button"
-                          onClick={() => setActiveTestimonialIndex(index)}
-                          className={`transition-all duration-300 rounded-full ${
-                            index === activeTestimonialIndex 
-                              ? 'w-4 h-1.5 bg-gradient-to-r from-orange-500 to-orange-600' 
-                              : 'w-1.5 h-1.5 bg-gray-300 hover:bg-orange-300'
-                          }`}
-                        />
-                      ))}
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={nextTestimonial}
-                      className="w-9 h-9 rounded-full border-2 border-orange-200 bg-white hover:border-orange-500 hover:bg-orange-50 transition-all flex items-center justify-center shadow-md"
-                      aria-label="Next testimonial"
-                    >
-                      <ChevronRight className="w-3 h-3 text-orange-500" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Decorative Circles */}
-                <div 
-                  className="absolute top-7 left-7 w-14 h-14 bg-orange-400/20 rounded-full"
-                  style={{
-                    animation: 'floatY 4s ease-in-out infinite'
-                  }}
-                />
-                <div 
-                  className="absolute bottom-7 right-7 w-11 h-11 bg-orange-300/20 rounded-full"
-                  style={{
-                    animation: 'floatY 5s ease-in-out infinite reverse'
-                  }}
-                />
-                <div 
-                  className="absolute top-1/3 right-14 w-8 h-8 bg-orange-400/20 rounded-full"
-                  style={{
-                    animation: 'floatX 6s ease-in-out infinite'
-                  }}
-                />
-              </div>
-
-            </div>
-
-            <style>{`
-              @keyframes spin-slow {
-                from { transform: translate(-50%, -50%) rotate(0deg); }
-                to { transform: translate(-50%, -50%) rotate(360deg); }
-              }
-              @keyframes spin-reverse {
-                from { transform: translate(-50%, -50%) rotate(0deg); }
-                to { transform: translate(-50%, -50%) rotate(-360deg); }
-              }
-              @keyframes bounce-slow {
-                0%, 100% { transform: translateY(0); }
-                50% { transform: translateY(-20px); }
-              }
-              @keyframes bounce-slow-delay {
-                0%, 100% { transform: translateY(0); }
-                50% { transform: translateY(20px); }
-              }
-              @keyframes float {
-                0%, 100% { transform: translateX(0); }
-                50% { transform: translateX(15px); }
-              }
-              .animate-spin-slow {
-                animation: spin-slow 60s linear infinite;
-              }
-              .animate-spin-reverse {
-                animation: spin-reverse 80s linear infinite;
-              }
-              .animate-bounce-slow {
-                animation: bounce-slow 4s ease-in-out infinite;
-              }
-              .animate-bounce-slow-delay {
-                animation: bounce-slow-delay 5s ease-in-out infinite;
-              }
-              .animate-float {
-                animation: float 6s ease-in-out infinite;
-              }
-            `}</style>
-          </section>
-        </div>
-
-        {/* Newsletter */}
-        <section className="w-full bg-gradient-to-br from-mokogo-primary/30 to-mokogo-primary/20 py-12 md:py-16">
-          <div className="max-w-6xl mx-auto px-6 md:px-12">
-            <div className="relative bg-white/40 backdrop-blur-xl border border-white/60 shadow-2xl rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-12 overflow-hidden">
-              <div className="relative max-w-[1177px] mx-auto">
-                <div className="text-center space-y-6">
-                  <h2 className="text-3xl font-bold text-gray-900">Stay Updated!</h2>
-                  <p className="text-gray-700">
-                    Subscribe to get updates on new listings in your area and exclusive deals
-                  </p>
-                  {subscribeSuccess && (
-                    <div className="max-w-lg mx-auto rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800 whitespace-pre-line">
-                      {subscribeSuccess}
-                    </div>
-                  )}
-                  {subscribeError && (
-                    <div className="max-w-lg mx-auto rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
-                      {subscribeError}
-                    </div>
-                  )}
-                  <div className="flex flex-col sm:flex-row gap-3 max-w-lg mx-auto">
-                    <input
-                      type="email"
-                      placeholder="Enter your email"
-                      value={subscribeEmail}
-                      onChange={(e) => {
-                        setSubscribeEmail(e.target.value)
-                        if (subscribeError) {
-                          setSubscribeError(null)
-                        }
-                      }}
-                      className="flex-1 px-6 py-3.5 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-mokogo-primary bg-white/90 backdrop-blur-sm border border-mokogo-gray"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleSubscribe}
-                      disabled={isSubscribing}
-                      className="px-6 py-3.5 rounded-xl bg-mokogo-primary text-white font-medium hover:bg-mokogo-primary-dark transition-colors shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
-                    >
-                      {isSubscribing ? 'Subscribing...' : 'Subscribe'}
-                    </button>
-                  </div>
-                </div>
+                  Not now
+                </button>
               </div>
             </div>
           </div>
-        </section>
+        )}
+
+        <HeroSection
+          searchMode={searchMode}
+          onSearchModeChange={setSearchMode}
+          onOpenMiko={() => setIsMikoOpen(true)}
+          searchFilters={searchFilters}
+          searchCities={searchCities}
+          onCityChange={(city) => {
+            if (searchValidationMessage) {
+              setSearchValidationMessage(null)
+            }
+            setSearchFilters((prev) => ({
+              ...prev,
+              city,
+              moveInDate: '',
+            }))
+          }}
+          searchValidationMessage={searchValidationMessage}
+          isStandardSearchReady={Boolean(searchFilters.city)}
+          onMoveInDateChange={(date) => setSearchFilters((prev) => ({ ...prev, moveInDate: date }))}
+          onSearch={handleSearch}
+        />
+        <div className="bg-gradient-to-br from-orange-50 via-orange-100/50 to-orange-50">
+          <div className="space-y-10 px-4 py-8 sm:space-y-14 sm:px-6 sm:py-10 md:space-y-16 md:px-12 md:py-12">
+          <FeaturedListingsSection
+            listings={nearbyListings}
+            locationState={locationState}
+          />
+          <CitiesSection cities={discoverCities} onNotify={openNotifyModal} />
+          <MikoVibeSection questions={mikoQuestionPills} onTryMiko={() => setIsMikoOpen(true)} />
+          <HowItWorksSection workflows={howItWorksWorkflows} />
+          <WhyMokogoSection features={whyMokogoFeatures} />
+          <ListYourSpaceSection />
+          {false && <TestimonialsSection testimonials={testimonialsLoop} />}
+          <FaqSection
+            items={faqItems}
+            openIndex={openFaqIndex}
+            onToggle={(index) => setOpenFaqIndex((prev) => (prev === index ? null : index))}
+          />
+          </div>
+        </div>
+        <MarqueeStyles />
+        <NewsletterSection
+          subscribeEmail={subscribeEmail}
+          onSubscribeEmailChange={(value) => {
+            setSubscribeEmail(value)
+            if (subscribeError) setSubscribeError(null)
+          }}
+          subscribeError={subscribeError}
+          subscribeSuccess={subscribeSuccess}
+          isSubscribing={isSubscribing}
+          onSubscribe={handleSubscribe}
+        />
       </main>
 
       <Footer />
-
-      <ListingFilters
-        open={isFilterOpen}
-        onClose={() => setIsFilterOpen(false)}
-        onApply={handleApplyFilters}
-        onClear={handleClearFilters}
-        initialValues={activeFilters ?? undefined}
+      <NotifyCityModal
+        isOpen={isNotifyModalOpen}
+        cityName={notifyCity}
+        email={notifyEmail}
+        notifyError={notifyError}
+        notifySuccess={notifySuccess}
+        isSubmitting={isNotifySubmitting}
+        onClose={closeNotifyModal}
+        onEmailChange={(value) => {
+          setNotifyEmail(value)
+          if (notifyError) setNotifyError(null)
+        }}
+        onSubmit={handleNotifySubmit}
       />
 
       <MikoVibeQuiz

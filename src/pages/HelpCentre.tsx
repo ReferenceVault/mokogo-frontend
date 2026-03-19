@@ -47,7 +47,7 @@ const HelpCentre = () => {
 
   const quickLinks = [
     { icon: Home, label: 'Find Your Place', href: '/explore', color: 'orange' },
-    { icon: Users, label: 'List Your Space', href: '/listing/wizard', color: 'orange' },
+    { icon: Users, label: 'List Your Place', href: '/listing/wizard', color: 'orange' },
     { icon: Shield, label: 'Safety Tips', href: '/safety-tips', color: 'orange' },
     { icon: FileText, label: 'How It Works', href: '/how-it-works', color: 'orange' },
   ]
@@ -118,7 +118,7 @@ const HelpCentre = () => {
       items: [
         {
           question: 'How do I list my space?',
-          answer: 'Click "List Your Space", sign up or log in, and fill in the listing details. The process is simple and should take just a few minutes.'
+          answer: 'Click "List Your Place", sign up or log in, and fill in the listing details. The process is simple and should take just a few minutes.'
         },
         {
           question: 'Can I edit or remove my listing?',

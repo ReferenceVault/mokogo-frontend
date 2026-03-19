@@ -22,6 +22,73 @@ export const VIBE_TAG_LABELS: Record<VibeTagId, string> = {
   flexible_overall: 'Flexible Overall',
 }
 
+export const VIBE_TAG_GROUPS: { id: string; title: string; tags: VibeTagId[] }[] = [
+  {
+    id: 'home_vibe',
+    title: 'Home Vibe',
+    tags: ['calm_vibes', 'thoughtfully_social', 'lively'],
+  },
+  {
+    id: 'home_life',
+    title: 'Home Life',
+    tags: ['couch_chill_repeat', 'remote_life', 'community_living'],
+  },
+  {
+    id: 'priorities',
+    title: 'Priorities',
+    tags: ['wallet_friendly', 'feel_good_space', 'well_connected_area'],
+  },
+  {
+    id: 'move_timing',
+    title: 'Move Timing',
+    tags: ['asap', 'next_few_weeks', 'no_rush'],
+  },
+  {
+    id: 'personal_space',
+    title: 'Personal Space',
+    tags: ['privacy_over_all', 'open_to_sharing', 'either_works'],
+  },
+  {
+    id: 'hard_no',
+    title: 'Hard No',
+    tags: ['smoke_free', 'peace_over_noise', 'no_furry_roommates', 'flexible_overall'],
+  },
+]
+
+const VIBE_TAG_TO_GROUP_ID = new Map<VibeTagId, string>(
+  VIBE_TAG_GROUPS.flatMap((g) => g.tags.map((t) => [t, g.id] as const)),
+)
+
+export const normalizeVibeTagsOnePerGroup = (tags: unknown): VibeTagId[] => {
+  if (!Array.isArray(tags)) return []
+  const seenGroups = new Set<string>()
+  const out: VibeTagId[] = []
+  for (const raw of tags) {
+    if (typeof raw !== 'string') continue
+    const tag = raw as VibeTagId
+    if (!(tag in VIBE_TAG_LABELS)) continue
+    const groupId = VIBE_TAG_TO_GROUP_ID.get(tag)
+    if (!groupId) continue
+    if (seenGroups.has(groupId)) continue
+    seenGroups.add(groupId)
+    out.push(tag)
+  }
+  return out
+}
+
+export const toggleVibeTagExclusive = (current: unknown, nextTag: VibeTagId): VibeTagId[] => {
+  const normalized = normalizeVibeTagsOnePerGroup(current)
+  const groupId = VIBE_TAG_TO_GROUP_ID.get(nextTag)
+  if (!groupId) return normalized
+
+  if (normalized.includes(nextTag)) {
+    return normalized.filter((t) => t !== nextTag)
+  }
+
+  const withoutGroup = normalized.filter((t) => VIBE_TAG_TO_GROUP_ID.get(t) !== groupId)
+  return [...withoutGroup, nextTag]
+}
+
 const WELL_CONNECTED_AREAS: Record<string, string[]> = {
   Pune: ['Baner', 'Hinjawadi', 'Kharadi', 'Viman Nagar', 'Wakad', 'Koregaon Park'],
   Mumbai: ['Andheri', 'Bandra', 'Powai', 'Lower Parel', 'Goregaon', 'Thane'],

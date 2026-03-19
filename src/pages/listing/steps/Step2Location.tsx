@@ -209,21 +209,18 @@ const Step2Location = ({ data, onChange, error, onClearError }: Step2LocationPro
 
   // Handle city change
   const handleCityChange = (value: string) => {
-    onChange({ city: value })
-    // Clear locality and place data when city changes
-    if (data.locality || data.placeId) {
-      onChange({
-        city: value,
-        locality: '',
-        placeId: undefined,
-        latitude: undefined,
-        longitude: undefined,
-        formattedAddress: undefined,
-      })
-      setInputValue('')
-      setSuggestions([])
-      setShowSuggestions(false)
-    }
+    // Always clear locality and place data when city changes
+    onChange({
+      city: value,
+      locality: '',
+      placeId: undefined,
+      latitude: undefined,
+      longitude: undefined,
+      formattedAddress: undefined,
+    })
+    setInputValue('')
+    setSuggestions([])
+    setShowSuggestions(false)
   }
 
   // Handle suggestion selection
@@ -236,16 +233,6 @@ const Step2Location = ({ data, onChange, error, onClearError }: Step2LocationPro
     try {
       // Fetch place details to get coordinates and formatted address
       const placeDetails = await placesApi.getPlaceDetails(prediction.place_id)
-      
-      // Extract city from address components (try multiple city-related types)
-      const cityComponent = placeDetails.address_components.find(
-        (component) => component.types.includes('locality')
-      ) || placeDetails.address_components.find(
-        (component) => component.types.includes('administrative_area_level_2')
-      ) || placeDetails.address_components.find(
-        (component) => component.types.includes('administrative_area_level_1')
-      )
-      const extractedCity = cityComponent?.long_name || data.city || ''
 
       // Extract locality/area name
       // Important: always prefer the suggestion title shown to the user (main_text)
@@ -274,7 +261,7 @@ const Step2Location = ({ data, onChange, error, onClearError }: Step2LocationPro
         latitude: placeDetails.geometry.location.lat,
         longitude: placeDetails.geometry.location.lng,
         formattedAddress: placeDetails.formatted_address,
-        city: extractedCity || data.city, // Use extracted city or keep existing
+        // Keep the user-selected city; locality suggestions are already scoped to it.
       })
 
       if (onClearError) {
