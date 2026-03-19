@@ -14,6 +14,7 @@ select option {
     @apply bg-mokogo-off-white font-sans antialiased;
     margin: 0;
     padding: 0;
+    overflow-x: hidden; /* Prevent mobile browser from switching to desktop-scale layout on horizontal overflow */
   }
   
   html {

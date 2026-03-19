@@ -79,7 +79,14 @@ const LandingPage = () => {
     if (compact === 'delhi' || compact === 'newdelhi' || compact === 'delhincr') return 'delhi ncr'
 
     // Pune + Pimpri-Chinchwad (treated as Pune)
-    if (compact === 'pune' || compact === 'pimprichinchwad') return 'pune'
+    if (
+      compact === 'pune' ||
+      compact === 'pimprichinchwad' ||
+      compact === 'pimpri' ||
+      compact === 'chinchwad' ||
+      compact === 'pcmc'
+    )
+      return 'pune'
 
     // Mumbai
     if (compact === 'mumbai') return 'mumbai'
@@ -90,6 +97,7 @@ const LandingPage = () => {
     // Hyderabad + Secunderabad (treated as Hyderabad)
     if (
       compact === 'hyderabad' ||
+      compact === 'hyderbad' ||
       compact === 'secunderabad' ||
       compact === 'secundrabad' ||
       compact === 'hyd'
@@ -317,7 +325,11 @@ const LandingPage = () => {
         active: count > 0,
       }
     })
-    return base
+    // Descending by listing count (active cities first automatically since 0 comes last)
+    return base.sort((a, b) => {
+      if (b.listings !== a.listings) return b.listings - a.listings
+      return baseOrder.indexOf(a.name) - baseOrder.indexOf(b.name)
+    })
   }, [liveCityStats])
 
   const searchCities = useMemo(() => {
@@ -446,8 +458,8 @@ const LandingPage = () => {
       
       <main className="flex-1">
         {(locationState === 'idle' || locationState === 'requesting') && (
-          <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/35 backdrop-blur-sm">
-            <div className="max-w-md w-full mx-4 rounded-3xl border border-orange-200/80 bg-gradient-to-br from-orange-50 via-white to-orange-100 p-6 shadow-[0_22px_70px_rgba(15,23,42,0.5)] transform transition-transform duration-200 ease-out">
+          <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/35 backdrop-blur-sm p-4 overflow-x-hidden">
+            <div className="w-full max-w-md rounded-3xl border border-orange-200/80 bg-gradient-to-br from-orange-50 via-white to-orange-100 p-6 shadow-[0_22px_70px_rgba(15,23,42,0.5)] transform transition-transform duration-200 ease-out max-h-[90vh] overflow-y-auto">
               <div className="flex flex-col items-center text-center gap-3">
                 <div className="inline-flex items-center gap-2 rounded-full bg-orange-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-orange-700">
                   <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />

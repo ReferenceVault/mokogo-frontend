@@ -10,10 +10,12 @@ import { getListingMikoTags } from '@/utils/miko'
 import { getListingBadgeLabel } from '@/utils/listingTags'
 import ListingFilters, { ListingFilterState } from '@/components/ListingFilters'
 import CustomSelect from '@/components/CustomSelect'
+import { useStore } from '@/store/useStore'
 
 const ExploreProperties = () => {
   const location = useLocation()
   const navigate = useNavigate()
+  const { allListings, setAllListings } = useStore()
   const [exploreListings, setExploreListings] = useState<Listing[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isFilterOpen, setIsFilterOpen] = useState(false)
@@ -154,6 +156,118 @@ const ExploreProperties = () => {
     filters.lgbtqFriendly,
     roomTypePreference,
   ])
+
+  const normalize = (v: string) => (v || '').trim().toLowerCase()
+
+  const canonicalizeCityKey = (city: string) => {
+    // Normalize city input and map common variants to the 5 supported landing cities.
+    const c = normalize(city)
+    if (!c) return ''
+    const compact = c.replace(/[^a-z]/g, '')
+
+    // Delhi / NCR
+    if (compact === 'delhi' || compact === 'newdelhi' || compact === 'delhincr') return 'delhi ncr'
+
+    // Pune + Pimpri-Chinchwad (treated as Pune)
+    if (
+      compact === 'pune' ||
+      compact === 'pimprichinchwad' ||
+      compact === 'pimpri' ||
+      compact === 'chinchwad' ||
+      compact === 'pcmc'
+    ) {
+      return 'pune'
+    }
+
+    // Mumbai
+    if (compact === 'mumbai') return 'mumbai'
+
+    // Bangalore / Bengaluru
+    if (compact === 'bangalore' || compact === 'bengaluru') return 'bangalore'
+
+    // Hyderabad + Secunderabad (treated as Hyderabad)
+    if (
+      compact === 'hyderabad' ||
+      compact === 'hyderbad' ||
+      compact === 'secunderabad' ||
+      compact === 'secundrabad' ||
+      compact === 'hyd'
+    ) {
+      return 'hyderabad'
+    }
+
+    return c
+  }
+
+  const canonicalizeCityLabel = (city: string) => {
+    const key = canonicalizeCityKey(city)
+    if (!key) return ''
+    switch (key) {
+      case 'pune':
+        return 'Pune'
+      case 'mumbai':
+        return 'Mumbai'
+      case 'bangalore':
+        return 'Bangalore'
+      case 'hyderabad':
+        return 'Hyderabad'
+      case 'delhi ncr':
+        return 'Delhi NCR'
+      default:
+        return (city || '').trim()
+    }
+  }
+
+  // Keep "Browse properties in active cities" consistent with LandingPage by using the same
+  // city stats source: all live listings, canonicalized into the 5 fixed cities.
+  useEffect(() => {
+    if (allListings.length > 0) return
+
+    const fetchAllLiveForCities = async () => {
+      try {
+        const listings = await listingsApi.getAllPublic('live')
+        const mapped: Listing[] = listings.map((listing: ListingResponse) => ({
+          id: listing._id || listing.id,
+          title: listing.title,
+          city: canonicalizeCityLabel(listing.city || ''),
+          locality: listing.locality || '',
+          placeId: listing.placeId,
+          latitude: listing.latitude,
+          longitude: listing.longitude,
+          formattedAddress: listing.formattedAddress,
+          societyName: listing.societyName,
+          buildingType: listing.buildingType,
+          bhkType: listing.bhkType || '',
+          roomType: listing.roomType || '',
+          rent: listing.rent || 0,
+          deposit: listing.deposit || 0,
+          moveInDate: listing.moveInDate || '',
+          furnishingLevel: listing.furnishingLevel || '',
+          bathroomType: listing.bathroomType,
+          flatAmenities: listing.flatAmenities || [],
+          societyAmenities: listing.societyAmenities || [],
+          preferredGender: listing.preferredGender || '',
+          foodPreference: listing.foodPreference,
+          petPolicy: listing.petPolicy,
+          smokingPolicy: listing.smokingPolicy,
+          drinkingPolicy: listing.drinkingPolicy,
+          description: listing.description,
+          photos: listing.photos || [],
+          status: listing.status,
+          createdAt: listing.createdAt,
+          updatedAt: listing.updatedAt,
+          mikoTags: listing.mikoTags,
+          lgbtqFriendly: listing.lgbtqFriendly,
+        }))
+
+        setAllListings(mapped)
+      } catch (error) {
+        console.error('Error fetching all live listings for city stats:', error)
+      }
+    }
+
+    void fetchAllLiveForCities()
+  }, [allListings.length, setAllListings])
   const handleApplyFilters = (state: ListingFilterState) => {
     const params = new URLSearchParams(location.search)
     if (state.minRent != null && state.minRent > 0) {
@@ -235,45 +349,49 @@ const ExploreProperties = () => {
     )
   }, [filteredListings, sortOption])
 
-  // Calculate listings count per city from actual fetched listings (no exaggerated fallbacks)
-  const getCityListingsCount = (cityName: string) => {
-    const normalize = (v: string) => (v || '').trim().toLowerCase()
-    const target = normalize(cityName)
-    return exploreListings.filter(l => normalize(l.city) === target && l.status === 'live').length
+  const liveCityStats = useMemo(() => {
+    const map = new Map<string, { name: string; count: number }>()
+    allListings
+      .filter((l) => normalize(l.status as string) === 'live')
+      .forEach((l) => {
+        const raw = (l.city || '').trim()
+        if (!raw) return
+        const key = canonicalizeCityKey(raw)
+        const label = canonicalizeCityLabel(raw)
+        const current = map.get(key)
+        if (current) current.count += 1
+        else map.set(key, { name: label || raw, count: 1 })
+      })
+    return map
+  }, [allListings])
+
+  const fixedCityOrder = ['Pune', 'Mumbai', 'Bangalore', 'Hyderabad', 'Delhi NCR']
+  const cityImageByName: Record<string, string> = {
+    pune: '/pune-city.png',
+    mumbai: '/mumbai-city.png',
+    bangalore: '/bangalore-city.png',
+    hyderabad: '/hyderabad-city.png',
+    'delhi ncr': '/delhi-city.png',
   }
 
-  const cities = [
-    { 
-      name: 'Pune', 
-      image: '/pune-city.png', 
-      listings: getCityListingsCount('Pune'),
-      active: getCityListingsCount('Pune') > 0
-    },
-    { 
-      name: 'Mumbai', 
-      image: '/mumbai-city.png', 
-      listings: getCityListingsCount('Mumbai'),
-      active: getCityListingsCount('Mumbai') > 0
-    },
-    { 
-      name: 'Hyderabad', 
-      image: '/hyderabad-city.png', 
-      listings: getCityListingsCount('Hyderabad'),
-      active: getCityListingsCount('Hyderabad') > 0
-    },
-    { 
-      name: 'Bangalore', 
-      image: '/bangalore-city.png', 
-      listings: getCityListingsCount('Bangalore'),
-      active: getCityListingsCount('Bangalore') > 0
-    },
-    {
-      name: 'Delhi NCR',
-      image: '/delhi-city.png',
-      listings: getCityListingsCount('Delhi NCR'),
-      active: getCityListingsCount('Delhi NCR') > 0
-    }
-  ]
+  const cities = useMemo(() => {
+    const base = fixedCityOrder.map((name) => {
+      const key = normalize(name)
+      const stat = liveCityStats.get(key)
+      const count = stat?.count ?? 0
+      return {
+        name,
+        image: cityImageByName[key] || '/pune-city.png',
+        listings: count,
+        active: count > 0,
+      }
+    })
+
+    return base.sort((a, b) => {
+      if (b.listings !== a.listings) return b.listings - a.listings
+      return fixedCityOrder.indexOf(a.name) - fixedCityOrder.indexOf(b.name)
+    })
+  }, [liveCityStats])
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
