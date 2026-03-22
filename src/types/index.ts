@@ -57,6 +57,8 @@ export interface Listing {
   moveInDate: string
   furnishingLevel: string
   bathroomType?: string
+  /** Standardized count: '0'..'6' or '6+' */
+  currentFlatmates?: string
   flatAmenities: string[]
   societyAmenities: string[]
   preferredGender: string
@@ -71,6 +73,10 @@ export interface Listing {
   updatedAt: string
   mikoTags?: VibeTagId[]
   lgbtqFriendly?: boolean
+  /** Concierge / preview: lister display (preferred over owner profile when set) */
+  conciergeListerName?: string
+  conciergeListerProfileImageUrl?: string
+  conciergeListerAbout?: string
 }
 
 export interface Request {

@@ -1,6 +1,7 @@
 import { io, Socket } from 'socket.io-client'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL || 'http://localhost:5000'
 
 // Get WebSocket base URL - strip /api if present, or use VITE_WS_URL if set
 const getWebSocketBaseURL = (): string => {

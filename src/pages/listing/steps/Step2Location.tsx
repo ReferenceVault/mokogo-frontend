@@ -3,19 +3,27 @@ import { createPortal } from 'react-dom'
 import { Listing } from '@/types'
 import CustomSelect from '@/components/CustomSelect'
 import { placesApi, AutocompletePrediction } from '@/services/api'
+import { LISTING_CITIES } from '@/constants/listingCities'
 
 interface Step2LocationProps {
   data: Partial<Listing>
   onChange: (updates: Partial<Listing>) => void
   error?: string
   onClearError?: (field?: string) => void
+  /** Hide wizard heading + intro (e.g. Concierge embedded form) */
+  hideTitle?: boolean
+  /** When false, society/building is omitted (caller can place it elsewhere) */
+  showSocietyField?: boolean
 }
 
-const cities = [
-  'Pune', 'Mumbai', 'Bangalore', 'Delhi NCR', 'Hyderabad'
-]
-
-const Step2Location = ({ data, onChange, error, onClearError }: Step2LocationProps) => {
+const Step2Location = ({
+  data,
+  onChange,
+  error,
+  onClearError,
+  hideTitle = false,
+  showSocietyField = true,
+}: Step2LocationProps) => {
   const [suggestions, setSuggestions] = useState<AutocompletePrediction[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -284,8 +292,12 @@ const Step2Location = ({ data, onChange, error, onClearError }: Step2LocationPro
 
   return (
     <div>
-      <h2 className="text-lg sm:text-[1.2375rem] font-semibold text-gray-900 mb-1">Location</h2>
-      <p className="text-[0.825rem] text-gray-600 mb-4">Where is the room located?</p>
+      {!hideTitle && (
+        <>
+          <h2 className="text-lg sm:text-[1.2375rem] font-semibold text-gray-900 mb-1">Location</h2>
+          <p className="text-[0.825rem] text-gray-600 mb-4">Where is the room located?</p>
+        </>
+      )}
 
       {error && (
         <div className="mb-3 p-2 bg-red-50 border border-red-200 rounded-lg text-red-700 text-[0.825rem]">
@@ -307,7 +319,7 @@ const Step2Location = ({ data, onChange, error, onClearError }: Step2LocationPro
             value={data.city || ''}
             onValueChange={handleCityChange}
             placeholder="Select your city"
-            options={cities.map(city => ({ value: city, label: city }))}
+            options={LISTING_CITIES.map((city) => ({ value: city, label: city }))}
             error={error}
           />
         </div>
@@ -393,26 +405,27 @@ const Step2Location = ({ data, onChange, error, onClearError }: Step2LocationPro
           )}
         </div>
 
-        {/* Society/Building Name */}
-        <div className="w-full">
-          <label className="block text-sm font-medium text-stone-700 mb-2">
-            Society / Building Name (Optional)
-          </label>
-          <div className="relative">
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 z-10">
-              <svg className="w-5 h-5 text-mokogo-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-              </svg>
+        {showSocietyField && (
+          <div className="w-full">
+            <label className="block text-sm font-medium text-stone-700 mb-2">
+              Society / Building Name (Optional)
+            </label>
+            <div className="relative">
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 z-10">
+                <svg className="w-5 h-5 text-mokogo-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+              </div>
+              <input
+                type="text"
+                value={data.societyName || ''}
+                onChange={(e) => handleChange('societyName', e.target.value)}
+                className="w-full min-h-[44px] text-base px-4 py-3 bg-white/50 backdrop-blur-sm border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400/50 focus:border-orange-400 transition-all duration-200 shadow-sm hover:shadow-md hover:border-orange-300 text-stone-900 font-medium pl-12"
+                placeholder="e.g., Green Valley Apartments, Sunrise Towers"
+              />
             </div>
-            <input
-              type="text"
-              value={data.societyName || ''}
-              onChange={(e) => handleChange('societyName', e.target.value)}
-              className="w-full min-h-[44px] text-base px-4 py-3 bg-white/50 backdrop-blur-sm border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400/50 focus:border-orange-400 transition-all duration-200 shadow-sm hover:shadow-md hover:border-orange-300 text-stone-900 font-medium pl-12"
-              placeholder="e.g., Green Valley Apartments, Sunrise Towers"
-            />
           </div>
-        </div>
+        )}
       </div>
     </div>
   )

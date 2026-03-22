@@ -19,6 +19,7 @@ import { handleLogout as handleLogoutUtil } from '@/utils/auth'
 import { requestsApi, listingsApi, messagesApi, usersApi, UserProfile } from '@/services/api'
 import { Listing } from '@/types'
 import { getListingBadgeLabel } from '@/utils/listingTags'
+import { mapApiListingToListing } from '@/utils/mapApiListingToListing'
 
 import {
   ChevronRight,
@@ -156,34 +157,7 @@ const ListingDetail = () => {
         }
 
         if (response) {
-          // Map API response to frontend format
-          const mappedListing: Listing = {
-            id: response._id || response.id,
-            title: response.title,
-            city: response.city || '',
-            locality: response.locality || '',
-            societyName: response.societyName,
-            bhkType: response.bhkType || '',
-            roomType: response.roomType || '',
-            rent: response.rent || 0,
-            deposit: response.deposit || 0,
-            moveInDate: response.moveInDate || '',
-            furnishingLevel: response.furnishingLevel || '',
-            bathroomType: response.bathroomType,
-            flatAmenities: response.flatAmenities || [],
-            societyAmenities: response.societyAmenities || [],
-            preferredGender: response.preferredGender || '',
-            foodPreference: response.foodPreference,
-            petPolicy: response.petPolicy,
-            smokingPolicy: response.smokingPolicy,
-            drinkingPolicy: response.drinkingPolicy,
-            description: response.description,
-            photos: response.photos || [],
-            status: response.status,
-            createdAt: response.createdAt,
-            updatedAt: response.updatedAt,
-            mikoTags: response.mikoTags,
-          }
+          const mappedListing = mapApiListingToListing(response)
           setListing(mappedListing)
           // Store ownerId to check ownership
           const ownerId = response.ownerId || null
@@ -282,34 +256,7 @@ const ListingDetail = () => {
       setLoading(true)
       try {
         const response = await listingsApi.getById(listingId)
-        const mappedListing: Listing = {
-          id: response._id || response.id,
-          title: response.title,
-          city: response.city || '',
-          locality: response.locality || '',
-          societyName: response.societyName,
-          bhkType: response.bhkType || '',
-          roomType: response.roomType || '',
-          rent: response.rent || 0,
-          deposit: response.deposit || 0,
-          moveInDate: response.moveInDate || '',
-          furnishingLevel: response.furnishingLevel || '',
-          bathroomType: response.bathroomType,
-          flatAmenities: response.flatAmenities || [],
-          societyAmenities: response.societyAmenities || [],
-          preferredGender: response.preferredGender || '',
-          foodPreference: response.foodPreference,
-          petPolicy: response.petPolicy,
-          smokingPolicy: response.smokingPolicy,
-          drinkingPolicy: response.drinkingPolicy,
-          description: response.description,
-          photos: response.photos || [],
-          status: response.status,
-          createdAt: response.createdAt,
-          updatedAt: response.updatedAt,
-          mikoTags: response.mikoTags,
-          lgbtqFriendly: (response as any).lgbtqFriendly,
-        }
+        const mappedListing = mapApiListingToListing(response)
         setListing(mappedListing)
       } catch (error) {
         console.error('Error loading listing detail:', error)
@@ -530,36 +477,8 @@ const ListingDetail = () => {
 
     try {
       const updatedListing = await listingsApi.markAsFulfilled(listingId)
-      // Map API response to frontend format
-      const mappedListing: Listing = {
-        id: updatedListing._id || updatedListing.id,
-        title: updatedListing.title,
-        city: updatedListing.city || '',
-        locality: updatedListing.locality || '',
-        societyName: updatedListing.societyName,
-        bhkType: updatedListing.bhkType || '',
-        roomType: updatedListing.roomType || '',
-        rent: updatedListing.rent || 0,
-        deposit: updatedListing.deposit || 0,
-        moveInDate: updatedListing.moveInDate || '',
-        furnishingLevel: updatedListing.furnishingLevel || '',
-        bathroomType: updatedListing.bathroomType,
-        flatAmenities: updatedListing.flatAmenities || [],
-        societyAmenities: updatedListing.societyAmenities || [],
-        preferredGender: updatedListing.preferredGender || '',
-        foodPreference: updatedListing.foodPreference,
-        petPolicy: updatedListing.petPolicy,
-        smokingPolicy: updatedListing.smokingPolicy,
-        drinkingPolicy: updatedListing.drinkingPolicy,
-        description: updatedListing.description,
-        photos: updatedListing.photos || [],
-        status: updatedListing.status,
-        createdAt: updatedListing.createdAt,
-        updatedAt: updatedListing.updatedAt,
-        mikoTags: updatedListing.mikoTags,
-        lgbtqFriendly: updatedListing.lgbtqFriendly,
-      }
-      setListing(mappedListing)
+      const mappedListing = mapApiListingToListing(updatedListing)
+      if (mappedListing) setListing(mappedListing)
     } catch (error: any) {
       console.error('Error marking listing as fulfilled:', error)
       alert(error?.response?.data?.message || 'Failed to mark listing as fulfilled. Please try again.')

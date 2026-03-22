@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Footer from '@/components/Footer'
 import SocialSidebar from '@/components/SocialSidebar'
@@ -6,14 +6,35 @@ import DashboardHeader from '@/components/DashboardHeader'
 import DashboardSidebar from '@/components/DashboardSidebar'
 import { LayoutGrid, Home, MessageSquare, Settings, Users, Flag, Briefcase, ArrowLeft, Image } from 'lucide-react'
 import { conciergeApi, uploadApi } from '@/services/api'
-import { MoveInDateField } from '@/components/MoveInDateField'
 import { useStore } from '@/store/useStore'
+import {
+  joinFullName,
+  sanitizeIndianMobileInput,
+  isValidIndianMobile10Digits,
+  INDIAN_MOBILE_HINT,
+} from '@/utils/listerProfile'
+import { generateListingTitle } from '@/utils/listingTitle'
+import { Listing } from '@/types'
+import Step2Location from '@/pages/listing/steps/Step2Location'
+import Step3Details from '@/pages/listing/steps/Step3Details'
+import Step4Pricing from '@/pages/listing/steps/Step4Pricing'
+import Step5Preferences from '@/pages/listing/steps/Step5Preferences'
 
 const SECTIONS = [
   { id: 'photos', title: 'Photos', icon: Image },
-  { id: 'lister', title: 'Lister Profile', icon: Users },
   { id: 'property', title: 'Property Details', icon: Home },
+  { id: 'lister', title: 'Lister Profile', icon: Users },
   { id: 'tracking', title: 'Concierge Tracking', icon: Briefcase },
+]
+
+/** Matches backend `ConciergeOutreachStatus` */
+const OUTREACH_STATUS_OPTIONS = [
+  { value: 'not_contacted', label: 'Not contacted' },
+  { value: 'link_sent', label: 'Link sent' },
+  { value: 'follow_up_sent', label: 'Follow-up sent' },
+  { value: 'responded', label: 'Responded' },
+  { value: 'approved', label: 'Approved' },
+  { value: 'declined', label: 'Declined' },
 ]
 
 export default function ConciergeCreateDraftPage() {
@@ -22,9 +43,12 @@ export default function ConciergeCreateDraftPage() {
   const [expandedSections, setExpandedSections] = useState<Set<number>>(new Set([0]))
   const [formData, setFormData] = useState<Record<string, string | number | boolean | string[] | undefined>>({
     photos: [],
-    title: '',
     city: '',
     locality: '',
+    placeId: '',
+    latitude: undefined as number | undefined,
+    longitude: undefined as number | undefined,
+    formattedAddress: '',
     societyName: '',
     roomType: '',
     buildingType: '',
@@ -42,19 +66,26 @@ export default function ConciergeCreateDraftPage() {
     petPolicy: '',
     smokingPolicy: '',
     drinkingPolicy: '',
-    lgbtqFriendly: false,
-    conciergeListerName: '',
+    currentFlatmates: '',
+    lgbtqFriendly: undefined as boolean | undefined,
+    conciergeListerFirstName: '',
+    conciergeListerLastName: '',
     conciergeListerEmail: '',
     conciergeListerPhone: '',
     conciergeListerOccupation: '',
-    conciergeListerCurrentCity: '',
     conciergeSourcePlatform: '',
     conciergeSourcePlatformOther: '',
     conciergeSourceLink: '',
     conciergeSourceUsername: '',
     conciergeAddedBy: '',
     conciergeOutreachChannel: '',
+    conciergeOutreachStatus: '',
+    conciergeFollowUpDate: '',
   })
+  /** Pending outreach log rows saved when the draft is created (same model as listing detail). */
+  const [outreachLogEntries, setOutreachLogEntries] = useState<Array<{ date: string; note: string }>>([])
+  const [newLogDate, setNewLogDate] = useState(() => new Date().toISOString().slice(0, 10))
+  const [newLogNote, setNewLogNote] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [photoUploading, setPhotoUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -73,7 +104,18 @@ export default function ConciergeCreateDraftPage() {
     })
   }
 
+  const validateListerPhone = (): boolean => {
+    const raw = (formData.conciergeListerPhone as string) || ''
+    const d = raw.replace(/\D/g, '')
+    if (d.length > 0 && !isValidIndianMobile10Digits(d)) {
+      setError(INDIAN_MOBILE_HINT)
+      return false
+    }
+    return true
+  }
+
   const performSubmit = async () => {
+    if (!validateListerPhone()) return
     setSubmitting(true)
     setError(null)
     try {
@@ -81,7 +123,7 @@ export default function ConciergeCreateDraftPage() {
       const created = await conciergeApi.createDraft(payload)
       const previewUrl = `${window.location.origin}/preview/${created.previewToken}`
       navigate('/admin/dashboard', {
-        state: { openTab: 'concierge', createSuccess: `Draft created. Preview link: ${previewUrl}` },
+        state: { openTab: 'concierge', createSuccess: `Draft saved. Preview link: ${previewUrl}` },
       })
     } catch (e: unknown) {
       const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message
@@ -92,8 +134,8 @@ export default function ConciergeCreateDraftPage() {
   }
 
   const handleSectionContinue = (index: number) => {
-    if (index === SECTIONS.length - 1) {
-      performSubmit()
+    // Lister profile section: block Continue if phone is partially filled or invalid
+    if (index === 2 && !validateListerPhone()) {
       return
     }
     setExpandedSections((prev) => {
@@ -109,6 +151,74 @@ export default function ConciergeCreateDraftPage() {
 
   const handleChange = (field: string, value: string | number | boolean | string[] | undefined) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
+    setError(null)
+  }
+
+  /** Maps concierge form state → listing wizard shape for shared step components */
+  const listingFormData = useMemo((): Partial<Listing> => {
+    const rentRaw = formData.rent
+    const depRaw = formData.deposit
+    const rent =
+      rentRaw !== '' && rentRaw != null && String(rentRaw).trim() !== ''
+        ? Number(rentRaw)
+        : 0
+    const deposit =
+      depRaw !== '' && depRaw != null && String(depRaw).trim() !== ''
+        ? Number(depRaw)
+        : 0
+    const cf = (formData.currentFlatmates as string)?.trim()
+    const lgbtq = formData.lgbtqFriendly
+    return {
+      city: (formData.city as string) || '',
+      locality: (formData.locality as string) || '',
+      placeId: ((formData.placeId as string) || '').trim() || undefined,
+      latitude: typeof formData.latitude === 'number' ? formData.latitude : undefined,
+      longitude: typeof formData.longitude === 'number' ? formData.longitude : undefined,
+      formattedAddress: ((formData.formattedAddress as string) || '').trim() || undefined,
+      societyName: (formData.societyName as string) || '',
+      roomType: (formData.roomType as string) || '',
+      buildingType: (formData.buildingType as string) || '',
+      bhkType: (formData.bhkType as string) || '',
+      furnishingLevel: (formData.furnishingLevel as string) || '',
+      bathroomType: (formData.bathroomType as string) || '',
+      currentFlatmates: cf || undefined,
+      flatAmenities: (formData.flatAmenities as string[]) || [],
+      societyAmenities: (formData.societyAmenities as string[]) || [],
+      rent,
+      deposit,
+      moveInDate: (formData.moveInDate as string) || '',
+      preferredGender: (formData.preferredGender as string) || '',
+      foodPreference: (formData.foodPreference as string) || '',
+      petPolicy: (formData.petPolicy as string) || '',
+      smokingPolicy: (formData.smokingPolicy as string) || '',
+      drinkingPolicy: (formData.drinkingPolicy as string) || '',
+      lgbtqFriendly: lgbtq === true ? true : lgbtq === false ? false : undefined,
+      description: (formData.description as string) || '',
+    }
+  }, [formData])
+
+  const handleListingFieldsChange = (updates: Partial<Listing>) => {
+    setFormData((prev) => {
+      const n: Record<string, string | number | boolean | string[] | undefined> = { ...prev }
+      if ('rent' in updates) {
+        const r = updates.rent
+        n.rent = r === undefined || r === null || r === 0 ? '' : String(r)
+      }
+      if ('deposit' in updates) {
+        const d = updates.deposit
+        n.deposit = d === undefined || d === null || d === 0 ? '' : String(d)
+      }
+      for (const [k, v] of Object.entries(updates)) {
+        if (k === 'rent' || k === 'deposit') continue
+        if (v === undefined) {
+          if (k === 'placeId') n.placeId = ''
+          else if (k === 'latitude' || k === 'longitude') n[k] = undefined
+          continue
+        }
+        n[k] = v as string | number | boolean | string[]
+      }
+      return n
+    })
     setError(null)
   }
 
@@ -133,27 +243,39 @@ export default function ConciergeCreateDraftPage() {
     handleChange('photos', current.filter((_, i) => i !== index))
   }
 
-  const handleAmenityToggle = (field: 'flatAmenities' | 'societyAmenities', value: string) => {
-    const arr = (formData[field] as string[]) || []
-    const next = arr.includes(value) ? arr.filter((a) => a !== value) : [...arr, value]
-    handleChange(field, next)
-  }
-
   const buildPayload = () => {
     const flatAmenities = (formData.flatAmenities as string[]) || []
     const societyAmenities = (formData.societyAmenities as string[]) || []
     const photos = (formData.photos as string[]) || []
+    const rentNum = formData.rent ? Number(formData.rent) : undefined
+    const title = generateListingTitle({
+      roomType: (formData.roomType as string) || '',
+      bhkType: (formData.bhkType as string) || '',
+      locality: (formData.locality as string) || '',
+      city: (formData.city as string) || '',
+      rent: rentNum,
+      furnishingLevel: (formData.furnishingLevel as string) || '',
+    })
+    const placeId = ((formData.placeId as string) || '').trim()
+    const lat = formData.latitude
+    const lng = formData.longitude
+    const formattedAddr = ((formData.formattedAddress as string) || '').trim()
     return {
       photos: photos.length ? photos : undefined,
-      title: (formData.title as string)?.trim() || 'Untitled Listing',
+      title,
       city: (formData.city as string)?.trim() || undefined,
       locality: (formData.locality as string)?.trim() || undefined,
+      placeId: placeId || undefined,
+      latitude: typeof lat === 'number' && !Number.isNaN(lat) ? lat : undefined,
+      longitude: typeof lng === 'number' && !Number.isNaN(lng) ? lng : undefined,
+      formattedAddress: formattedAddr || undefined,
       societyName: (formData.societyName as string)?.trim() || undefined,
       roomType: (formData.roomType as string) || undefined,
       buildingType: (formData.buildingType as string) || undefined,
       bhkType: (formData.bhkType as string) || undefined,
       furnishingLevel: (formData.furnishingLevel as string) || undefined,
       bathroomType: (formData.bathroomType as string) || undefined,
+      currentFlatmates: ((formData.currentFlatmates as string) || '').trim() || undefined,
       rent: formData.rent ? Number(formData.rent) : undefined,
       deposit: formData.deposit ? Number(formData.deposit) : undefined,
       moveInDate: (formData.moveInDate as string) || undefined,
@@ -165,31 +287,55 @@ export default function ConciergeCreateDraftPage() {
       petPolicy: (formData.petPolicy as string) || undefined,
       smokingPolicy: (formData.smokingPolicy as string) || undefined,
       drinkingPolicy: (formData.drinkingPolicy as string) || undefined,
-      lgbtqFriendly: formData.lgbtqFriendly ? true : undefined,
-      conciergeListerName: (formData.conciergeListerName as string)?.trim() || undefined,
+      lgbtqFriendly: formData.lgbtqFriendly === true ? true : formData.lgbtqFriendly === false ? false : undefined,
+      conciergeListerName:
+        joinFullName(
+          (formData.conciergeListerFirstName as string) || '',
+          (formData.conciergeListerLastName as string) || '',
+        ) || undefined,
       conciergeListerEmail: (formData.conciergeListerEmail as string)?.trim() || undefined,
-      conciergeListerPhone: (formData.conciergeListerPhone as string)?.trim() || undefined,
+      conciergeListerPhone: (() => {
+        const d = ((formData.conciergeListerPhone as string) || '').replace(/\D/g, '')
+        return d ? d : undefined
+      })(),
       conciergeListerOccupation: (formData.conciergeListerOccupation as string)?.trim() || undefined,
-      conciergeListerCurrentCity: (formData.conciergeListerCurrentCity as string)?.trim() || undefined,
       conciergeSourcePlatform: (formData.conciergeSourcePlatform as string) || undefined,
       conciergeSourcePlatformOther: (formData.conciergeSourcePlatformOther as string)?.trim() || undefined,
       conciergeSourceLink: (formData.conciergeSourceLink as string)?.trim() || undefined,
       conciergeSourceUsername: (formData.conciergeSourceUsername as string)?.trim() || undefined,
       conciergeAddedBy: (formData.conciergeAddedBy as string)?.trim() || undefined,
       conciergeOutreachChannel: (formData.conciergeOutreachChannel as string) || undefined,
-      conciergeOutreachStatus: 'not_contacted',
+      conciergeOutreachStatus:
+        ((formData.conciergeOutreachStatus as string) || '').trim() || 'not_contacted',
+      conciergeFollowUpDate: ((formData.conciergeFollowUpDate as string) || '').trim() || undefined,
+      outreachLogEntries:
+        outreachLogEntries.length > 0
+          ? outreachLogEntries.map((e) => ({
+              date: e.date || undefined,
+              note: e.note.trim(),
+            }))
+          : undefined,
     }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    performSubmit()
+  const addOutreachLogRow = () => {
+    const note = newLogNote.trim()
+    if (!note) return
+    setOutreachLogEntries((prev) => [...prev, { date: newLogDate, note }])
+    setNewLogNote('')
+    setNewLogDate(new Date().toISOString().slice(0, 10))
+    setError(null)
+  }
+
+  const removeOutreachLogRow = (idx: number) => {
+    setOutreachLogEntries((prev) => prev.filter((_, i) => i !== idx))
   }
 
   const userName = user?.name || user?.email?.split('@')[0] || 'Admin'
   const userEmail = user?.email || ''
-  const flatList = (formData.flatAmenities as string[]) || []
-  const societyList = (formData.societyAmenities as string[]) || []
+  const listerPhoneDigits = ((formData.conciergeListerPhone as string) || '').replace(/\D/g, '')
+  const listerPhoneInvalid =
+    listerPhoneDigits.length > 0 && !isValidIndianMobile10Digits(listerPhoneDigits)
 
   return (
     <div className="min-h-screen bg-stone-100 flex flex-col">
@@ -243,7 +389,11 @@ export default function ConciergeCreateDraftPage() {
               <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-800">{error}</div>
             )}
 
-            <form onSubmit={handleSubmit}>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault()
+              }}
+            >
               <div className="space-y-2">
                 {SECTIONS.map((section, index) => {
                   const isExpanded = expandedSections.has(index)
@@ -330,17 +480,80 @@ export default function ConciergeCreateDraftPage() {
                               )}
                             </>
                           )}
-                          {section.id === 'lister' && (
+                          {section.id === 'property' && (
                             <>
+                              <div className="p-3 bg-stone-50 border border-stone-200 rounded-lg text-xs text-stone-700 space-y-1">
+                                <p>
+                                  <span className="font-medium text-stone-800">Title</span> is generated automatically from
+                                  room type, BHK, locality, rent, and furnishing — same formula as the user-facing{' '}
+                                  <span className="font-medium">List Your Place</span> flow.
+                                </p>
+                                <p className="text-stone-600">
+                                  The sections below match the production listing wizard: Location → Details → Pricing →
+                                  Preferences.
+                                </p>
+                              </div>
+                              <p className="text-xs font-semibold text-gray-800 uppercase tracking-wide">Location</p>
+                              <div className="border border-gray-200 rounded-lg p-3 bg-white">
+                                <Step2Location
+                                  data={listingFormData}
+                                  onChange={handleListingFieldsChange}
+                                  hideTitle
+                                  showSocietyField={false}
+                                />
+                              </div>
                               <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Lister Name</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Society / Building Name</label>
                                 <input
                                   type="text"
-                                  value={(formData.conciergeListerName as string) || ''}
-                                  onChange={(e) => handleChange('conciergeListerName', e.target.value)}
+                                  value={(formData.societyName as string) || ''}
+                                  onChange={(e) => handleChange('societyName', e.target.value)}
                                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                                  placeholder="Owner name"
+                                  placeholder="Optional"
                                 />
+                              </div>
+                              <p className="text-xs font-semibold text-gray-800 uppercase tracking-wide">Details</p>
+                              <div className="border border-gray-200 rounded-lg p-3 bg-white overflow-x-hidden">
+                                <Step3Details data={listingFormData} onChange={handleListingFieldsChange} hideHeader />
+                              </div>
+                              <p className="text-xs font-semibold text-gray-800 uppercase tracking-wide">Pricing</p>
+                              <div className="border border-gray-200 rounded-lg p-3 bg-white overflow-x-hidden">
+                                <Step4Pricing data={listingFormData} onChange={handleListingFieldsChange} hideHeader />
+                              </div>
+                              <p className="text-xs font-semibold text-gray-800 uppercase tracking-wide">Preferences</p>
+                              <div className="border border-gray-200 rounded-lg p-3 bg-white overflow-x-hidden">
+                                <Step5Preferences data={listingFormData} onChange={handleListingFieldsChange} hideHeader />
+                              </div>
+                            </>
+                          )}
+                          {section.id === 'lister' && (
+                            <>
+                              <p className="text-xs text-gray-500 -mt-1 mb-2">
+                                Matches the user profile layout (first &amp; last name). Stored as a single full name for the listing.
+                              </p>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">First name</label>
+                                  <input
+                                    type="text"
+                                    value={(formData.conciergeListerFirstName as string) || ''}
+                                    onChange={(e) => handleChange('conciergeListerFirstName', e.target.value)}
+                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                                    placeholder="First name"
+                                    autoComplete="given-name"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">Last name</label>
+                                  <input
+                                    type="text"
+                                    value={(formData.conciergeListerLastName as string) || ''}
+                                    onChange={(e) => handleChange('conciergeListerLastName', e.target.value)}
+                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                                    placeholder="Last name"
+                                    autoComplete="family-name"
+                                  />
+                                </div>
                               </div>
                               <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Lister Email</label>
@@ -356,11 +569,20 @@ export default function ConciergeCreateDraftPage() {
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Lister Phone</label>
                                 <input
                                   type="tel"
+                                  inputMode="numeric"
                                   value={(formData.conciergeListerPhone as string) || ''}
-                                  onChange={(e) => handleChange('conciergeListerPhone', e.target.value)}
-                                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                                  placeholder="10-digit mobile"
+                                  onChange={(e) =>
+                                    handleChange('conciergeListerPhone', sanitizeIndianMobileInput(e.target.value))
+                                  }
+                                  className={`w-full border rounded-lg px-3 py-2 text-sm ${
+                                    listerPhoneInvalid ? 'border-red-500' : 'border-gray-300'
+                                  }`}
+                                  placeholder="10-digit mobile (6–9…)"
+                                  maxLength={10}
                                 />
+                                {listerPhoneInvalid && (
+                                  <p className="mt-1 text-xs text-red-600">{INDIAN_MOBILE_HINT}</p>
+                                )}
                               </div>
                               <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Occupation</label>
@@ -372,301 +594,14 @@ export default function ConciergeCreateDraftPage() {
                                   placeholder="Optional"
                                 />
                               </div>
-                              <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Current City</label>
-                                <input
-                                  type="text"
-                                  value={(formData.conciergeListerCurrentCity as string) || ''}
-                                  onChange={(e) => handleChange('conciergeListerCurrentCity', e.target.value)}
-                                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                                  placeholder="Optional"
-                                />
-                              </div>
-                            </>
-                          )}
-
-                          {section.id === 'property' && (
-                            <>
-                              <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
-                                <input
-                                  type="text"
-                                  value={(formData.title as string) || ''}
-                                  onChange={(e) => handleChange('title', e.target.value)}
-                                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                                  placeholder="Untitled Listing"
-                                />
-                              </div>
-                              <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
-                                  <input
-                                    type="text"
-                                    value={(formData.city as string) || ''}
-                                    onChange={(e) => handleChange('city', e.target.value)}
-                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                                    placeholder="e.g. Bangalore"
-                                  />
-                                </div>
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-1">Locality</label>
-                                  <input
-                                    type="text"
-                                    value={(formData.locality as string) || ''}
-                                    onChange={(e) => handleChange('locality', e.target.value)}
-                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                                    placeholder="e.g. Koramangala"
-                                  />
-                                </div>
-                              </div>
-                              <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Society / Building Name</label>
-                                <input
-                                  type="text"
-                                  value={(formData.societyName as string) || ''}
-                                  onChange={(e) => handleChange('societyName', e.target.value)}
-                                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                                  placeholder="Optional"
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Room Type</label>
-                                <select
-                                  value={(formData.roomType as string) || ''}
-                                  onChange={(e) => handleChange('roomType', e.target.value)}
-                                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                                >
-                                  <option value="">—</option>
-                                  <option value="Private Room">Private Room</option>
-                                  <option value="Shared Room">Shared Room</option>
-                                  <option value="Master Room">Master Room</option>
-                                </select>
-                              </div>
-                              <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-1">Building Type</label>
-                                  <select
-                                    value={(formData.buildingType as string) || ''}
-                                    onChange={(e) => handleChange('buildingType', e.target.value)}
-                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                                  >
-                                    <option value="">—</option>
-                                    <option value="Gated Society">Gated Society</option>
-                                    <option value="Standalone Apartment">Standalone Apartment</option>
-                                    <option value="Independent House">Independent House</option>
-                                  </select>
-                                </div>
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-1">BHK Type</label>
-                                  <select
-                                    value={(formData.bhkType as string) || ''}
-                                    onChange={(e) => handleChange('bhkType', e.target.value)}
-                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                                  >
-                                    <option value="">—</option>
-                                    <option value="1BHK">1 BHK</option>
-                                    <option value="2BHK">2 BHK</option>
-                                    <option value="3BHK">3 BHK</option>
-                                    <option value="4BHK+">4 BHK+</option>
-                                  </select>
-                                </div>
-                              </div>
-                              <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-1">Furnishing</label>
-                                  <select
-                                    value={(formData.furnishingLevel as string) || ''}
-                                    onChange={(e) => handleChange('furnishingLevel', e.target.value)}
-                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                                  >
-                                    <option value="">—</option>
-                                    <option value="Fully Furnished">Fully Furnished</option>
-                                    <option value="Semi-furnished">Semi-furnished</option>
-                                    <option value="Unfurnished">Unfurnished</option>
-                                  </select>
-                                </div>
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-1">Bathroom Type</label>
-                                  <select
-                                    value={(formData.bathroomType as string) || ''}
-                                    onChange={(e) => handleChange('bathroomType', e.target.value)}
-                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                                  >
-                                    <option value="">—</option>
-                                    <option value="Attached">Attached</option>
-                                    <option value="Common">Common</option>
-                                  </select>
-                                </div>
-                              </div>
-                              <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-1">Rent (₹/month)</label>
-                                  <input
-                                    type="number"
-                                    min={0}
-                                    value={(formData.rent as string) ?? ''}
-                                    onChange={(e) => handleChange('rent', e.target.value || '')}
-                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                                    placeholder="15000"
-                                  />
-                                </div>
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-1">Deposit (₹)</label>
-                                  <input
-                                    type="number"
-                                    min={0}
-                                    value={(formData.deposit as string) ?? ''}
-                                    onChange={(e) => handleChange('deposit', e.target.value || '')}
-                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                                    placeholder="30000"
-                                  />
-                                </div>
-                              </div>
-                              <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Move-in Date</label>
-                                <MoveInDateField
-                                  value={(formData.moveInDate as string) || undefined}
-                                  onChange={(v) => handleChange('moveInDate', v || '')}
-                                  hideLabel
-                                  className="w-full border border-gray-300 rounded-lg bg-white"
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                                <textarea
-                                  rows={2}
-                                  value={(formData.description as string) || ''}
-                                  onChange={(e) => handleChange('description', e.target.value)}
-                                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                                  placeholder="Optional"
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Flat Amenities</label>
-                                <div className="flex flex-wrap gap-2">
-                                  {['WiFi', 'AC', 'TV', 'Kitchen', 'Washing machine', 'Fridge', 'Geyser', 'Sofa', 'Bed'].map((a) => (
-                                    <label
-                                      key={a}
-                                      className={`inline-flex items-center gap-1.5 px-2 py-1.5 border rounded-lg cursor-pointer hover:bg-gray-50 text-sm ${
-                                        flatList.includes(a) ? 'border-orange-400 bg-orange-50' : 'border-gray-200'
-                                      }`}
-                                    >
-                                      <input
-                                        type="checkbox"
-                                        checked={flatList.includes(a)}
-                                        onChange={() => handleAmenityToggle('flatAmenities', a)}
-                                        className="rounded text-orange-500"
-                                      />
-                                      {a}
-                                    </label>
-                                  ))}
-                                </div>
-                              </div>
-                              <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Society Amenities</label>
-                                <div className="flex flex-wrap gap-2">
-                                  {['Gym', 'Pool', 'Security', 'Parking'].map((a) => (
-                                    <label
-                                      key={a}
-                                      className={`inline-flex items-center gap-1.5 px-2 py-1.5 border rounded-lg cursor-pointer hover:bg-gray-50 text-sm ${
-                                        societyList.includes(a) ? 'border-orange-400 bg-orange-50' : 'border-gray-200'
-                                      }`}
-                                    >
-                                      <input
-                                        type="checkbox"
-                                        checked={societyList.includes(a)}
-                                        onChange={() => handleAmenityToggle('societyAmenities', a)}
-                                        className="rounded text-orange-500"
-                                      />
-                                      {a}
-                                    </label>
-                                  ))}
-                                </div>
-                              </div>
-                              <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Preferred Gender</label>
-                                <select
-                                  value={(formData.preferredGender as string) || ''}
-                                  onChange={(e) => handleChange('preferredGender', e.target.value)}
-                                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                                >
-                                  <option value="">—</option>
-                                  <option value="Male">Male Only</option>
-                                  <option value="Female">Female Only</option>
-                                  <option value="Any">Any</option>
-                                </select>
-                              </div>
-                              <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-1">Food Preference</label>
-                                  <select
-                                    value={(formData.foodPreference as string) || ''}
-                                    onChange={(e) => handleChange('foodPreference', e.target.value)}
-                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                                  >
-                                    <option value="">—</option>
-                                    <option value="Vegetarian only">Vegetarian only</option>
-                                    <option value="Non-veg allowed">Non-veg allowed</option>
-                                    <option value="Open">Open</option>
-                                  </select>
-                                </div>
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-1">Pet Policy</label>
-                                  <select
-                                    value={(formData.petPolicy as string) || ''}
-                                    onChange={(e) => handleChange('petPolicy', e.target.value)}
-                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                                  >
-                                    <option value="">—</option>
-                                    <option value="Pets allowed">Pets allowed</option>
-                                    <option value="Not allowed">Not allowed</option>
-                                  </select>
-                                </div>
-                              </div>
-                              <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-1">Smoking Policy</label>
-                                  <select
-                                    value={(formData.smokingPolicy as string) || ''}
-                                    onChange={(e) => handleChange('smokingPolicy', e.target.value)}
-                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                                  >
-                                    <option value="">—</option>
-                                    <option value="Allowed">Allowed</option>
-                                    <option value="Not allowed">Not allowed</option>
-                                    <option value="No issues">No issues</option>
-                                  </select>
-                                </div>
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-1">Drinking Policy</label>
-                                  <select
-                                    value={(formData.drinkingPolicy as string) || ''}
-                                    onChange={(e) => handleChange('drinkingPolicy', e.target.value)}
-                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                                  >
-                                    <option value="">—</option>
-                                    <option value="Allowed">Allowed</option>
-                                    <option value="Not allowed">Not allowed</option>
-                                    <option value="No issues">No issues</option>
-                                  </select>
-                                </div>
-                              </div>
-                              <div>
-                                <label className="inline-flex items-center gap-2 cursor-pointer">
-                                  <input
-                                    type="checkbox"
-                                    checked={!!formData.lgbtqFriendly}
-                                    onChange={(e) => handleChange('lgbtqFriendly', e.target.checked)}
-                                    className="rounded text-orange-500"
-                                  />
-                                  <span className="text-sm font-medium text-gray-700">LGBTQ+ friendly</span>
-                                </label>
-                              </div>
                             </>
                           )}
 
                           {section.id === 'tracking' && (
                             <>
+                              <p className="text-xs text-gray-500 -mt-1 mb-2">
+                                Source and assignment fields. Set outreach status, follow-up, and log notes so the team stays aligned.
+                              </p>
                               <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Source Platform</label>
                                 <select
@@ -727,29 +662,124 @@ export default function ConciergeCreateDraftPage() {
                                   <option value="phone_call">Phone Call</option>
                                 </select>
                               </div>
+
+                              <div className="pt-2 border-t border-gray-100 mt-2">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Outreach status</label>
+                                <select
+                                  value={(formData.conciergeOutreachStatus as string) || 'not_contacted'}
+                                  onChange={(e) => handleChange('conciergeOutreachStatus', e.target.value)}
+                                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                                >
+                                  {OUTREACH_STATUS_OPTIONS.map((o) => (
+                                    <option key={o.value} value={o.value}>
+                                      {o.label}
+                                    </option>
+                                  ))}
+                                </select>
+                                {(formData.conciergeOutreachStatus as string) === 'link_sent' && (
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    After link sent, we can flag this listing for follow-up if there is no response in 48 hours.
+                                  </p>
+                                )}
+                              </div>
+
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Follow-up date</label>
+                                <input
+                                  type="date"
+                                  value={(formData.conciergeFollowUpDate as string) || ''}
+                                  onChange={(e) => handleChange('conciergeFollowUpDate', e.target.value)}
+                                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                                />
+                                <p className="text-xs text-gray-500 mt-1">
+                                  When to check back with this owner (optional).
+                                </p>
+                              </div>
+
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Outreach log</label>
+                                <p className="text-xs text-gray-500 mb-2">
+                                  Timestamped notes visible to the whole team. Add entries here before saving; they are stored when you save the draft.
+                                </p>
+                                {outreachLogEntries.length > 0 && (
+                                  <ul className="space-y-2 mb-3 max-h-40 overflow-y-auto">
+                                    {outreachLogEntries.map((entry, idx) => (
+                                      <li
+                                        key={`${entry.date}-${idx}`}
+                                        className="flex gap-2 items-start p-2 bg-gray-50 rounded-lg text-sm"
+                                      >
+                                        <span className="text-gray-500 flex-shrink-0 tabular-nums">
+                                          {entry.date
+                                            ? new Date(entry.date + 'T12:00:00').toLocaleDateString('en-IN', {
+                                                day: 'numeric',
+                                                month: 'short',
+                                                year: 'numeric',
+                                              })
+                                            : '—'}
+                                        </span>
+                                        <span className="text-gray-800 flex-1">{entry.note}</span>
+                                        <button
+                                          type="button"
+                                          onClick={() => removeOutreachLogRow(idx)}
+                                          className="text-xs text-red-600 hover:underline flex-shrink-0"
+                                        >
+                                          Remove
+                                        </button>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                )}
+                                <div className="flex flex-wrap gap-2 items-end">
+                                  <div>
+                                    <label className="sr-only">Log entry date</label>
+                                    <input
+                                      type="date"
+                                      value={newLogDate}
+                                      onChange={(e) => setNewLogDate(e.target.value)}
+                                      className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                                    />
+                                  </div>
+                                  <div className="flex-1 min-w-[180px]">
+                                    <label className="sr-only">Log note</label>
+                                    <input
+                                      type="text"
+                                      value={newLogNote}
+                                      onChange={(e) => setNewLogNote(e.target.value)}
+                                      placeholder="Note (e.g. messaged on WA, no reply yet)"
+                                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                                    />
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={addOutreachLogRow}
+                                    disabled={!newLogNote.trim()}
+                                    className="px-3 py-2 bg-stone-200 text-stone-800 rounded-lg text-sm font-medium hover:bg-stone-300 disabled:opacity-50"
+                                  >
+                                    Add to log
+                                  </button>
+                                </div>
+                              </div>
                             </>
                           )}
 
-                          {/* Section footer with Continue */}
-                          <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:items-center gap-2 mt-4 pt-3 border-t border-gray-100">
-                            <button
-                              type="button"
-                              onClick={() => handleSectionContinue(index)}
-                              disabled={submitting}
-                              className="w-full sm:w-auto text-sm px-4 py-2 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 disabled:opacity-50 flex items-center justify-center gap-1.5"
-                            >
-                              {submitting
-                                ? 'Creating...'
-                                : index === SECTIONS.length - 1
-                                ? 'Create Draft'
-                                : 'Continue'}
-                              {!submitting && index < SECTIONS.length - 1 && (
-                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                </svg>
-                              )}
-                            </button>
-                          </div>
+                          {/* Continue (not on last section — use Save below) */}
+                          {index < SECTIONS.length - 1 && (
+                            <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:items-center gap-2 mt-4 pt-3 border-t border-gray-100">
+                              <button
+                                type="button"
+                                onClick={() => handleSectionContinue(index)}
+                                disabled={submitting}
+                                className="w-full sm:w-auto text-sm px-4 py-2 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 disabled:opacity-50 flex items-center justify-center gap-1.5"
+                              >
+                                Continue
+                                {!submitting && (
+                                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                  </svg>
+                                )}
+                              </button>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -757,21 +787,28 @@ export default function ConciergeCreateDraftPage() {
                 })}
               </div>
 
-              <div className="flex gap-3 mt-6">
-                <button
-                  type="button"
-                  onClick={() => navigate('/admin/dashboard', { state: { openTab: 'concierge' } })}
-                  className="px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="px-4 py-2 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 disabled:opacity-50"
-                >
-                  {submitting ? 'Creating...' : 'Create Draft'}
-                </button>
+              <div className="flex flex-col sm:flex-row gap-3 mt-6 sm:items-center sm:justify-between">
+                <p className="text-xs text-gray-500 order-2 sm:order-1">
+                  Use <span className="font-medium text-gray-700">Continue</span> between sections, then{' '}
+                  <span className="font-medium text-gray-700">Save</span> once to create the draft and return to the list.
+                </p>
+                <div className="flex gap-3 order-1 sm:order-2">
+                  <button
+                    type="button"
+                    onClick={() => navigate('/admin/dashboard', { state: { openTab: 'concierge' } })}
+                    className="px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => performSubmit()}
+                    disabled={submitting}
+                    className="px-4 py-2 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 disabled:opacity-50"
+                  >
+                    {submitting ? 'Saving…' : 'Save'}
+                  </button>
+                </div>
               </div>
             </form>
           </div>

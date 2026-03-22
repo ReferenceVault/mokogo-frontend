@@ -8,16 +8,13 @@ export const isProfileComplete = (user: User | null): boolean => {
   const firstName = nameParts[0] || ''
   const lastName = nameParts.slice(1).join(' ') || ''
 
-  // Check all required fields
+  // Check all required fields (aligned with Profile form — no DOB / city / area)
   const requiredFields = {
     firstName: firstName.trim(),
     lastName: lastName.trim(),
-    dateOfBirth: user.dateOfBirth || '',
     gender: user.gender || '',
     occupation: user.occupation || '',
     companyName: user.companyName || '',
-    currentCity: user.currentCity || '',
-    area: user.area || '',
     about: user.about || '',
     smoking: user.smoking || '',
     drinking: user.drinking || '',

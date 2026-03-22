@@ -7,9 +7,10 @@ interface Step4PricingProps {
   onChange: (updates: Partial<Listing>) => void
   error?: string
   onClearError?: (field?: string) => void
+  hideHeader?: boolean
 }
 
-const Step4Pricing = ({ data, onChange, error, onClearError }: Step4PricingProps) => {
+const Step4Pricing = ({ data, onChange, error, onClearError, hideHeader = false }: Step4PricingProps) => {
   const moveInDateRef = useRef<HTMLDivElement>(null)
   
   // Focus move-in date field when there's an error related to it
@@ -84,8 +85,14 @@ const Step4Pricing = ({ data, onChange, error, onClearError }: Step4PricingProps
 
   return (
     <div>
-      <h2 className="text-xl sm:text-[1.375rem] font-semibold text-gray-900 mb-1">Pricing</h2>
-      <p className="text-[0.9625rem] text-gray-600 mb-4">Rent and deposit (per person — for the room, not the entire flat)</p>
+      {!hideHeader && (
+        <>
+          <h2 className="text-xl sm:text-[1.375rem] font-semibold text-gray-900 mb-1">Pricing</h2>
+          <p className="text-[0.9625rem] text-gray-600 mb-4">
+            Rent and deposit (per person — for the room, not the entire flat)
+          </p>
+        </>
+      )}
 
       {/* Show general error only if it's not a move-in date error (move-in date errors show below the field) */}
       {error && !error.includes('Move-in date') && !error.includes('move-in date') && (

@@ -69,6 +69,23 @@ const RoomDetails = ({ listing, className = '' }: RoomDetailsProps) => {
         </div>
       </div>
 
+      {(listing.societyName?.trim() || listing.currentFlatmates) && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+          {listing.societyName?.trim() ? (
+            <div className="p-3 bg-stone-50 rounded-lg border border-stone-100">
+              <div className="text-xs text-gray-600">Society / building</div>
+              <div className="text-sm font-semibold text-gray-900">{listing.societyName}</div>
+            </div>
+          ) : null}
+          {listing.currentFlatmates ? (
+            <div className="p-3 bg-stone-50 rounded-lg border border-stone-100">
+              <div className="text-xs text-gray-600">Current flatmates</div>
+              <div className="text-sm font-semibold text-gray-900">{listing.currentFlatmates}</div>
+            </div>
+          ) : null}
+        </div>
+      )}
+
       {listing.description && listing.description.trim() && (
         <div className="border-t border-stone-200 pt-4">
           <h3 className="text-base font-semibold text-gray-900 mb-3">Description</h3>

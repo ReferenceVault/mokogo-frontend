@@ -2,8 +2,8 @@ import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useStore } from '@/store/useStore'
 import { usersApi, uploadApi } from '@/services/api'
-import DateOfBirthSelector from '@/components/DateOfBirthSelector'
-import { User, Mail, Phone, Calendar, Users, Briefcase, Building, MapPin, FileText, Cigarette, Wine, Utensils, X, Clock, Copy, Heart } from 'lucide-react'
+import { isValidIndianMobile10Digits } from '@/utils/listerProfile'
+import { User, Mail, Phone, Calendar, Users, Briefcase, Building, FileText, Cigarette, Wine, Utensils, X, Clock, Copy, Heart } from 'lucide-react'
 
 const ProfileContent = () => {
   const navigate = useNavigate()
@@ -33,12 +33,9 @@ const ProfileContent = () => {
     lastName: nameParts.last,
     email: user?.email || '',
     phone: userData?.phoneNumber || userData?.phone || '',
-    dateOfBirth: userData?.dateOfBirth || '',
     gender: userData?.gender || '',
     occupation: userData?.occupation || '',
     companyName: userData?.companyName || '',
-    currentCity: userData?.currentCity || '',
-    area: userData?.area || '',
     about: userData?.about || '',
     smoking: userData?.smoking || '',
     drinking: userData?.drinking || '',
@@ -58,12 +55,9 @@ const ProfileContent = () => {
   // Refs for form fields to scroll to on validation error
   const firstNameRef = useRef<HTMLInputElement>(null)
   const lastNameRef = useRef<HTMLInputElement>(null)
-  const dateOfBirthRef = useRef<HTMLDivElement>(null)
   const genderRef = useRef<HTMLSelectElement>(null)
   const occupationRef = useRef<HTMLInputElement>(null)
   const companyNameRef = useRef<HTMLInputElement>(null)
-  const currentCityRef = useRef<HTMLInputElement>(null)
-  const areaRef = useRef<HTMLInputElement>(null)
   const aboutRef = useRef<HTMLTextAreaElement>(null)
   const smokingRef = useRef<HTMLSelectElement>(null)
   const drinkingRef = useRef<HTMLSelectElement>(null)
@@ -73,12 +67,9 @@ const ProfileContent = () => {
   const fieldRefs: Record<string, React.RefObject<any>> = {
     firstName: firstNameRef,
     lastName: lastNameRef,
-    dateOfBirth: dateOfBirthRef,
     gender: genderRef,
     occupation: occupationRef,
     companyName: companyNameRef,
-    currentCity: currentCityRef,
-    area: areaRef,
     about: aboutRef,
     smoking: smokingRef,
     drinking: drinkingRef,
@@ -99,24 +90,6 @@ const ProfileContent = () => {
         const firstName = nameParts[0] || ''
         const lastName = nameParts.slice(1).join(' ') || ''
         
-        // Format date of birth if exists
-        let dateOfBirth = ''
-        if (profile.dateOfBirth) {
-          // If already in YYYY-MM-DD format, use it directly
-          if (/^\d{4}-\d{2}-\d{2}$/.test(profile.dateOfBirth)) {
-            dateOfBirth = profile.dateOfBirth
-          } else {
-            // Otherwise parse it
-            const date = new Date(profile.dateOfBirth)
-            if (!isNaN(date.getTime())) {
-              const year = date.getFullYear()
-              const month = String(date.getMonth() + 1).padStart(2, '0')
-              const day = String(date.getDate()).padStart(2, '0')
-              dateOfBirth = `${year}-${month}-${day}`
-            }
-          }
-        }
-        
         const rawPhone = (profile.phoneNumber || '').toString().trim()
         const phoneDigits = rawPhone.replace(/\D/g, '')
         const phone10 = phoneDigits.length > 10 ? phoneDigits.slice(-10) : phoneDigits
@@ -129,12 +102,9 @@ const ProfileContent = () => {
             lastName,
             email: profile.email || '',
             phone: keepPhone ? prev.phone : phone10,
-            dateOfBirth,
             gender: profile.gender || '',
             occupation: profile.occupation || '',
             companyName: profile.companyName || '',
-            currentCity: profile.currentCity || '',
-            area: profile.area || '',
             about: profile.about || '',
             smoking: profile.smoking || '',
             drinking: profile.drinking || '',
@@ -278,19 +248,16 @@ const ProfileContent = () => {
     }
   }
 
-  const isPhoneValidFormat = (p: string) => /^[6-9]\d{9}$/.test((p || '').replace(/\D/g, ''))
+  const isPhoneValidFormat = (p: string) => isValidIndianMobile10Digits(p)
 
   const validate = () => {
     const newErrors: Record<string, string> = {}
     
     if (!formData.firstName.trim()) newErrors.firstName = 'First name is required'
     if (!formData.lastName.trim()) newErrors.lastName = 'Last name is required'
-    if (!formData.dateOfBirth) newErrors.dateOfBirth = 'Date of birth is required'
     if (!formData.gender) newErrors.gender = 'Gender is required'
     if (!formData.occupation.trim()) newErrors.occupation = 'Occupation is required'
     if (!formData.companyName.trim()) newErrors.companyName = 'Company name is required'
-    if (!formData.currentCity.trim()) newErrors.currentCity = 'Current city is required'
-    if (!formData.area.trim()) newErrors.area = 'Area is required'
     if (!formData.about.trim()) newErrors.about = 'About you is required'
     if (formData.about.length > 500) newErrors.about = 'About you must be 500 characters or less'
     if (!formData.smoking) newErrors.smoking = 'Smoking preference is required'
@@ -300,7 +267,7 @@ const ProfileContent = () => {
     // Phone number validation (optional). Skip if already saved so we don't block saving other fields.
     if (!hasSavedPhoneNumber && formData.phone && formData.phone.trim() !== '') {
       const digitsOnly = formData.phone.replace(/\D/g, '')
-      if (digitsOnly.length !== 10 || !/^[6-9]\d{9}$/.test(digitsOnly)) {
+      if (digitsOnly.length !== 10 || !isValidIndianMobile10Digits(digitsOnly)) {
         newErrors.phone = 'Please enter a valid 10-digit mobile number (starting with 6–9)'
       }
     }
@@ -340,12 +307,9 @@ const ProfileContent = () => {
       const updateData = {
         name: `${formData.firstName} ${formData.lastName}`.trim(),
         ...(formData.phone && formData.phone.trim() && { phoneNumber: formData.phone.trim().replace(/\D/g, '') }),
-        dateOfBirth: formData.dateOfBirth,
         gender: formData.gender,
         occupation: formData.occupation,
         companyName: formData.companyName,
-        currentCity: formData.currentCity,
-        area: formData.area,
         about: formData.about,
         smoking: formData.smoking,
         drinking: formData.drinking,
@@ -649,43 +613,27 @@ const ProfileContent = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div ref={dateOfBirthRef}>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-gray-400" />
-                Date of Birth <span className="text-red-500">*</span>
-              </label>
-              <DateOfBirthSelector
-                value={formData.dateOfBirth}
-                onChange={(value) => handleChange('dateOfBirth', value)}
-                error={errors.dateOfBirth}
-              />
-              {errors.dateOfBirth && (
-                <p className="text-xs text-red-500 mt-1">{errors.dateOfBirth}</p>
-              )}
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-2">
-                <Users className="w-4 h-4 text-gray-400" />
-                Gender <span className="text-red-500">*</span>
-              </label>
-              <select
-                ref={genderRef}
-                value={formData.gender}
-                onChange={(e) => handleChange('gender', e.target.value)}
-                className={`w-full px-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 ${
-                  errors.gender ? 'border-red-500' : 'border-gray-300'
-                }`}
-              >
-                <option value="">Select gender</option>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-                <option value="Other">Other</option>
-              </select>
-              {errors.gender && (
-                <p className="text-xs text-red-500 mt-1">{errors.gender}</p>
-              )}
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-2">
+              <Users className="w-4 h-4 text-gray-400" />
+              Gender <span className="text-red-500">*</span>
+            </label>
+            <select
+              ref={genderRef}
+              value={formData.gender}
+              onChange={(e) => handleChange('gender', e.target.value)}
+              className={`w-full max-w-md px-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 ${
+                errors.gender ? 'border-red-500' : 'border-gray-300'
+              }`}
+            >
+              <option value="">Select gender</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
+            {errors.gender && (
+              <p className="text-xs text-red-500 mt-1">{errors.gender}</p>
+            )}
           </div>
         </div>
       </section>
@@ -740,54 +688,6 @@ const ProfileContent = () => {
         </div>
       </section>
 
-      {/* Location Information */}
-      <section className="mb-8">
-        <div className="flex items-center gap-2 mb-4">
-          <MapPin className="w-5 h-5 text-orange-500" />
-          <h2 className="text-lg font-semibold text-gray-900">Location Information</h2>
-        </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-gray-400" />
-              Current City <span className="text-red-500">*</span>
-            </label>
-            <input
-              ref={currentCityRef}
-              type="text"
-              value={formData.currentCity}
-              onChange={(e) => handleChange('currentCity', e.target.value)}
-              className={`w-full px-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 ${
-                errors.currentCity ? 'border-red-500' : 'border-gray-300'
-              }`}
-              placeholder="Enter your current city"
-            />
-            {errors.currentCity && (
-              <p className="text-xs text-red-500 mt-1">{errors.currentCity}</p>
-            )}
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-gray-400" />
-              Area <span className="text-red-500">*</span>
-            </label>
-            <input
-              ref={areaRef}
-              type="text"
-              value={formData.area}
-              onChange={(e) => handleChange('area', e.target.value)}
-              className={`w-full px-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 ${
-                errors.area ? 'border-red-500' : 'border-gray-300'
-              }`}
-              placeholder="Enter your area/locality"
-            />
-            {errors.area && (
-              <p className="text-xs text-red-500 mt-1">{errors.area}</p>
-            )}
-          </div>
-        </div>
-      </section>
-
       {/* About You */}
       <section className="mb-8">
         <div className="flex items-center gap-2 mb-4">
@@ -836,6 +736,11 @@ const ProfileContent = () => {
           <h2 className="text-lg font-semibold text-gray-900">Lifestyle Preferences</h2>
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
+          <div className="p-3 bg-blue-50 border border-blue-100 rounded-lg">
+            <p className="text-xs text-blue-800 leading-relaxed">
+              These preferences are private and used only to recommend compatible homes and flatmates.
+            </p>
+          </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-2">
               <Cigarette className="w-4 h-4 text-gray-400" />

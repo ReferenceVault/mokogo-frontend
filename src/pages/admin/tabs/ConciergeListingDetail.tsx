@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { conciergeApi } from '@/services/api'
+import { splitFullName } from '@/utils/listerProfile'
 import { ArrowLeft, Copy, RefreshCw, AlertCircle } from 'lucide-react'
 
 const LISTING_STATUS_OPTIONS = [
@@ -134,6 +135,8 @@ export function ConciergeListingDetail({ listingId, onBack, onUpdated }: Concier
       </div>
     )
   }
+
+  const listerNameParts = splitFullName((listing.conciergeListerName as string) || '')
 
   return (
     <div>
@@ -433,8 +436,12 @@ export function ConciergeListingDetail({ listingId, onBack, onUpdated }: Concier
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Lister Profile</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <div>
-            <span className="text-gray-500">Name:</span>{' '}
-            {(listing.conciergeListerName as string) || '—'}
+            <span className="text-gray-500">First name:</span>{' '}
+            {listerNameParts.first || '—'}
+          </div>
+          <div>
+            <span className="text-gray-500">Last name:</span>{' '}
+            {listerNameParts.last || '—'}
           </div>
           <div>
             <span className="text-gray-500">Email:</span>{' '}

@@ -11,6 +11,7 @@ import { Listing } from '@/types'
 import { handleLogout as handleLogoutUtil } from '@/utils/auth'
 import { isListingLimitError } from '@/utils/errorHandler'
 import { normalizeVibeTagsOnePerGroup } from '@/utils/miko'
+import { generateListingTitle } from '@/utils/listingTitle'
 
 import { listingsApi, CreateListingRequest } from '@/services/api'
 import { Search, LayoutGrid, Home, MessageSquare, Bookmark, Calendar, Plus, Sparkles } from 'lucide-react'
@@ -154,6 +155,7 @@ const ListingWizard = () => {
           deposit: 0,
           moveInDate: '',
           furnishingLevel: '',
+          currentFlatmates: undefined,
           flatAmenities: [],
           societyAmenities: [],
           preferredGender: '',
@@ -214,6 +216,7 @@ const ListingWizard = () => {
         deposit: 0,
         moveInDate: '',
         furnishingLevel: '',
+        currentFlatmates: undefined,
         flatAmenities: [],
         societyAmenities: [],
         preferredGender: '',
@@ -265,7 +268,7 @@ const ListingWizard = () => {
       // When editing, include all fields that have values
       // When creating, ONLY include fields from validated steps
       const draftData: Partial<CreateListingRequest> = {
-        title: dataToSave.title || generateTitle(),
+        title: dataToSave.title || generateListingTitle(dataToSave),
       }
 
       // Check if we have a real listing ID (from backend, not a temporary one)
@@ -308,6 +311,9 @@ const ListingWizard = () => {
         }
         if (dataToSave.bathroomType && dataToSave.bathroomType.trim()) {
           draftData.bathroomType = dataToSave.bathroomType
+        }
+        if (dataToSave.currentFlatmates) {
+          draftData.currentFlatmates = dataToSave.currentFlatmates
         }
         if (dataToSave.flatAmenities && dataToSave.flatAmenities.length > 0) {
           draftData.flatAmenities = dataToSave.flatAmenities
@@ -375,6 +381,9 @@ const ListingWizard = () => {
           }
           if (dataToSave.bathroomType && dataToSave.bathroomType.trim()) {
             draftData.bathroomType = dataToSave.bathroomType
+          }
+          if (dataToSave.currentFlatmates) {
+            draftData.currentFlatmates = dataToSave.currentFlatmates
           }
           if (dataToSave.flatAmenities && dataToSave.flatAmenities.length > 0) {
             draftData.flatAmenities = dataToSave.flatAmenities
@@ -451,6 +460,9 @@ const ListingWizard = () => {
             }
             if (dataToSave.bathroomType && dataToSave.bathroomType.trim()) {
               draftData.bathroomType = dataToSave.bathroomType
+            }
+            if (dataToSave.currentFlatmates) {
+              draftData.currentFlatmates = dataToSave.currentFlatmates
             }
             if (dataToSave.flatAmenities && dataToSave.flatAmenities.length > 0) {
               draftData.flatAmenities = dataToSave.flatAmenities
@@ -768,6 +780,7 @@ const ListingWizard = () => {
           if (dataToSave.roomType && dataToSave.roomType.trim()) updateData.roomType = dataToSave.roomType
           if (dataToSave.furnishingLevel && dataToSave.furnishingLevel.trim()) updateData.furnishingLevel = dataToSave.furnishingLevel
           if (dataToSave.bathroomType && dataToSave.bathroomType.trim()) updateData.bathroomType = dataToSave.bathroomType
+          if (dataToSave.currentFlatmates) updateData.currentFlatmates = dataToSave.currentFlatmates
           if (dataToSave.flatAmenities && dataToSave.flatAmenities.length > 0) updateData.flatAmenities = dataToSave.flatAmenities
           if (dataToSave.societyAmenities && dataToSave.societyAmenities.length > 0) updateData.societyAmenities = dataToSave.societyAmenities
         }
@@ -823,6 +836,7 @@ const ListingWizard = () => {
           moveInDate: formatDateForInput(savedListing.moveInDate) || dataToSave.moveInDate || '',
           furnishingLevel: savedListing.furnishingLevel || dataToSave.furnishingLevel || '',
           bathroomType: savedListing.bathroomType || dataToSave.bathroomType,
+          currentFlatmates: savedListing.currentFlatmates || dataToSave.currentFlatmates,
           flatAmenities: savedListing.flatAmenities || dataToSave.flatAmenities || [],
           societyAmenities: savedListing.societyAmenities || dataToSave.societyAmenities || [],
           preferredGender: savedListing.preferredGender || dataToSave.preferredGender || '',
@@ -966,16 +980,6 @@ const ListingWizard = () => {
     return hasPhotos && hasLocation && hasDetails && hasPricing && hasPreferences
   }
 
-  const generateTitle = (): string => {
-    const roomType = listingData.roomType === 'Private Room' ? 'Private Room' : listingData.roomType === 'Shared Room' ? 'Shared Room' : 'Room'
-    const bhk = listingData.bhkType || ''
-    const locality = listingData.locality || listingData.city || ''
-    const rent = listingData.rent ? `₹${listingData.rent.toLocaleString()}` : ''
-    const furnishing = listingData.furnishingLevel || ''
-    
-    return `${roomType} in ${bhk} · ${locality} · ${rent} · ${furnishing}`
-  }
-
   /**
    * Handles final "Create Listing" button click
    * 1. Validates ALL steps (not just current step)
@@ -1056,7 +1060,7 @@ const ListingWizard = () => {
     setIsCreating(true)
     try {
       const dataToSave = listingDataRef.current
-      const title = generateTitle()
+      const title = generateListingTitle(dataToSave)
       
       const listingId = currentListing?.id || listingDataRef.current.id
       const isUpdating = listingId && !listingId.startsWith('listing-')
@@ -1082,6 +1086,7 @@ const ListingWizard = () => {
         moveInDate: dataToSave.moveInDate || '',
         furnishingLevel: dataToSave.furnishingLevel || '',
         bathroomType: dataToSave.bathroomType,
+        currentFlatmates: dataToSave.currentFlatmates,
         flatAmenities: dataToSave.flatAmenities || [],
         societyAmenities: dataToSave.societyAmenities || [],
         preferredGender: dataToSave.preferredGender || '',
@@ -1114,6 +1119,7 @@ const ListingWizard = () => {
         moveInDate: formatDateForInput(savedListing.moveInDate),
         furnishingLevel: savedListing.furnishingLevel,
         bathroomType: savedListing.bathroomType,
+        currentFlatmates: savedListing.currentFlatmates,
         flatAmenities: savedListing.flatAmenities,
         societyAmenities: savedListing.societyAmenities,
         preferredGender: savedListing.preferredGender,
@@ -1260,7 +1266,7 @@ const ListingWizard = () => {
       try {
         setIsSaving(true)
         const draftData: CreateListingRequest = {
-          title: updated.title || generateTitle(),
+          title: updated.title || generateListingTitle(updated),
           city: updated.city || undefined,
           locality: updated.locality || undefined,
           societyName: updated.societyName || undefined,
@@ -1272,6 +1278,7 @@ const ListingWizard = () => {
           moveInDate: updated.moveInDate || undefined,
           furnishingLevel: updated.furnishingLevel || undefined,
           bathroomType: updated.bathroomType || undefined,
+          currentFlatmates: updated.currentFlatmates || undefined,
           flatAmenities: updated.flatAmenities && updated.flatAmenities.length > 0 ? updated.flatAmenities : undefined,
           societyAmenities: updated.societyAmenities && updated.societyAmenities.length > 0 ? updated.societyAmenities : undefined,
           preferredGender: updated.preferredGender || undefined,
@@ -1291,7 +1298,7 @@ const ListingWizard = () => {
         // Map API response to frontend format
         const mappedListing: Listing = {
           id: savedListing._id || savedListing.id,
-          title: savedListing.title || updated.title || generateTitle(),
+          title: savedListing.title || updated.title || generateListingTitle(updated),
           city: savedListing.city || updated.city || '',
           locality: savedListing.locality || updated.locality || '',
           societyName: savedListing.societyName || updated.societyName,
@@ -1303,6 +1310,7 @@ const ListingWizard = () => {
           moveInDate: formatDateForInput(savedListing.moveInDate) || updated.moveInDate || '',
           furnishingLevel: savedListing.furnishingLevel || updated.furnishingLevel || '',
           bathroomType: savedListing.bathroomType || updated.bathroomType,
+          currentFlatmates: savedListing.currentFlatmates || updated.currentFlatmates,
           flatAmenities: savedListing.flatAmenities || updated.flatAmenities || [],
           societyAmenities: savedListing.societyAmenities || updated.societyAmenities || [],
           preferredGender: savedListing.preferredGender || updated.preferredGender || '',
