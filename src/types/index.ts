@@ -57,7 +57,7 @@ export interface Listing {
   moveInDate: string
   furnishingLevel: string
   bathroomType?: string
-  /** Standardized count: '0'..'6' or '6+' */
+  /** Standardized count: '0'..'6' */
   currentFlatmates?: string
   flatAmenities: string[]
   societyAmenities: string[]

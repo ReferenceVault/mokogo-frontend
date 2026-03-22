@@ -126,6 +126,14 @@ function App() {
           }
         />
         <Route
+          path="/admin/dashboard/concierge/edit/:listingId"
+          element={
+            <AdminProtectedRoute>
+              <ConciergeCreateDraftPage />
+            </AdminProtectedRoute>
+          }
+        />
+        <Route
           path="/admin/dashboard/user/:userId"
           element={
             <AdminProtectedRoute>

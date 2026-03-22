@@ -431,9 +431,19 @@ export function ConciergeListingDetail({ listingId, onBack, onUpdated }: Concier
         </div>
       ) : null}
 
-      {/* Lister info summary */}
+      {/* Lister info summary — same field set as user Profile + concierge create form */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Lister Profile</h2>
+        {(listing.conciergeListerProfileImageUrl as string) && (
+          <div className="mb-4 flex items-center gap-3">
+            <img
+              src={listing.conciergeListerProfileImageUrl as string}
+              alt="Lister"
+              className="w-16 h-16 rounded-full object-cover border border-gray-200"
+            />
+            <span className="text-sm text-gray-500">Profile photo</span>
+          </div>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <div>
             <span className="text-gray-500">First name:</span>{' '}
@@ -452,6 +462,30 @@ export function ConciergeListingDetail({ listingId, onBack, onUpdated }: Concier
             {(listing.conciergeListerPhone as string) || '—'}
           </div>
           <div>
+            <span className="text-gray-500">Gender:</span>{' '}
+            {(listing.conciergeListerGender as string) || '—'}
+          </div>
+          <div>
+            <span className="text-gray-500">Occupation / role:</span>{' '}
+            {(listing.conciergeListerOccupation as string) || '—'}
+          </div>
+          <div>
+            <span className="text-gray-500">Company name:</span>{' '}
+            {(listing.conciergeListerCompanyName as string) || '—'}
+          </div>
+          <div>
+            <span className="text-gray-500">Smoking:</span>{' '}
+            {(listing.conciergeListerSmoking as string) || '—'}
+          </div>
+          <div>
+            <span className="text-gray-500">Drinking:</span>{' '}
+            {(listing.conciergeListerDrinking as string) || '—'}
+          </div>
+          <div>
+            <span className="text-gray-500">Food preference:</span>{' '}
+            {(listing.conciergeListerFoodPreference as string) || '—'}
+          </div>
+          <div>
             <span className="text-gray-500">Added by:</span>{' '}
             {(listing.conciergeAddedBy as string) || '—'}
           </div>
@@ -460,6 +494,12 @@ export function ConciergeListingDetail({ listingId, onBack, onUpdated }: Concier
             {formatDate(listing.conciergeDateAdded as string)}
           </div>
         </div>
+        {(listing.conciergeListerAbout as string)?.trim() ? (
+          <div className="mt-4 pt-4 border-t border-gray-100">
+            <span className="text-gray-500 text-sm block mb-1">About</span>
+            <p className="text-sm text-gray-800 whitespace-pre-wrap">{listing.conciergeListerAbout as string}</p>
+          </div>
+        ) : null}
       </div>
     </div>
   )

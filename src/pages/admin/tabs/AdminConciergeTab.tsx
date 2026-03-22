@@ -3,7 +3,6 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { conciergeApi } from '@/services/api'
 import { Plus, RefreshCw, AlertCircle } from 'lucide-react'
 import { MoveInDateField } from '@/components/MoveInDateField'
-import { ConciergeListingDetail } from './ConciergeListingDetail'
 
 const LISTING_STATUS_OPTIONS = [
   { value: 'all', label: 'All' },
@@ -84,8 +83,6 @@ export function AdminConciergeTab() {
   const [searchDebounced, setSearchDebounced] = useState('')
   const createSuccess = (location.state as { createSuccess?: string })?.createSuccess ?? null
   const [statusUpdating, setStatusUpdating] = useState(false)
-  const [selectedListingId, setSelectedListingId] = useState<string | null>(null)
-
   useEffect(() => {
     const t = setTimeout(() => setSearchDebounced(search), 400)
     return () => clearTimeout(t)
@@ -320,13 +317,7 @@ export function AdminConciergeTab() {
         </div>
       )}
 
-      {selectedListingId ? (
-        <ConciergeListingDetail
-          listingId={selectedListingId}
-          onBack={() => setSelectedListingId(null)}
-          onUpdated={fetchListings}
-        />
-      ) : loading ? (
+      {loading ? (
         <div className="flex items-center justify-center py-16">
           <RefreshCw className="w-8 h-8 text-orange-500 animate-spin" />
         </div>
@@ -337,11 +328,11 @@ export function AdminConciergeTab() {
               key={listing._id}
               role="button"
               tabIndex={0}
-              onClick={() => setSelectedListingId(listing._id)}
+              onClick={() => navigate(`/admin/dashboard/concierge/edit/${listing._id}`)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault()
-                  setSelectedListingId(listing._id)
+                  navigate(`/admin/dashboard/concierge/edit/${listing._id}`)
                 }
               }}
               className="group bg-white rounded-2xl border border-gray-200/80 shadow-md overflow-hidden hover:shadow-xl hover:shadow-orange-500/10 hover:border-orange-200 transition-all duration-300 hover:-translate-y-1 cursor-pointer text-left outline-none focus-visible:ring-2 focus-visible:ring-orange-400 focus-visible:ring-offset-2"

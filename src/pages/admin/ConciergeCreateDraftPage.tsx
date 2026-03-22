@@ -1,10 +1,35 @@
-import { useState, useEffect, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect, useMemo, useRef } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import Footer from '@/components/Footer'
 import SocialSidebar from '@/components/SocialSidebar'
 import DashboardHeader from '@/components/DashboardHeader'
 import DashboardSidebar from '@/components/DashboardSidebar'
-import { LayoutGrid, Home, MessageSquare, Settings, Users, Flag, Briefcase, ArrowLeft, Image } from 'lucide-react'
+import {
+  LayoutGrid,
+  Home,
+  MessageSquare,
+  Settings,
+  Users,
+  Flag,
+  Briefcase,
+  ArrowLeft,
+  Image,
+  User,
+  Mail,
+  Phone,
+  Building,
+  FileText,
+  Cigarette,
+  Wine,
+  Utensils,
+  X,
+  Clock,
+  Copy,
+  Heart,
+  Calendar,
+  RefreshCw,
+  AlertCircle,
+} from 'lucide-react'
 import { conciergeApi, uploadApi } from '@/services/api'
 import { useStore } from '@/store/useStore'
 import {
@@ -19,6 +44,11 @@ import Step2Location from '@/pages/listing/steps/Step2Location'
 import Step3Details from '@/pages/listing/steps/Step3Details'
 import Step4Pricing from '@/pages/listing/steps/Step4Pricing'
 import Step5Preferences from '@/pages/listing/steps/Step5Preferences'
+import {
+  createEmptyConciergeDraftForm,
+  conciergeListingRecordToFormData,
+  parseOutreachLogFromListing,
+} from '@/utils/conciergeDraftFormFromListing'
 
 const SECTIONS = [
   { id: 'photos', title: 'Photos', icon: Image },
@@ -37,63 +67,128 @@ const OUTREACH_STATUS_OPTIONS = [
   { value: 'declined', label: 'Declined' },
 ]
 
+/** Same copy as user Profile “About You” templates (ProfileContent). */
+const LISTER_ABOUT_TEMPLATES: {
+  id: string
+  title: string
+  icon: typeof Briefcase
+  content: string
+}[] = [
+  {
+    id: 'professional',
+    title: 'Professional Background',
+    icon: Briefcase,
+    content:
+      "I'm a software engineer working at TCS with 5 years of experience in the tech industry. I'm a clean, responsible person with excellent references. I don't smoke, rarely have guests, and prefer a quiet environment for work. I maintain a regular work schedule and value cleanliness and organization in shared spaces.",
+  },
+  {
+    id: 'lifestyle',
+    title: 'Clean & Quiet Lifestyle',
+    icon: Calendar,
+    content:
+      "I'm a marketing professional who values cleanliness and a peaceful environment. I have flexible work hours and am very respectful of shared spaces. I maintain a clean, quiet lifestyle and prefer organized living. I'm looking for a roommate who shares similar values of respect and cleanliness.",
+  },
+  {
+    id: 'tech-worker',
+    title: 'Tech Professional',
+    icon: Briefcase,
+    content:
+      "I work in the tech industry and maintain a clean, quiet lifestyle. I'm organized, responsible, and prefer a peaceful living environment. I respect shared spaces and believe in open communication with roommates. I enjoy a balanced lifestyle with time for both work and personal interests.",
+  },
+  {
+    id: 'creative',
+    title: 'Creative Professional',
+    icon: Heart,
+    content:
+      "I'm a UI/UX designer who loves creativity and tidy living spaces. I'm respectful, enjoy cooking, and maintain a clean environment. I value friendly interactions and mutual respect with roommates. I prefer a calm, organized home where I can focus on my work and hobbies.",
+  },
+  {
+    id: 'working-professional',
+    title: 'Working Professional',
+    icon: Clock,
+    content:
+      "I'm a working professional with a steady income and reliable employment. I'm ready to move in and can provide all necessary documents. I maintain a professional lifestyle, respect house rules, and value cleanliness. I'm looking for a comfortable living space with a responsible roommate.",
+  },
+  {
+    id: 'founder',
+    title: 'Founder & Entrepreneur',
+    icon: Briefcase,
+    content:
+      "I'm a founder building exciting projects and value focus, discipline, and a positive environment. My schedule can be busy, but I'm respectful of shared spaces and maintain a clean, organized lifestyle. I appreciate open communication and living with driven, like-minded individuals who value ambition and balance.",
+  },
+]
+
 export default function ConciergeCreateDraftPage() {
   const navigate = useNavigate()
+  const { listingId } = useParams<{ listingId?: string }>()
+  const isEditMode = Boolean(listingId)
   const user = useStore((state) => state.user)
   const [expandedSections, setExpandedSections] = useState<Set<number>>(new Set([0]))
-  const [formData, setFormData] = useState<Record<string, string | number | boolean | string[] | undefined>>({
-    photos: [],
-    city: '',
-    locality: '',
-    placeId: '',
-    latitude: undefined as number | undefined,
-    longitude: undefined as number | undefined,
-    formattedAddress: '',
-    societyName: '',
-    roomType: '',
-    buildingType: '',
-    bhkType: '',
-    furnishingLevel: '',
-    bathroomType: '',
-    rent: '',
-    deposit: '',
-    moveInDate: '',
-    description: '',
-    flatAmenities: [],
-    societyAmenities: [],
-    preferredGender: '',
-    foodPreference: '',
-    petPolicy: '',
-    smokingPolicy: '',
-    drinkingPolicy: '',
-    currentFlatmates: '',
-    lgbtqFriendly: undefined as boolean | undefined,
-    conciergeListerFirstName: '',
-    conciergeListerLastName: '',
-    conciergeListerEmail: '',
-    conciergeListerPhone: '',
-    conciergeListerOccupation: '',
-    conciergeSourcePlatform: '',
-    conciergeSourcePlatformOther: '',
-    conciergeSourceLink: '',
-    conciergeSourceUsername: '',
-    conciergeAddedBy: '',
-    conciergeOutreachChannel: '',
-    conciergeOutreachStatus: '',
-    conciergeFollowUpDate: '',
-  })
+  const [formData, setFormData] = useState<Record<string, string | number | boolean | string[] | undefined>>(
+    () => createEmptyConciergeDraftForm(),
+  )
+  const [listingLoading, setListingLoading] = useState(!!listingId)
+  const [listingLoadError, setListingLoadError] = useState<string | null>(null)
+  const [loadedListing, setLoadedListing] = useState<Record<string, unknown> | null>(null)
+  const [actionsBusy, setActionsBusy] = useState(false)
   /** Pending outreach log rows saved when the draft is created (same model as listing detail). */
   const [outreachLogEntries, setOutreachLogEntries] = useState<Array<{ date: string; note: string }>>([])
   const [newLogDate, setNewLogDate] = useState(() => new Date().toISOString().slice(0, 10))
   const [newLogNote, setNewLogNote] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [photoUploading, setPhotoUploading] = useState(false)
+  const [listerPhotoUploading, setListerPhotoUploading] = useState(false)
+  const [showListerAboutTemplates, setShowListerAboutTemplates] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const listerTemplateModalRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [])
+
+  useEffect(() => {
+    if (!listingId) {
+      setListingLoading(false)
+      setLoadedListing(null)
+      return
+    }
+    let cancelled = false
+    setListingLoading(true)
+    setListingLoadError(null)
+    conciergeApi
+      .getById(listingId)
+      .then((data) => {
+        if (cancelled) return
+        const rec = data as Record<string, unknown>
+        setLoadedListing(rec)
+        setFormData(conciergeListingRecordToFormData(rec))
+        setOutreachLogEntries(parseOutreachLogFromListing(rec))
+        setExpandedSections(new Set())
+      })
+      .catch((e: unknown) => {
+        if (cancelled) return
+        const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message
+        setListingLoadError(msg || 'Failed to load listing.')
+      })
+      .finally(() => {
+        if (!cancelled) setListingLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [listingId])
+
+  useEffect(() => {
+    if (!showListerAboutTemplates) return
+    const onDown = (ev: MouseEvent) => {
+      if (listerTemplateModalRef.current && !listerTemplateModalRef.current.contains(ev.target as Node)) {
+        setShowListerAboutTemplates(false)
+      }
+    }
+    document.addEventListener('mousedown', onDown)
+    return () => document.removeEventListener('mousedown', onDown)
+  }, [showListerAboutTemplates])
 
   const toggleSection = (index: number) => {
     setExpandedSections((prev) => {
@@ -120,14 +215,22 @@ export default function ConciergeCreateDraftPage() {
     setError(null)
     try {
       const payload = buildPayload()
-      const created = await conciergeApi.createDraft(payload)
-      const previewUrl = `${window.location.origin}/preview/${created.previewToken}`
-      navigate('/admin/dashboard', {
-        state: { openTab: 'concierge', createSuccess: `Draft saved. Preview link: ${previewUrl}` },
-      })
+      if (isEditMode && listingId) {
+        const updated = await conciergeApi.updateListing(listingId, payload)
+        setLoadedListing(updated as Record<string, unknown>)
+        navigate('/admin/dashboard', {
+          state: { openTab: 'concierge', createSuccess: 'Draft listing updated.' },
+        })
+      } else {
+        const created = await conciergeApi.createDraft(payload)
+        const previewUrl = `${window.location.origin}/preview/${created.previewToken}`
+        navigate('/admin/dashboard', {
+          state: { openTab: 'concierge', createSuccess: `Draft saved. Preview link: ${previewUrl}` },
+        })
+      }
     } catch (e: unknown) {
       const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message
-      setError(msg || 'Failed to create draft.')
+      setError(msg || (isEditMode ? 'Failed to update draft.' : 'Failed to create draft.'))
     } finally {
       setSubmitting(false)
     }
@@ -243,6 +346,31 @@ export default function ConciergeCreateDraftPage() {
     handleChange('photos', current.filter((_, i) => i !== index))
   }
 
+  const handleListerPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      setError('Please select an image file.')
+      return
+    }
+    const maxSize = 2 * 1024 * 1024
+    if (file.size > maxSize) {
+      setError('Image size must be less than 2MB.')
+      return
+    }
+    setListerPhotoUploading(true)
+    setError(null)
+    try {
+      const url = await uploadApi.uploadProfileImage(file)
+      handleChange('conciergeListerProfileImageUrl', url)
+    } catch {
+      setError('Failed to upload lister photo. Please try again.')
+    } finally {
+      setListerPhotoUploading(false)
+      e.target.value = ''
+    }
+  }
+
   const buildPayload = () => {
     const flatAmenities = (formData.flatAmenities as string[]) || []
     const societyAmenities = (formData.societyAmenities as string[]) || []
@@ -299,6 +427,16 @@ export default function ConciergeCreateDraftPage() {
         return d ? d : undefined
       })(),
       conciergeListerOccupation: (formData.conciergeListerOccupation as string)?.trim() || undefined,
+      conciergeListerProfileImageUrl:
+        ((formData.conciergeListerProfileImageUrl as string) || '').trim() || undefined,
+      conciergeListerGender: ((formData.conciergeListerGender as string) || '').trim() || undefined,
+      conciergeListerCompanyName:
+        ((formData.conciergeListerCompanyName as string) || '').trim() || undefined,
+      conciergeListerAbout: ((formData.conciergeListerAbout as string) || '').trim() || undefined,
+      conciergeListerSmoking: ((formData.conciergeListerSmoking as string) || '').trim() || undefined,
+      conciergeListerDrinking: ((formData.conciergeListerDrinking as string) || '').trim() || undefined,
+      conciergeListerFoodPreference:
+        ((formData.conciergeListerFoodPreference as string) || '').trim() || undefined,
       conciergeSourcePlatform: (formData.conciergeSourcePlatform as string) || undefined,
       conciergeSourcePlatformOther: (formData.conciergeSourcePlatformOther as string)?.trim() || undefined,
       conciergeSourceLink: (formData.conciergeSourceLink as string)?.trim() || undefined,
@@ -308,8 +446,14 @@ export default function ConciergeCreateDraftPage() {
       conciergeOutreachStatus:
         ((formData.conciergeOutreachStatus as string) || '').trim() || 'not_contacted',
       conciergeFollowUpDate: ((formData.conciergeFollowUpDate as string) || '').trim() || undefined,
-      outreachLogEntries:
-        outreachLogEntries.length > 0
+      outreachLogEntries: isEditMode
+        ? outreachLogEntries
+            .filter((e) => e.note.trim())
+            .map((e) => ({
+              date: e.date || undefined,
+              note: e.note.trim(),
+            }))
+        : outreachLogEntries.length > 0
           ? outreachLogEntries.map((e) => ({
               date: e.date || undefined,
               note: e.note.trim(),
@@ -336,6 +480,113 @@ export default function ConciergeCreateDraftPage() {
   const listerPhoneDigits = ((formData.conciergeListerPhone as string) || '').replace(/\D/g, '')
   const listerPhoneInvalid =
     listerPhoneDigits.length > 0 && !isValidIndianMobile10Digits(listerPhoneDigits)
+
+  const copyPreviewLink = () => {
+    const t = loadedListing?.previewToken as string | undefined
+    if (!t) return
+    void navigator.clipboard.writeText(`${window.location.origin}/preview/${t}`)
+  }
+
+  const handleRegeneratePreviewLink = async () => {
+    if (!listingId) return
+    setActionsBusy(true)
+    setError(null)
+    try {
+      const res = await conciergeApi.regenerateLink(listingId)
+      setLoadedListing((prev) => (prev ? { ...prev, previewToken: res.previewToken } : prev))
+    } catch (e: unknown) {
+      const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message
+      setError(msg || 'Failed to regenerate link.')
+    } finally {
+      setActionsBusy(false)
+    }
+  }
+
+  const handlePublishOnBehalf = async () => {
+    if (!listingId) return
+    setActionsBusy(true)
+    setError(null)
+    try {
+      await conciergeApi.publishOnBehalf(listingId)
+      const fresh = await conciergeApi.getById(listingId)
+      setLoadedListing(fresh as Record<string, unknown>)
+      navigate('/admin/dashboard', { state: { openTab: 'concierge', createSuccess: 'Listing published on behalf of owner.' } })
+    } catch (e: unknown) {
+      const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message
+      setError(msg || 'Failed to publish.')
+    } finally {
+      setActionsBusy(false)
+    }
+  }
+
+  const handlePublishChanges = async () => {
+    if (!listingId) return
+    setActionsBusy(true)
+    setError(null)
+    try {
+      await conciergeApi.publishChanges(listingId)
+      const fresh = await conciergeApi.getById(listingId)
+      setLoadedListing(fresh as Record<string, unknown>)
+      setFormData(conciergeListingRecordToFormData(fresh as Record<string, unknown>))
+    } catch (e: unknown) {
+      const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message
+      setError(msg || 'Failed to publish changes.')
+    } finally {
+      setActionsBusy(false)
+    }
+  }
+
+  if (listingId && listingLoading) {
+    return (
+      <div className="min-h-screen bg-stone-100 flex flex-col">
+        <DashboardHeader
+          activeView="concierge"
+          onViewChange={() => navigate('/admin/dashboard')}
+          menuItems={[{ label: 'Dashboard', view: 'overview' }]}
+          userName={userName}
+          userEmail={userEmail}
+          userImageUrl={user?.profileImageUrl}
+          onLogout={() => navigate('/admin/login')}
+          onNavigateToOtherDashboard={() => navigate('/dashboard')}
+          otherDashboardLabel="User Dashboard"
+        />
+        <div className="flex flex-1 items-center justify-center py-24">
+          <RefreshCw className="w-10 h-10 text-orange-500 animate-spin" />
+        </div>
+        <Footer />
+      </div>
+    )
+  }
+
+  if (listingId && listingLoadError) {
+    return (
+      <div className="min-h-screen bg-stone-100 flex flex-col">
+        <DashboardHeader
+          activeView="concierge"
+          onViewChange={() => navigate('/admin/dashboard')}
+          menuItems={[{ label: 'Dashboard', view: 'overview' }]}
+          userName={userName}
+          userEmail={userEmail}
+          userImageUrl={user?.profileImageUrl}
+          onLogout={() => navigate('/admin/login')}
+          onNavigateToOtherDashboard={() => navigate('/dashboard')}
+          otherDashboardLabel="User Dashboard"
+        />
+        <div className="flex flex-1 flex-col items-center justify-center px-4 py-12">
+          <AlertCircle className="w-12 h-12 text-red-400 mb-3" />
+          <p className="text-red-800 text-center mb-4">{listingLoadError}</p>
+          <button
+            type="button"
+            onClick={() => navigate('/admin/dashboard', { state: { openTab: 'concierge' } })}
+            className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50"
+          >
+            Back to Concierge
+          </button>
+        </div>
+        <Footer />
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-stone-100 flex flex-col">
@@ -381,9 +632,62 @@ export default function ConciergeCreateDraftPage() {
               </button>
             </div>
             <div className="mb-3">
-              <h1 className="text-xl sm:text-[1.375rem] font-bold text-gray-900">Create Draft Listing</h1>
-              <p className="text-[0.825rem] text-gray-600">All fields are optional. Add details as needed.</p>
+              <h1 className="text-xl sm:text-[1.375rem] font-bold text-gray-900">
+                {isEditMode ? 'Edit draft listing' : 'Create Draft Listing'}
+              </h1>
+              <p className="text-[0.825rem] text-gray-600">
+                {isEditMode
+                  ? 'Same form as create: every field is shown; empty fields can be filled in now.'
+                  : 'All fields are optional. Add details as needed.'}
+              </p>
             </div>
+
+            {isEditMode && loadedListing && (
+              <div className="mb-4 p-4 bg-white rounded-lg border border-gray-200 shadow-sm space-y-3">
+                <p className="text-sm font-semibold text-gray-900">Preview &amp; publish</p>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    disabled={actionsBusy || !loadedListing.previewToken}
+                    onClick={copyPreviewLink}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    <Copy className="w-4 h-4" /> Copy preview link
+                  </button>
+                  <button
+                    type="button"
+                    disabled={actionsBusy}
+                    onClick={() => void handleRegeneratePreviewLink()}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${actionsBusy ? 'animate-spin' : ''}`} /> Regenerate link
+                  </button>
+                </div>
+                {(loadedListing.status as string) !== 'live' && (
+                  <button
+                    type="button"
+                    disabled={actionsBusy}
+                    onClick={() => void handlePublishOnBehalf()}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {actionsBusy ? 'Working…' : 'Publish on behalf'}
+                  </button>
+                )}
+                {loadedListing.conciergeHasUnpublishedEdits === true && (
+                  <div className="pt-2 border-t border-gray-100">
+                    <p className="text-xs text-amber-800 mb-2">This listing has unpublished edits (live on site).</p>
+                    <button
+                      type="button"
+                      disabled={actionsBusy}
+                      onClick={() => void handlePublishChanges()}
+                      className="px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 disabled:opacity-50"
+                    >
+                      Publish changes to live
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
 
             {error && (
               <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-800">{error}</div>
@@ -528,71 +832,258 @@ export default function ConciergeCreateDraftPage() {
                           )}
                           {section.id === 'lister' && (
                             <>
-                              <p className="text-xs text-gray-500 -mt-1 mb-2">
-                                Matches the user profile layout (first &amp; last name). Stored as a single full name for the listing.
+                              <p className="text-xs text-gray-500 -mt-1 mb-3">
+                                Same fields and groupings as the user Profile page. Optional for drafts; name is stored as
+                                first + last on the listing. Photo and &quot;About you&quot; appear on the public preview
+                                where configured.
                               </p>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+                              {/* Profile photo — matches Profile */}
+                              <div className="mb-6">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Profile Photo</label>
+                                <div className="flex items-center gap-4">
+                                  <div className="relative">
+                                    <input
+                                      id="concierge-lister-photo"
+                                      type="file"
+                                      accept="image/*"
+                                      className="hidden"
+                                      onChange={handleListerPhotoUpload}
+                                      disabled={listerPhotoUploading}
+                                    />
+                                    <label
+                                      htmlFor="concierge-lister-photo"
+                                      className={`w-20 h-20 rounded-full bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center text-white text-lg font-semibold cursor-pointer hover:opacity-90 transition-opacity overflow-hidden ${
+                                        listerPhotoUploading ? 'opacity-50 cursor-not-allowed' : ''
+                                      }`}
+                                    >
+                                      {(formData.conciergeListerProfileImageUrl as string) ? (
+                                        <img
+                                          src={formData.conciergeListerProfileImageUrl as string}
+                                          alt="Lister"
+                                          className="w-full h-full object-cover"
+                                        />
+                                      ) : (
+                                        ((formData.conciergeListerFirstName as string) || 'L').charAt(0).toUpperCase()
+                                      )}
+                                    </label>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-gray-500">Click to upload</p>
+                                    <p className="text-xs text-gray-400 mt-0.5">JPG, PNG or GIF. Max 2MB</p>
+                                    {listerPhotoUploading && (
+                                      <p className="text-xs text-orange-500 mt-1">Uploading…</p>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Basic Information */}
+                              <div className="flex items-center gap-2 mb-2">
+                                <User className="w-4 h-4 text-orange-500" />
+                                <p className="text-sm font-semibold text-gray-900">Basic Information</p>
+                              </div>
+                              <div className="border border-gray-200 rounded-lg p-4 space-y-4 mb-6 bg-white">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                  <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                                    <input
+                                      type="text"
+                                      value={(formData.conciergeListerFirstName as string) || ''}
+                                      onChange={(e) => handleChange('conciergeListerFirstName', e.target.value)}
+                                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                                      placeholder="Enter your first name"
+                                      autoComplete="given-name"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                                    <input
+                                      type="text"
+                                      value={(formData.conciergeListerLastName as string) || ''}
+                                      onChange={(e) => handleChange('conciergeListerLastName', e.target.value)}
+                                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                                      placeholder="Enter your last name"
+                                      autoComplete="family-name"
+                                    />
+                                  </div>
+                                </div>
                                 <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-1">First name</label>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
+                                    <Mail className="w-3.5 h-3.5 text-gray-400" />
+                                    Email
+                                  </label>
+                                  <input
+                                    type="email"
+                                    value={(formData.conciergeListerEmail as string) || ''}
+                                    onChange={(e) => handleChange('conciergeListerEmail', e.target.value)}
+                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                                    placeholder="owner@example.com"
+                                  />
+                                  <p className="text-xs text-gray-500 mt-1">Lister contact email (for outreach and claim flow).</p>
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
+                                    <Phone className="w-3.5 h-3.5 text-gray-400" />
+                                    Phone Number
+                                  </label>
+                                  <input
+                                    type="tel"
+                                    inputMode="numeric"
+                                    value={(formData.conciergeListerPhone as string) || ''}
+                                    onChange={(e) =>
+                                      handleChange('conciergeListerPhone', sanitizeIndianMobileInput(e.target.value))
+                                    }
+                                    className={`w-full border rounded-lg px-3 py-2 text-sm ${
+                                      listerPhoneInvalid ? 'border-red-500' : 'border-gray-300'
+                                    }`}
+                                    placeholder="10-digit mobile number (e.g., 9876543210)"
+                                    maxLength={10}
+                                  />
+                                  {listerPhoneInvalid && (
+                                    <p className="mt-1 text-xs text-red-600">{INDIAN_MOBILE_HINT}</p>
+                                  )}
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
+                                    <Users className="w-3.5 h-3.5 text-gray-400" />
+                                    Gender
+                                  </label>
+                                  <select
+                                    value={(formData.conciergeListerGender as string) || ''}
+                                    onChange={(e) => handleChange('conciergeListerGender', e.target.value)}
+                                    className="w-full max-w-md border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                                  >
+                                    <option value="">Select gender</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                    <option value="Other">Other</option>
+                                  </select>
+                                </div>
+                              </div>
+
+                              {/* Professional Information */}
+                              <div className="flex items-center gap-2 mb-2">
+                                <Briefcase className="w-4 h-4 text-orange-500" />
+                                <p className="text-sm font-semibold text-gray-900">Professional Information</p>
+                              </div>
+                              <div className="border border-gray-200 rounded-lg p-4 space-y-4 mb-6 bg-white">
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
+                                    <Briefcase className="w-3.5 h-3.5 text-gray-400" />
+                                    Occupation / Role
+                                  </label>
                                   <input
                                     type="text"
-                                    value={(formData.conciergeListerFirstName as string) || ''}
-                                    onChange={(e) => handleChange('conciergeListerFirstName', e.target.value)}
+                                    value={(formData.conciergeListerOccupation as string) || ''}
+                                    onChange={(e) => handleChange('conciergeListerOccupation', e.target.value)}
                                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                                    placeholder="First name"
-                                    autoComplete="given-name"
+                                    placeholder="e.g., Software Engineer, Marketing Manager"
                                   />
                                 </div>
                                 <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-1">Last name</label>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
+                                    <Building className="w-3.5 h-3.5 text-gray-400" />
+                                    Company Name
+                                  </label>
                                   <input
                                     type="text"
-                                    value={(formData.conciergeListerLastName as string) || ''}
-                                    onChange={(e) => handleChange('conciergeListerLastName', e.target.value)}
+                                    value={(formData.conciergeListerCompanyName as string) || ''}
+                                    onChange={(e) => handleChange('conciergeListerCompanyName', e.target.value)}
                                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                                    placeholder="Last name"
-                                    autoComplete="family-name"
+                                    placeholder="Enter company name"
                                   />
                                 </div>
                               </div>
-                              <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Lister Email</label>
-                                <input
-                                  type="email"
-                                  value={(formData.conciergeListerEmail as string) || ''}
-                                  onChange={(e) => handleChange('conciergeListerEmail', e.target.value)}
-                                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                                  placeholder="owner@example.com"
-                                />
+
+                              {/* About You */}
+                              <div className="flex items-center gap-2 mb-2">
+                                <FileText className="w-4 h-4 text-orange-500" />
+                                <p className="text-sm font-semibold text-gray-900">About You</p>
                               </div>
-                              <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Lister Phone</label>
-                                <input
-                                  type="tel"
-                                  inputMode="numeric"
-                                  value={(formData.conciergeListerPhone as string) || ''}
-                                  onChange={(e) =>
-                                    handleChange('conciergeListerPhone', sanitizeIndianMobileInput(e.target.value))
-                                  }
-                                  className={`w-full border rounded-lg px-3 py-2 text-sm ${
-                                    listerPhoneInvalid ? 'border-red-500' : 'border-gray-300'
-                                  }`}
-                                  placeholder="10-digit mobile (6–9…)"
-                                  maxLength={10}
+                              <div className="border border-gray-200 rounded-lg p-4 mb-6 bg-white">
+                                <label className="flex items-center justify-between text-sm font-medium text-gray-700 mb-1.5">
+                                  <span>About You</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => setShowListerAboutTemplates(true)}
+                                    className="text-xs text-orange-500 hover:text-orange-600 hover:underline font-normal"
+                                  >
+                                    Choose from pre-written templates
+                                  </button>
+                                </label>
+                                <textarea
+                                  value={(formData.conciergeListerAbout as string) || ''}
+                                  onChange={(e) => handleChange('conciergeListerAbout', e.target.value)}
+                                  rows={5}
+                                  maxLength={500}
+                                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm resize-none"
+                                  placeholder="Tell us about yourself..."
                                 />
-                                {listerPhoneInvalid && (
-                                  <p className="mt-1 text-xs text-red-600">{INDIAN_MOBILE_HINT}</p>
-                                )}
+                                <p className="text-xs text-gray-500 mt-1 text-right">
+                                  {String((formData.conciergeListerAbout as string) || '').length}/500 characters
+                                </p>
                               </div>
-                              <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Occupation</label>
-                                <input
-                                  type="text"
-                                  value={(formData.conciergeListerOccupation as string) || ''}
-                                  onChange={(e) => handleChange('conciergeListerOccupation', e.target.value)}
-                                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                                  placeholder="Optional"
-                                />
+
+                              {/* Lifestyle */}
+                              <div className="flex items-center gap-2 mb-2">
+                                <Users className="w-4 h-4 text-orange-500" />
+                                <p className="text-sm font-semibold text-gray-900">Lifestyle Preferences</p>
+                              </div>
+                              <div className="border border-gray-200 rounded-lg p-4 space-y-4 bg-white">
+                                <div className="p-2 bg-blue-50 border border-blue-100 rounded-lg">
+                                  <p className="text-xs text-blue-800">
+                                    These preferences are private and used only to recommend compatible homes and flatmates.
+                                  </p>
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
+                                    <Cigarette className="w-3.5 h-3.5 text-gray-400" />
+                                    Smoking
+                                  </label>
+                                  <select
+                                    value={(formData.conciergeListerSmoking as string) || ''}
+                                    onChange={(e) => handleChange('conciergeListerSmoking', e.target.value)}
+                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                                  >
+                                    <option value="">Select preference</option>
+                                    <option value="Yes">Yes</option>
+                                    <option value="No">No</option>
+                                    <option value="Occasionally">Occasionally</option>
+                                  </select>
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
+                                    <Wine className="w-3.5 h-3.5 text-gray-400" />
+                                    Drinking
+                                  </label>
+                                  <select
+                                    value={(formData.conciergeListerDrinking as string) || ''}
+                                    onChange={(e) => handleChange('conciergeListerDrinking', e.target.value)}
+                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                                  >
+                                    <option value="">Select preference</option>
+                                    <option value="Yes">Yes</option>
+                                    <option value="No">No</option>
+                                    <option value="Occasionally">Occasionally</option>
+                                  </select>
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
+                                    <Utensils className="w-3.5 h-3.5 text-gray-400" />
+                                    Food Preference
+                                  </label>
+                                  <select
+                                    value={(formData.conciergeListerFoodPreference as string) || ''}
+                                    onChange={(e) => handleChange('conciergeListerFoodPreference', e.target.value)}
+                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                                  >
+                                    <option value="">Select preference</option>
+                                    <option value="Vegetarian">Vegetarian</option>
+                                    <option value="Non-vegetarian">Non-vegetarian</option>
+                                    <option value="Eggetarian">Eggetarian</option>
+                                  </select>
+                                </div>
                               </div>
                             </>
                           )}
@@ -806,10 +1297,74 @@ export default function ConciergeCreateDraftPage() {
                     disabled={submitting}
                     className="px-4 py-2 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 disabled:opacity-50"
                   >
-                    {submitting ? 'Saving…' : 'Save'}
+                    {submitting ? 'Saving…' : isEditMode ? 'Save changes' : 'Save'}
                   </button>
                 </div>
               </div>
+
+              {showListerAboutTemplates && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                  <div
+                    ref={listerTemplateModalRef}
+                    className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+                  >
+                    <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                      <div>
+                        <h3 className="text-xl font-bold text-gray-900">About You Templates</h3>
+                        <p className="text-sm text-gray-600 mt-1">Same templates as the user Profile page</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowListerAboutTemplates(false)}
+                        className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+                    <div className="flex-1 overflow-y-auto p-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {LISTER_ABOUT_TEMPLATES.map((template) => {
+                          const IconComponent = template.icon
+                          return (
+                            <div
+                              key={template.id}
+                              className="bg-white border border-gray-200 rounded-lg p-5 hover:border-orange-400 hover:shadow-md transition-all relative group"
+                            >
+                              <div className="flex items-start gap-3 mb-3">
+                                <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                  <IconComponent className="w-5 h-5 text-orange-600" />
+                                </div>
+                                <div className="flex-1">
+                                  <h4 className="font-semibold text-gray-900 mb-1">{template.title}</h4>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => navigator.clipboard.writeText(template.content)}
+                                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 text-gray-400 hover:text-orange-600"
+                                  title="Copy template"
+                                >
+                                  <Copy className="w-4 h-4" />
+                                </button>
+                              </div>
+                              <p className="text-sm text-gray-700 leading-relaxed mb-4 line-clamp-3">{template.content}</p>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  handleChange('conciergeListerAbout', template.content)
+                                  setShowListerAboutTemplates(false)
+                                }}
+                                className="text-sm font-medium text-orange-600 hover:text-orange-700"
+                              >
+                                Use This Template →
+                              </button>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </form>
           </div>
         </main>
