@@ -3,7 +3,7 @@ import { CheckCircle2 } from 'lucide-react'
 
 const ListYourSpaceSection = () => {
   return (
-    <section className="mx-auto grid max-w-7xl overflow-hidden rounded-[32px] bg-white shadow-sm ring-1 ring-orange-100 lg:grid-cols-[0.95fr_1.05fr]">
+    <section className="mx-auto grid max-w-7xl overflow-hidden rounded-[28px] bg-white shadow-sm ring-1 ring-orange-100 lg:rounded-[32px] lg:grid-cols-[0.95fr_1.05fr]">
       <div className="flex bg-orange-400 px-6 py-10 text-white md:px-10 lg:items-center lg:py-12">
         <div className="max-w-xl space-y-6">
           <span className="inline-flex items-center rounded-full border border-white/80 bg-white px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.26em] text-orange-600 shadow-sm">
@@ -43,8 +43,8 @@ const ListYourSpaceSection = () => {
           </div>
         </div>
       </div>
-      <div className="bg-orange-50 p-4 md:p-5 lg:pl-0 lg:pr-5 lg:py-0">
-        <div className="h-full w-full overflow-hidden rounded-[28px] lg:rounded-l-none shadow-sm ring-1 ring-orange-100">
+      <div className="bg-orange-400 p-0 lg:bg-orange-50 lg:p-4 lg:pl-0 lg:pr-5 lg:py-0">
+        <div className="h-full w-full overflow-hidden rounded-b-[28px] rounded-t-none lg:rounded-[28px] lg:rounded-l-none lg:shadow-sm lg:ring-1 lg:ring-orange-100">
           <img
             src="/bangalore-city.png"
             alt="Listing preview"
